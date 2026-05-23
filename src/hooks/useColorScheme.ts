@@ -9,8 +9,8 @@ function readSavedPreference(): ColorSchemePreference {
   try {
     const value = window.localStorage.getItem(STORAGE_KEY)
     if (value === 'light' || value === 'dark' || value === 'system') return value
-  } catch {
-    // ignore
+  } catch (error) {
+    console.warn('读取主题偏好失败（localStorage 不可用），将使用跟随系统：', error)
   }
   return 'system'
 }
@@ -28,7 +28,8 @@ function applyHtmlClass(resolved: ResolvedColorScheme) {
   // 同步浏览器 UI（地址栏 / iOS 状态栏）
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) {
-    meta.setAttribute('content', resolved === 'dark' ? '#020617' : '#0f172a')
+    // 深色：slate-950；浅色：与 :root 背景的 slate-50 对齐
+    meta.setAttribute('content', resolved === 'dark' ? '#020617' : '#f8fafc')
   }
 }
 
@@ -64,8 +65,8 @@ export function useColorScheme() {
     setPreferenceState(next)
     try {
       window.localStorage.setItem(STORAGE_KEY, next)
-    } catch {
-      // ignore
+    } catch (error) {
+      console.warn('保存主题偏好失败（localStorage 不可用，可能是隐私模式或配额已满）：', error)
     }
   }, [])
 
@@ -75,8 +76,8 @@ export function useColorScheme() {
         current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system'
       try {
         window.localStorage.setItem(STORAGE_KEY, next)
-      } catch {
-        // ignore
+      } catch (error) {
+        console.warn('保存主题偏好失败（localStorage 不可用，可能是隐私模式或配额已满）：', error)
       }
       return next
     })

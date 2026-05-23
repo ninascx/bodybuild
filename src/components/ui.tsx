@@ -37,11 +37,14 @@ export function StatCard({
   value,
   helper,
   delta,
+  size = 'normal',
 }: {
   label: string
   value: ReactNode
   helper?: string
   delta?: { direction: 'up' | 'down' | 'flat'; text: string; tone?: 'positive' | 'warning' | 'neutral' }
+  /** 'large' 用于关键 KPI（前 4 张），'normal' 是其它较为辅助的指标。 */
+  size?: 'normal' | 'large'
 }) {
   const deltaTone = delta?.tone ?? 'neutral'
   const deltaClasses: Record<NonNullable<typeof delta>['tone'] & string, string> = {
@@ -50,10 +53,17 @@ export function StatCard({
     neutral: 'text-slate-500 dark:text-slate-400',
   }
   const arrow = delta?.direction === 'up' ? '↑' : delta?.direction === 'down' ? '↓' : '→'
+  const isLarge = size === 'large'
   return (
-    <Card className="min-h-28">
-      <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-50">{value}</p>
+    <Card className={isLarge ? 'min-h-32' : 'min-h-24'}>
+      <p className={`${isLarge ? 'text-sm' : 'text-xs'} text-slate-500 dark:text-slate-400`}>{label}</p>
+      <p
+        className={`mt-2 font-semibold text-slate-950 dark:text-slate-50 ${
+          isLarge ? 'text-3xl' : 'text-xl'
+        }`}
+      >
+        {value}
+      </p>
       {delta ? (
         <p className={`mt-1 text-xs font-medium ${deltaClasses[deltaTone]}`}>
           {arrow} {delta.text}

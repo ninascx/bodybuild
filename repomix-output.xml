@@ -1,3 +1,2857 @@
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: src/assets/**/*.svg, public/**/*.svg, public/**/*.png, public/**/*.ico, public/**/*.webmanifest, dist/**, repomix-output.*, *.lock, package-lock.json, pnpm-lock.yaml, yarn.lock
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.claude/launch.json
+.claude/settings.local.json
+.codex/environments/environment.toml
+.env.example
+.gitignore
+eslint.config.js
+index.html
+package.json
+README.md
+repomix.config.json
+scripts/boxing-glove-twemoji.svg
+scripts/generate-icons.mjs
+server/index.ts
+src/App.css
+src/App.tsx
+src/assets/hero.png
+src/components/ConfirmDialog.tsx
+src/components/ErrorBoundary.tsx
+src/components/PWAUpdatePrompt.tsx
+src/components/ui.tsx
+src/data/plans.ts
+src/hooks/useColorScheme.ts
+src/index.css
+src/lib/dates.ts
+src/lib/ids.ts
+src/lib/metrics.ts
+src/lib/recommendations.ts
+src/lib/storage.ts
+src/main.tsx
+src/types.ts
+tsconfig.app.json
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".claude/settings.local.json">
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(mkdir -p 'C:/Users/www20/.claude/projects/C--Users-www20-OneDrive----bodybuild/memory' && ls 'C:/Users/www20/.claude/projects/C--Users-www20-OneDrive----bodybuild/memory/')",
+      "Bash(npx tsc *)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(npx vite *)",
+      "Bash(npm install *)",
+      "Bash(node scripts/generate-icons.mjs)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl -sS -o /tmp/boxing-glove.svg https://raw.githubusercontent.com/twitter/twemoji/master/assets/svg/1f94a.svg)",
+      "Read(//tmp/**)",
+      "Bash(cp /tmp/boxing-glove.svg \"C:\\\\Users\\\\www20\\\\OneDrive\\\\文档\\\\bodybuild\\\\scripts\\\\boxing-glove-twemoji.svg\" 2>&1; echo \"EXIT: $?\")"
+    ]
+  }
+}
+</file>
+
+<file path="repomix.config.json">
+{
+  "$schema": "https://repomix.com/schemas/latest/schema.json",
+  "output": {
+    "filePath": "repomix-output.xml",
+    "style": "xml",
+    "removeComments": false,
+    "removeEmptyLines": false,
+    "showLineNumbers": false
+  },
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "src/assets/**/*.svg",
+      "public/**/*.svg",
+      "public/**/*.png",
+      "public/**/*.ico",
+      "public/**/*.webmanifest",
+      "dist/**",
+      "repomix-output.*",
+      "*.lock",
+      "package-lock.json",
+      "pnpm-lock.yaml",
+      "yarn.lock"
+    ]
+  },
+  "security": {
+    "enableSecurityCheck": true
+  }
+}
+</file>
+
+<file path="src/components/ConfirmDialog.tsx">
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Button } from './ui'
+
+export interface ConfirmOptions {
+  title?: string
+  message: string
+  confirmLabel?: string
+  cancelLabel?: string
+  tone?: 'default' | 'danger'
+}
+
+interface ConfirmRequest extends ConfirmOptions {
+  resolve: (value: boolean) => void
+}
+
+const dangerButtonClass =
+  'inline-flex min-h-11 min-w-0 items-center justify-center rounded-md bg-rose-600 px-4 py-2 text-center text-sm font-medium leading-5 text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-rose-500 dark:hover:bg-rose-400'
+const primaryButtonClass =
+  'inline-flex min-h-11 min-w-0 items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-center text-sm font-medium leading-5 text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-400'
+
+/**
+ * Hook：返回 confirm(options) 函数和需要渲染的 dialog 节点。
+ * 用法：const { confirm, dialog } = useConfirm()
+ *      const ok = await confirm({ message: '...' })
+ * 在组件树某处渲染 {dialog}。
+ */
+export function useConfirm() {
+  const [request, setRequest] = useState<ConfirmRequest | null>(null)
+  const dialogRef = useRef<HTMLDialogElement | null>(null)
+  const confirmButtonRef = useRef<HTMLButtonElement | null>(null)
+
+  const confirm = useCallback((options: ConfirmOptions) => {
+    return new Promise<boolean>((resolve) => {
+      setRequest({ ...options, resolve })
+    })
+  }, [])
+
+  // 打开/关闭原生 <dialog>。用 dialog.showModal() 自动处理焦点陷阱、ESC 关闭、背景遮罩。
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+    if (request && !dialog.open) {
+      dialog.showModal()
+      // 默认聚焦到 confirm 按钮：用 rAF 把焦点从 dialog 自身移走。
+      window.requestAnimationFrame(() => {
+        confirmButtonRef.current?.focus()
+      })
+    } else if (!request && dialog.open) {
+      dialog.close()
+    }
+  }, [request])
+
+  const handleAnswer = useCallback(
+    (value: boolean) => {
+      const current = request
+      if (!current) return
+      setRequest(null)
+      current.resolve(value)
+    },
+    [request],
+  )
+
+  // ESC 关闭（dialog 的原生 cancel 事件）→ 视为取消。
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+    const onCancel = (event: Event) => {
+      event.preventDefault()
+      handleAnswer(false)
+    }
+    dialog.addEventListener('cancel', onCancel)
+    return () => dialog.removeEventListener('cancel', onCancel)
+  }, [handleAnswer])
+
+  // 点击背景遮罩 → 视为取消。
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDialogElement>) => {
+    if (event.target === event.currentTarget) handleAnswer(false)
+  }
+
+  const dialog = (
+    <dialog
+      ref={dialogRef}
+      onClick={handleBackdropClick}
+      className="m-auto w-[min(420px,calc(100vw-2rem))] rounded-lg border border-slate-200 bg-white p-0 text-slate-900 shadow-xl backdrop:bg-slate-900/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:backdrop:bg-black/60"
+    >
+      {request ? (
+        <div className="p-5">
+          {request.title ? (
+            <h2 className="text-base font-semibold text-slate-950 dark:text-slate-50">{request.title}</h2>
+          ) : null}
+          <p className={`text-sm leading-6 text-slate-700 dark:text-slate-300 ${request.title ? 'mt-2' : ''}`}>
+            {request.message}
+          </p>
+          <div className="mt-5 flex flex-wrap justify-end gap-2">
+            <Button variant="secondary" onClick={() => handleAnswer(false)}>
+              {request.cancelLabel ?? '取消'}
+            </Button>
+            <button
+              type="button"
+              ref={confirmButtonRef}
+              onClick={() => handleAnswer(true)}
+              className={request.tone === 'danger' ? dangerButtonClass : primaryButtonClass}
+            >
+              {request.confirmLabel ?? '确定'}
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </dialog>
+  )
+
+  return { confirm, dialog }
+}
+</file>
+
+<file path=".claude/launch.json">
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vite-dev",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--port", "5179"],
+      "port": 5179
+    },
+    {
+      "name": "vite-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "preview", "--port", "4179"],
+      "port": 4179
+    }
+  ]
+}
+</file>
+
+<file path=".codex/environments/environment.toml">
+# THIS IS AUTOGENERATED. DO NOT EDIT MANUALLY
+version = 1
+name = "bodybuild"
+
+[setup]
+script = ""
+
+[[actions]]
+name = "测试"
+icon = "run"
+command = "npm run dev"
+</file>
+
+<file path=".env.example">
+PORT=8787
+BODYBUILD_DATA_FILE=/var/lib/bodybuild/bodybuild-data.json
+</file>
+
+<file path="eslint.config.js">
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      globals: globals.browser,
+    },
+  },
+])
+</file>
+
+<file path="README.md">
+# Bodybuild Tracker
+
+个人减脂增肌追踪网站。前端使用 Vite + React + TypeScript + Tailwind CSS，数据通过 Node/Express API 保存到服务器目录中的 JSON 文件。
+
+## 本地开发
+
+安装依赖：
+
+```bash
+npm install
+```
+
+启动后端 API：
+
+```bash
+npm run server:dev
+```
+
+另开一个终端启动前端：
+
+```bash
+npm run dev
+```
+
+前端默认访问：
+
+```text
+http://127.0.0.1:5173
+```
+
+后端默认监听：
+
+```text
+http://127.0.0.1:8787
+```
+
+## 数据文件
+
+默认数据文件：
+
+```text
+./data/bodybuild-data.json
+```
+
+可以用环境变量覆盖：
+
+```bash
+BODYBUILD_DATA_FILE=/var/lib/bodybuild/bodybuild-data.json npm run start
+```
+
+首次启动时，如果文件不存在，服务会自动创建空数据文件。
+
+数据文件会保存：
+
+- 每日记录
+- 训练记录
+- 今日任务勾选状态
+- 自定义训练模板
+
+训练模块支持从内置计划或自定义模板快速生成当天训练，也可以只编辑当天动作和组数；当天编辑不会反向修改模板。
+
+## 生产部署
+
+在服务器上构建：
+
+```bash
+npm install
+npm run build
+```
+
+启动服务：
+
+```bash
+PORT=8787 BODYBUILD_DATA_FILE=/var/lib/bodybuild/bodybuild-data.json npm run start
+```
+
+Nginx 反向代理示例：
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8787;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+## 常用命令
+
+```bash
+npm run test
+npm run build
+npm run start
+```
+
+## 注意
+
+当前版本公开无密码访问。任何能访问站点的人都可能查看或修改数据。建议只放在可信网络，或后续增加 Basic Auth / 登录保护。
+</file>
+
+<file path="scripts/boxing-glove-twemoji.svg">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><path fill="#BE1931" d="M19.598.326c9.613 0 12.243 1.697 12.243 11.311 0 5.506-1.167 8.488-1.167 13.488 0 2.958-4.551 3-8.659 3-4.218 0-9.142.199-11.341-2-6-6-10.545-16.449-2-19C9.129.614 9.984.326 19.598.326z"/><path fill="#99AAB5" d="M26.736 26c2.229 0 4.264.858 4.264 2.903v3.519C31 34.467 28.965 36 26.736 36H15V26h11.736z"/><path fill="#CCD6DD" d="M22.341 26c2.454 0 4.659.858 4.659 2.903v3.519C27 34.467 24.795 36 22.341 36h-7.333C12.553 36 11 34.467 11 32.422v-3.519C11 26.858 12.553 26 15.008 26h7.333z"/><path fill="#A0041E" d="M4.292 10.948c.715-.575 1.862-1.424 2.383 1.178 1 5 3.794 9.384 3 7-1-3-1-12-1-12-2.437.727-3.806 2.097-4.383 3.822z"/><path fill="#E1E8ED" d="M21.674 28c1.105 0 2.326.538 2.326 1.459v3.333c0 .92-1.221 1.208-2.326 1.208h-5C15.57 34 15 33.712 15 32.792v-3.333c0-.921.57-1.459 1.674-1.459h5z"/></svg>
+</file>
+
+<file path="scripts/generate-icons.mjs">
+// 生成 PWA 图标：Twemoji 🥊 + 深色圆角背景
+// 用法: node scripts/generate-icons.mjs
+import sharp from 'sharp'
+import { readFile, writeFile, mkdir } from 'node:fs/promises'
+import { resolve } from 'node:path'
+
+const projectRoot = resolve(import.meta.dirname, '..')
+const publicDir = resolve(projectRoot, 'public')
+const sourceSvg = resolve(import.meta.dirname, 'boxing-glove-twemoji.svg')
+
+const BG = '#0f172a' // slate-950，跟应用主色一致
+
+// 提取 Twemoji 内部 path，剥掉外层 <svg> 包装
+async function loadGlovePaths() {
+  const raw = await readFile(sourceSvg, 'utf8')
+  const inner = raw.replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '')
+  return inner
+}
+
+function buildSvg(paths, size, padding, radius) {
+  const inner = size - padding * 2
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <rect width="${size}" height="${size}" rx="${radius}" ry="${radius}" fill="${BG}"/>
+  <g transform="translate(${padding} ${padding}) scale(${inner / 36})">
+    ${paths}
+  </g>
+</svg>`
+}
+
+async function svgToPng(svg, size, outPath) {
+  await sharp(Buffer.from(svg)).resize(size, size).png().toFile(outPath)
+  console.log(`  ✓ ${outPath.replace(projectRoot, '').replace(/\\/g, '/')}`)
+}
+
+async function main() {
+  await mkdir(publicDir, { recursive: true })
+  const paths = await loadGlovePaths()
+
+  // favicon.svg：浏览器标签
+  const faviconSvg = buildSvg(paths, 64, 8, 12)
+  await writeFile(resolve(publicDir, 'favicon.svg'), faviconSvg, 'utf8')
+  console.log(`  ✓ /public/favicon.svg`)
+
+  // PWA 图标 PNG（圆角约 18%，安全区 padding 约 12%）
+  await svgToPng(buildSvg(paths, 192, 24, 36), 192, resolve(publicDir, 'pwa-192x192.png'))
+  await svgToPng(buildSvg(paths, 512, 64, 96), 512, resolve(publicDir, 'pwa-512x512.png'))
+
+  // maskable 图标：填满整个 512×512，emoji 缩小到 60% 留出安全区
+  await svgToPng(buildSvg(paths, 512, 102, 0), 512, resolve(publicDir, 'pwa-maskable-512x512.png'))
+
+  // Apple touch icon
+  await svgToPng(buildSvg(paths, 180, 22, 32), 180, resolve(publicDir, 'apple-touch-icon.png'))
+
+  console.log('\n图标生成完成。')
+}
+
+main().catch((error) => {
+  console.error('生成失败：', error)
+  process.exit(1)
+})
+</file>
+
+<file path="src/App.css">
+.counter {
+  font-size: 16px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+  margin-bottom: 24px;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.hero {
+  position: relative;
+
+  .base,
+  .framework,
+  .vite {
+    inset-inline: 0;
+    margin: 0 auto;
+  }
+
+  .base {
+    width: 170px;
+    position: relative;
+    z-index: 0;
+  }
+
+  .framework,
+  .vite {
+    position: absolute;
+  }
+
+  .framework {
+    z-index: 1;
+    top: 34px;
+    height: 28px;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+      scale(1.4);
+  }
+
+  .vite {
+    z-index: 0;
+    top: 107px;
+    height: 26px;
+    width: auto;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+      scale(0.8);
+  }
+}
+
+#center {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  place-content: center;
+  place-items: center;
+  flex-grow: 1;
+
+  @media (max-width: 1024px) {
+    padding: 32px 20px 24px;
+    gap: 18px;
+  }
+}
+
+#next-steps {
+  display: flex;
+  border-top: 1px solid var(--border);
+  text-align: left;
+
+  & > div {
+    flex: 1 1 0;
+    padding: 32px;
+    @media (max-width: 1024px) {
+      padding: 24px 20px;
+    }
+  }
+
+  .icon {
+    margin-bottom: 16px;
+    width: 22px;
+    height: 22px;
+  }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+#docs {
+  border-right: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 32px 0 0;
+
+  .logo {
+    height: 18px;
+  }
+
+  a {
+    color: var(--text-h);
+    font-size: 16px;
+    border-radius: 6px;
+    background: var(--social-bg);
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow 0.3s;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+    .button-icon {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    li {
+      flex: 1 1 calc(50% - 8px);
+    }
+
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+  }
+}
+
+#spacer {
+  height: 88px;
+  border-top: 1px solid var(--border);
+  @media (max-width: 1024px) {
+    height: 48px;
+  }
+}
+
+.ticks {
+  position: relative;
+  width: 100%;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -4.5px;
+    border: 5px solid transparent;
+  }
+
+  &::before {
+    left: 0;
+    border-left-color: var(--border);
+  }
+  &::after {
+    right: 0;
+    border-right-color: var(--border);
+  }
+}
+</file>
+
+<file path="src/components/ErrorBoundary.tsx">
+import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { createBackup, downloadBackup, loadCachedData } from '../lib/storage'
+
+interface ErrorBoundaryProps {
+  children: ReactNode
+  fallback?: (error: Error, reset: () => void) => ReactNode
+}
+
+interface ErrorBoundaryState {
+  error: Error | null
+  exportMessage: string
+  copyStatus: 'idle' | 'success' | 'error'
+}
+
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { error: null, exportMessage: '', copyStatus: 'idle' }
+
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+    return { error }
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo): void {
+    console.error('App crash captured by ErrorBoundary:', error, info)
+  }
+
+  reset = () => {
+    this.setState({ error: null, exportMessage: '', copyStatus: 'idle' })
+  }
+
+  exportCache = () => {
+    try {
+      const cached = loadCachedData()
+      downloadBackup(createBackup(cached.dailyLogs, cached.workoutLogs, cached.taskChecks, cached.workoutTemplates))
+      this.setState({ exportMessage: '已导出本地缓存到下载目录。' })
+    } catch (error) {
+      console.error('从缓存导出备份失败：', error)
+      this.setState({ exportMessage: '导出失败，请手动备份后再刷新。' })
+    }
+  }
+
+  copyError = async () => {
+    const { error } = this.state
+    if (!error) return
+    const text = [
+      `Message: ${error.message}`,
+      error.stack ? `Stack:\n${error.stack}` : '',
+      `UA: ${navigator.userAgent}`,
+      `Time: ${new Date().toISOString()}`,
+    ]
+      .filter(Boolean)
+      .join('\n\n')
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text)
+      } else {
+        const textarea = document.createElement('textarea')
+        textarea.value = text
+        textarea.setAttribute('readonly', 'true')
+        textarea.style.position = 'fixed'
+        textarea.style.opacity = '0'
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        textarea.remove()
+      }
+      this.setState({ copyStatus: 'success' })
+      window.setTimeout(() => this.setState({ copyStatus: 'idle' }), 2000)
+    } catch (copyError) {
+      console.error('复制错误信息失败：', copyError)
+      this.setState({ copyStatus: 'error' })
+      window.setTimeout(() => this.setState({ copyStatus: 'idle' }), 2000)
+    }
+  }
+
+  clearTabAndReload = () => {
+    try {
+      window.sessionStorage.removeItem('bodybuild:v1:activeTab')
+    } catch (error) {
+      console.warn('清除上次激活标签失败：', error)
+    }
+    window.location.reload()
+  }
+
+  render(): ReactNode {
+    const { error, exportMessage, copyStatus } = this.state
+    if (!error) return this.props.children
+    if (this.props.fallback) return this.props.fallback(error, this.reset)
+    const copyLabel = copyStatus === 'success' ? '✓ 已复制' : copyStatus === 'error' ? '✗ 复制失败' : '复制错误信息'
+    return (
+      <div className="mx-auto mt-10 max-w-xl rounded-lg border border-rose-200 bg-rose-50 p-6 text-rose-900 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-100">
+        <h2 className="text-lg font-semibold">出现错误</h2>
+        <p className="mt-2 text-sm leading-6">
+          页面渲染时遇到异常。可以先把本地缓存导出做备份，再尝试恢复。
+        </p>
+        <ul className="mt-2 list-disc pl-5 text-sm leading-6">
+          <li>检查"记录"或"训练"页面的日期是否为空</li>
+          <li>点击"导出本地缓存"先备份，避免数据丢失</li>
+          <li>点击"复制错误信息"再贴给开发者，便于排查</li>
+          <li>再点击"重试"或"清除标签缓存并刷新"</li>
+        </ul>
+        <pre className="mt-3 max-h-40 overflow-auto rounded bg-rose-100 p-2 text-xs dark:bg-rose-900/50">
+          {error.message}
+          {error.stack ? `\n\n${error.stack}` : ''}
+        </pre>
+        {exportMessage ? <p className="mt-2 text-xs text-rose-800 dark:text-rose-200">{exportMessage}</p> : null}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={this.exportCache}
+            className="inline-flex h-10 items-center justify-center rounded-md border border-rose-300 bg-white px-4 text-sm font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-700/40 dark:bg-rose-900/40 dark:text-rose-100 dark:hover:bg-rose-900/60"
+          >
+            导出本地缓存
+          </button>
+          <button
+            type="button"
+            onClick={() => void this.copyError()}
+            aria-live="polite"
+            className={`inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition ${
+              copyStatus === 'success'
+                ? 'border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/40 dark:text-emerald-100'
+                : copyStatus === 'error'
+                  ? 'border-rose-400 bg-rose-200 text-rose-900 dark:border-rose-700/40 dark:bg-rose-900/60 dark:text-rose-100'
+                  : 'border-rose-300 bg-white text-rose-700 hover:bg-rose-100 dark:border-rose-700/40 dark:bg-rose-900/40 dark:text-rose-100 dark:hover:bg-rose-900/60'
+            }`}
+          >
+            {copyLabel}
+          </button>
+          <button
+            type="button"
+            onClick={this.reset}
+            className="inline-flex h-10 items-center justify-center rounded-md bg-rose-600 px-4 text-sm font-medium text-white hover:bg-rose-700"
+          >
+            重试
+          </button>
+          <button
+            type="button"
+            onClick={this.clearTabAndReload}
+            className="inline-flex h-10 items-center justify-center rounded-md border border-rose-300 bg-white px-4 text-sm font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-700/40 dark:bg-rose-900/40 dark:text-rose-100 dark:hover:bg-rose-900/60"
+          >
+            清除标签缓存并刷新
+          </button>
+        </div>
+      </div>
+    )
+  }
+}
+</file>
+
+<file path="src/components/PWAUpdatePrompt.tsx">
+import { useEffect, useState } from 'react'
+import { useRegisterSW } from 'virtual:pwa-register/react'
+
+/**
+ * PWA 更新提示
+ * - 检测到新版本时，浮窗提示用户刷新
+ * - autoUpdate 注册类型已经会自动激活新 SW，这里只是给用户一个明确的"重新加载"入口
+ */
+export function PWAUpdatePrompt() {
+  const {
+    needRefresh: [needRefresh, setNeedRefresh],
+    offlineReady: [offlineReady, setOfflineReady],
+    updateServiceWorker,
+  } = useRegisterSW({
+    onRegistered(registration) {
+      // 每小时检查一次更新（应用打开期间）
+      if (registration) {
+        setInterval(() => {
+          void registration.update()
+        }, 60 * 60 * 1000)
+      }
+    },
+    onRegisterError(error) {
+      console.error('SW 注册失败：', error)
+    },
+  })
+
+  const [showOffline, setShowOffline] = useState(false)
+
+  useEffect(() => {
+    if (offlineReady) {
+      setShowOffline(true)
+      const timer = window.setTimeout(() => {
+        setShowOffline(false)
+        setOfflineReady(false)
+      }, 4000)
+      return () => window.clearTimeout(timer)
+    }
+  }, [offlineReady, setOfflineReady])
+
+  if (!needRefresh && !showOffline) return null
+
+  return (
+    <div className="fixed inset-x-0 bottom-4 z-50 mx-auto flex max-w-md justify-center px-4">
+      {needRefresh ? (
+        <div className="flex w-full items-center gap-3 rounded-lg border border-emerald-200 bg-white p-3 shadow-lg">
+          <div className="flex-1 text-sm">
+            <p className="font-semibold text-slate-950">新版本已就绪</p>
+            <p className="text-slate-600">点击重新加载使用最新功能。</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => updateServiceWorker(true)}
+            className="inline-flex h-9 items-center justify-center rounded-md bg-emerald-600 px-3 text-sm font-medium text-white hover:bg-emerald-700"
+          >
+            重新加载
+          </button>
+          <button
+            type="button"
+            onClick={() => setNeedRefresh(false)}
+            className="inline-flex h-9 items-center justify-center rounded-md px-2 text-sm text-slate-500 hover:bg-slate-100"
+            aria-label="忽略"
+          >
+            ✕
+          </button>
+        </div>
+      ) : showOffline ? (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-900 shadow-lg">
+          已缓存到本地，可离线使用 🥊
+        </div>
+      ) : null}
+    </div>
+  )
+}
+</file>
+
+<file path="src/hooks/useColorScheme.ts">
+import { useEffect, useState, useCallback } from 'react'
+
+export type ColorSchemePreference = 'system' | 'light' | 'dark'
+export type ResolvedColorScheme = 'light' | 'dark'
+
+const STORAGE_KEY = 'bodybuild:v1:colorScheme'
+
+function readSavedPreference(): ColorSchemePreference {
+  try {
+    const value = window.localStorage.getItem(STORAGE_KEY)
+    if (value === 'light' || value === 'dark' || value === 'system') return value
+  } catch (error) {
+    console.warn('读取主题偏好失败（localStorage 不可用），将使用跟随系统：', error)
+  }
+  return 'system'
+}
+
+function getSystemScheme(): ResolvedColorScheme {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'light'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+function applyHtmlClass(resolved: ResolvedColorScheme) {
+  const root = document.documentElement
+  if (resolved === 'dark') root.classList.add('dark')
+  else root.classList.remove('dark')
+
+  // 同步浏览器 UI（地址栏 / iOS 状态栏）
+  const meta = document.querySelector('meta[name="theme-color"]')
+  if (meta) {
+    // 深色：slate-950；浅色：与 :root 背景的 slate-50 对齐
+    meta.setAttribute('content', resolved === 'dark' ? '#020617' : '#f8fafc')
+  }
+}
+
+/**
+ * 暗色模式管理：默认跟随系统偏好，可手动覆盖为 light / dark；选择持久化到 localStorage。
+ */
+export function useColorScheme() {
+  const [preference, setPreferenceState] = useState<ColorSchemePreference>(() => readSavedPreference())
+  const [systemScheme, setSystemScheme] = useState<ResolvedColorScheme>(() => getSystemScheme())
+
+  // 监听系统偏好变化
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+    const mql = window.matchMedia('(prefers-color-scheme: dark)')
+    const handler = (event: MediaQueryListEvent) => setSystemScheme(event.matches ? 'dark' : 'light')
+    if (typeof mql.addEventListener === 'function') {
+      mql.addEventListener('change', handler)
+      return () => mql.removeEventListener('change', handler)
+    }
+    // Safari 旧版兼容
+    mql.addListener(handler)
+    return () => mql.removeListener(handler)
+  }, [])
+
+  const resolved: ResolvedColorScheme = preference === 'system' ? systemScheme : preference
+
+  // 同步 html.dark 与 meta theme-color
+  useEffect(() => {
+    applyHtmlClass(resolved)
+  }, [resolved])
+
+  const setPreference = useCallback((next: ColorSchemePreference) => {
+    setPreferenceState(next)
+    try {
+      window.localStorage.setItem(STORAGE_KEY, next)
+    } catch (error) {
+      console.warn('保存主题偏好失败（localStorage 不可用，可能是隐私模式或配额已满）：', error)
+    }
+  }, [])
+
+  const cycle = useCallback(() => {
+    setPreferenceState((current) => {
+      const next: ColorSchemePreference =
+        current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system'
+      try {
+        window.localStorage.setItem(STORAGE_KEY, next)
+      } catch (error) {
+        console.warn('保存主题偏好失败（localStorage 不可用，可能是隐私模式或配额已满）：', error)
+      }
+      return next
+    })
+  }, [])
+
+  return { preference, resolved, setPreference, cycle }
+}
+</file>
+
+<file path="src/lib/ids.ts">
+export function createId(prefix: string): string {
+  const random =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+  return `${prefix}-${random}`
+}
+</file>
+
+<file path="src/lib/recommendations.ts">
+import { dailyTargets } from '../data/plans'
+import type { AdjustmentRecommendation, DailyLog } from '../types'
+import { addDays, getDayKey, getRecentWindow, sortByDateAsc } from './dates'
+
+function average(values: Array<number | undefined>): number | undefined {
+  const valid = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+  if (valid.length === 0) return undefined
+  return valid.reduce((sum, value) => sum + value, 0) / valid.length
+}
+
+function averageWeightForRange(logs: DailyLog[], endDate: string, days: number): number | undefined {
+  return average(getRecentWindow(logs, endDate, days).map((log) => log.morningWeightKg))
+}
+
+export function getDailyRecommendations(log: DailyLog | undefined, logs: DailyLog[], dateValue: string): AdjustmentRecommendation[] {
+  const day = getDayKey(dateValue)
+  const recommendations: AdjustmentRecommendation[] = []
+
+  if (log?.sleepHours !== undefined && log.sleepHours < 6.5) {
+    recommendations.push({
+      title: '睡眠偏少',
+      message: '今天不要冲力竭，训练保留更多余力。',
+      tone: 'warning',
+    })
+  }
+
+  const recentThree = getRecentWindow(logs, dateValue, 3)
+  if (recentThree.length >= 3 && recentThree.every((item) => (item.steps ?? 6500) < 6500)) {
+    recommendations.push({
+      title: '活动量偏低',
+      message: '连续 3 天步数低于 6500，建议增加 10-20 分钟散步。',
+      tone: 'warning',
+    })
+  }
+
+  if ([5, 6].includes(day)) {
+    if ((log?.calories ?? 0) > 3000) {
+      recommendations.push({
+        title: '自由饮食偏高',
+        message: '周五或周六热量超过 3000 kcal，可能抵消周内赤字。优先控制周末，不要用极端压低工作日热量补偿。',
+        tone: 'danger',
+      })
+    }
+    if (log?.protein !== undefined && log.protein < 160) {
+      recommendations.push({
+        title: '蛋白质未达底线',
+        message: '休息日也尽量保证至少 160 g 蛋白质。',
+        tone: 'warning',
+      })
+    }
+    if (log?.steps !== undefined && log.steps < 8000) {
+      recommendations.push({
+        title: '步数未达底线',
+        message: '建议饭后步行 20-30 分钟补足活动量。',
+        tone: 'warning',
+      })
+    }
+  }
+
+  if ([0, 3].includes(day) && log?.shoulderPainScore !== undefined) {
+    if (log.shoulderPainScore >= 5) {
+      recommendations.push({
+        title: '推日肩部压力偏高',
+        message: '今天避免引发不适的推举动作，减少推举总量，优先选择无明显不适的胸推和飞鸟。',
+        tone: 'danger',
+      })
+    } else if (log.shoulderPainScore >= 3) {
+      recommendations.push({
+        title: '推日肩部提醒',
+        message: '降低推举重量，缩小动作范围，优先使用器械和中立握。',
+        tone: 'warning',
+      })
+    }
+  }
+
+  if (recommendations.length === 0) {
+    recommendations.push({
+      title: '今日节奏',
+      message: dailyTargets[day].isTrainingDay ? '按计划完成主项，推举动作保持可控和无明显不适。' : '休息日重点是蛋白质达标、控制自由饮食和补足步数。',
+      tone: 'positive',
+    })
+  }
+
+  return recommendations
+}
+
+export function getWeekendRiskRecommendation(logs: DailyLog[], today: string): AdjustmentRecommendation {
+  const weekLogs = getRecentWindow(logs, today, 7).filter((log) => [5, 6].includes(getDayKey(log.date)))
+  const riskyDays = weekLogs.filter((log) => (log.calories ?? 0) > 3000)
+  const averageWeekendCalories =
+    weekLogs.length > 0
+      ? weekLogs.reduce((sum, log) => sum + (log.calories ?? 0), 0) / weekLogs.length
+      : undefined
+
+  if (riskyDays.length > 0 || (averageWeekendCalories ?? 0) > 3000) {
+    return {
+      title: '周末风险预警',
+      message: '周五周六热量偏高时，优先控制自由饮食结构和步数，不建议用极端压低工作日热量来补偿。',
+      tone: 'danger',
+    }
+  }
+
+  return {
+    title: '周末节奏',
+    message: '目前没有明显周末超标记录。继续守住 2600-3000 kcal、蛋白质 160 g 和 8000 步底线。',
+    tone: 'positive',
+  }
+}
+
+export function getPushDayShoulderRecommendation(logs: DailyLog[], today: string): AdjustmentRecommendation {
+  const pushLogs = sortByDateAsc(logs)
+    .filter((log) => log.date <= today && [0, 3].includes(getDayKey(log.date)) && log.shoulderPainScore !== undefined)
+    .slice(-3)
+
+  const latest = pushLogs.at(-1)
+  if (!latest) {
+    return {
+      title: '推日肩部记录',
+      message: '推日可选记录肩部 0-10 分，用来观察趋势；不适明显时以动作可控和无明显不适为先。',
+      tone: 'neutral',
+    }
+  }
+
+  if (pushLogs.length >= 3 && pushLogs.every((log) => (log.shoulderPainScore ?? 0) >= 4)) {
+    return {
+      title: '连续推日肩部压力偏高',
+      message: '连续 3 次推日肩部评分偏高，建议暂停上斜哑铃卧推和双杠臂屈伸，优先无明显不适的器械胸推；若持续加重，考虑运动医学评估。',
+      tone: 'danger',
+    }
+  }
+
+  if ((latest.shoulderPainScore ?? 0) >= 4) {
+    return {
+      title: '推日肩部提醒',
+      message: '最近一次推日肩部评分偏高。下次推日降低推举重量和总量，优先中立握器械。',
+      tone: 'warning',
+    }
+  }
+
+  return {
+    title: '推日肩部趋势',
+    message: '最近推日肩部评分可控。继续保持充分热身、稳定动作和保留余力。',
+    tone: 'positive',
+  }
+}
+
+export function getTwoWeekAdjustment(logs: DailyLog[], today: string): AdjustmentRecommendation {
+  const sorted = sortByDateAsc(logs)
+  const recentFourteen = getRecentWindow(sorted, today, 14)
+  const previousEnd = addDays(today, -14)
+  const previousFourteen = getRecentWindow(sorted, previousEnd, 14)
+
+  if (recentFourteen.length < 10 || previousFourteen.length < 7) {
+    return {
+      title: '两周调整',
+      message: '连续记录还不够完整。先积累至少 2-4 周体重、腰围、热量和训练完成度，再做热量调整。',
+      tone: 'neutral',
+    }
+  }
+
+  const latestWeight = averageWeightForRange(sorted, today, 7)
+  const previousWeight = averageWeightForRange(sorted, addDays(today, -7), 7)
+  const firstWaist = recentFourteen.find((log) => log.waistCm !== undefined)?.waistCm
+  const lastWaist = [...recentFourteen].reverse().find((log) => log.waistCm !== undefined)?.waistCm
+  const recentCompletion = average(recentFourteen.map((log) => log.workoutCompletion))
+  const previousCompletion = average(previousFourteen.map((log) => log.workoutCompletion))
+  const recentFatigue = average(recentFourteen.map((log) => log.fatigueScore))
+
+  if (latestWeight === undefined || previousWeight === undefined) {
+    return {
+      title: '两周调整',
+      message: '体重数据不足，暂不调整热量。优先保持晨起体重连续记录。',
+      tone: 'neutral',
+    }
+  }
+
+  const weeklyChangeRate = ((latestWeight - previousWeight) / previousWeight) * 100
+  const waistChange = firstWaist !== undefined && lastWaist !== undefined ? lastWaist - firstWaist : undefined
+  const performanceStable = previousCompletion === undefined || recentCompletion === undefined || recentCompletion >= previousCompletion - 8
+  const performanceRising = previousCompletion !== undefined && recentCompletion !== undefined && recentCompletion > previousCompletion + 5
+  const weightFlat = Math.abs(weeklyChangeRate) < 0.15
+  const waistFlat = waistChange === undefined || Math.abs(waistChange) < 0.3
+
+  if (weeklyChangeRate <= -0.25 && weeklyChangeRate >= -0.75 && performanceStable) {
+    return {
+      title: '继续当前方案',
+      message: '7 日平均体重下降速度在合理区间，训练表现稳定，先保持当前热量与训练安排。',
+      tone: 'positive',
+    }
+  }
+
+  if (weightFlat && !waistFlat && waistChange !== undefined && waistChange < 0 && performanceRising) {
+    return {
+      title: '可能正在身体重组',
+      message: '体重变化不大，但腰围下降且训练表现上升，不要急着降热量。',
+      tone: 'positive',
+    }
+  }
+
+  if (weightFlat && waistFlat) {
+    return {
+      title: '优先检查周末',
+      message: '连续两周体重和腰围几乎不变。先检查周五周六是否超过 2800-3000 kcal；如果周末已控制，再把周日至周四每日减少 100-150 kcal。',
+      tone: 'warning',
+    }
+  }
+
+  if (weeklyChangeRate < -0.75 || (recentFatigue ?? 0) >= 7 || !performanceStable) {
+    return {
+      title: '赤字可能过大',
+      message: '体重下降偏快、疲劳偏高或训练完成度下降。建议训练日增加 100-150 kcal 碳水，并减少每周 2-4 组附件训练。',
+      tone: 'warning',
+    }
+  }
+
+  return {
+    title: '保持观察',
+    message: '当前变化不极端。继续记录 1 周，重点看 7 日均重、腰围和训练完成度是否同向改善。',
+    tone: 'neutral',
+  }
+}
+</file>
+
+<file path="tsconfig.json">
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
+</file>
+
+<file path="tsconfig.node.json">
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023"],
+    "module": "esnext",
+    "types": ["node"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["vite.config.ts", "server"]
+}
+</file>
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+.env
+.env.*
+!.env.example
+
+# Local/server runtime data
+/data
+*.tmp
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+</file>
+
+<file path="index.html">
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="健身追踪" />
+    <title>减脂增肌追踪</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="package.json">
+{
+  "name": "bodybuild",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "server:dev": "tsx server/index.ts",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "typecheck": "tsc -b",
+    "test": "npm run lint && npm run typecheck",
+    "preview": "vite preview",
+    "start": "tsx server/index.ts",
+    "icons:generate": "node scripts/generate-icons.mjs"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.0",
+    "express": "^5.2.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "recharts": "^3.8.1",
+    "tailwindcss": "^4.3.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.12.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "sharp": "^0.34.5",
+    "tsx": "^4.22.3",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.59.2",
+    "vite": "^8.0.12",
+    "vite-plugin-pwa": "^1.3.0"
+  }
+}
+</file>
+
+<file path="server/index.ts">
+import express from 'express'
+import { copyFile, mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import type { ServerData } from '../src/types'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const projectRoot = path.resolve(__dirname, '..')
+const port = Number(process.env.PORT ?? 8787)
+const dataFile = path.resolve(process.env.BODYBUILD_DATA_FILE ?? path.join(projectRoot, 'data', 'bodybuild-data.json'))
+const distDir = path.join(projectRoot, 'dist')
+const BACKUP_KEEP = 7
+
+const emptyData = (): ServerData => ({
+  version: 1,
+  updatedAt: new Date().toISOString(),
+  dailyLogs: [],
+  workoutLogs: [],
+  taskChecks: {},
+  workoutTemplates: [],
+})
+
+function validateData(value: unknown): ServerData {
+  if (typeof value !== 'object' || value === null) {
+    throw new Error('Invalid data payload')
+  }
+
+  const payload = value as Partial<ServerData>
+  if (
+    payload.version !== 1 ||
+    !Array.isArray(payload.dailyLogs) ||
+    !Array.isArray(payload.workoutLogs) ||
+    typeof payload.taskChecks !== 'object' ||
+    payload.taskChecks === null ||
+    (payload.workoutTemplates !== undefined && !Array.isArray(payload.workoutTemplates))
+  ) {
+    throw new Error('Invalid data payload')
+  }
+
+  return {
+    version: 1,
+    updatedAt: typeof payload.updatedAt === 'string' ? payload.updatedAt : new Date().toISOString(),
+    dailyLogs: payload.dailyLogs,
+    workoutLogs: payload.workoutLogs,
+    taskChecks: payload.taskChecks,
+    workoutTemplates: payload.workoutTemplates ?? [],
+  }
+}
+
+async function ensureDataFile() {
+  await mkdir(path.dirname(dataFile), { recursive: true })
+  try {
+    await stat(dataFile)
+  } catch {
+    await writeFile(dataFile, `${JSON.stringify(emptyData(), null, 2)}\n`, 'utf8')
+  }
+}
+
+async function readData(): Promise<ServerData> {
+  await ensureDataFile()
+  const raw = await readFile(dataFile, 'utf8')
+  return validateData(JSON.parse(raw))
+}
+
+async function rotateBackup() {
+  try {
+    const stats = await stat(dataFile)
+    if (!stats.isFile()) return
+    const today = new Date().toISOString().slice(0, 10)
+    const backupPath = `${dataFile}.${today}.bak.json`
+    try {
+      await stat(backupPath)
+    } catch {
+      await copyFile(dataFile, backupPath)
+    }
+    const dir = path.dirname(dataFile)
+    const prefix = `${path.basename(dataFile)}.`
+    const entries = await readdir(dir)
+    const backups = entries
+      .filter((entry) => entry.startsWith(prefix) && entry.endsWith('.bak.json'))
+      .sort()
+    while (backups.length > BACKUP_KEEP) {
+      const name = backups.shift()
+      if (name) {
+        await unlink(path.join(dir, name))
+      }
+    }
+  } catch (err) {
+    console.warn('备份失败', err)
+  }
+}
+
+async function writeData(data: ServerData): Promise<ServerData> {
+  await ensureDataFile()
+  await rotateBackup()
+  const nextData: ServerData = {
+    ...data,
+    updatedAt: new Date().toISOString(),
+  }
+  const tempFile = `${dataFile}.${process.pid}.${Date.now()}.tmp`
+  await writeFile(tempFile, `${JSON.stringify(nextData, null, 2)}\n`, 'utf8')
+  await rename(tempFile, dataFile)
+  return nextData
+}
+
+const app = express()
+
+app.use(express.json({ limit: '5mb' }))
+
+app.get('/api/health', (_request, response) => {
+  response.json({
+    ok: true,
+    dataFile,
+  })
+})
+
+app.get('/api/data', async (_request, response) => {
+  try {
+    response.json(await readData())
+  } catch (error) {
+    response.status(500).json({ error: error instanceof Error ? error.message : 'Failed to read data' })
+  }
+})
+
+app.put('/api/data', async (request, response) => {
+  try {
+    const data = validateData(request.body)
+    const saved = await writeData(data)
+    response.json(saved)
+  } catch (error) {
+    response.status(400).json({ error: error instanceof Error ? error.message : 'Failed to save data' })
+  }
+})
+
+app.use('/api', (_request, response) => {
+  response.status(404).json({ error: 'API endpoint not found' })
+})
+
+app.use(express.static(distDir))
+app.get(/.*/, (_request, response) => {
+  response.sendFile(path.join(distDir, 'index.html'))
+})
+
+await ensureDataFile()
+
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Bodybuild tracker listening on http://127.0.0.1:${port}`)
+  console.log(`Data file: ${dataFile}`)
+})
+</file>
+
+<file path="src/data/plans.ts">
+import type { DailyTarget, DayKey, UserProfile, WorkoutPlan, WorkoutTemplate } from '../types'
+
+export const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'] as const
+
+export const userProfile: UserProfile = {
+  sex: 'male',
+  birthDate: '2002-11-10',
+  heightCm: 174,
+  initialWeightKg: 80,
+  estimatedBodyFatPercent: 18,
+  targetWeeks: '8-12 周',
+  goal: '减脂过程中尽量增肌，重点提升胸肌视觉效果，同时保护肩部',
+  sleepHours: 7,
+  averageSteps: 6500,
+  trainingDays: [0, 1, 2, 3, 4],
+}
+
+const weekendNotes = [
+  '允许自由饮食，但不要全天零食化进食。',
+  '额外热量优先来自碳水，不要主要来自高脂零食、油炸、甜品和酒精。',
+]
+
+export const dailyTargets: Record<DayKey, DailyTarget> = {
+  0: {
+    day: 0,
+    dayName: '周日',
+    workoutName: '推 A',
+    calories: 2100,
+    protein: 170,
+    carbs: 220,
+    fat: 60,
+    stepTarget: 6500,
+    notes: ['胸部主刺激日，卧推保留 1-2 次余力。'],
+    isTrainingDay: true,
+  },
+  1: {
+    day: 1,
+    dayName: '周一',
+    workoutName: '拉 A',
+    calories: 2100,
+    protein: 170,
+    carbs: 220,
+    fat: 60,
+    stepTarget: 6500,
+    notes: ['背阔和后束为主，划船保持肩胛稳定。'],
+    isTrainingDay: true,
+  },
+  2: {
+    day: 2,
+    dayName: '周二',
+    workoutName: '腿',
+    calories: 2200,
+    protein: 170,
+    carbs: 245,
+    fat: 60,
+    stepTarget: 6500,
+    notes: ['完整下肢日，主项前保证热身充分。'],
+    isTrainingDay: true,
+  },
+  3: {
+    day: 3,
+    dayName: '周三',
+    workoutName: '推 B',
+    calories: 2050,
+    protein: 170,
+    carbs: 207,
+    fat: 60,
+    stepTarget: 6500,
+    notes: ['上胸与胸型日，推举动作仅在无不适时保留。'],
+    isTrainingDay: true,
+  },
+  4: {
+    day: 4,
+    dayName: '周四',
+    workoutName: '拉 B + 腿部补量',
+    calories: 2050,
+    protein: 170,
+    carbs: 207,
+    fat: 60,
+    stepTarget: 6500,
+    notes: ['拉 B 加腿部补量，避免把补量做成第二个腿日。'],
+    isTrainingDay: true,
+  },
+  5: {
+    day: 5,
+    dayName: '周五',
+    workoutName: '休息 / 自由饮食',
+    calorieRange: [2600, 3000],
+    protein: 160,
+    stepTarget: 8000,
+    notes: weekendNotes,
+    isTrainingDay: false,
+  },
+  6: {
+    day: 6,
+    dayName: '周六',
+    workoutName: '休息 / 自由饮食',
+    calorieRange: [2600, 3000],
+    protein: 160,
+    stepTarget: 8000,
+    notes: weekendNotes,
+    isTrainingDay: false,
+  },
+}
+
+export const weeklyCalorieTarget = 16000
+
+/** 周末规则阈值，用于"周末规则检查"等显示性判断（非硬性目标）。 */
+export const weekendRules = {
+  /** 单日热量上限：超过即视为周末偏高。与 calorieRange 上限保持一致以便集中维护。 */
+  caloriesUpperKcal: 3000,
+  /** 单日蛋白质下限。低于即标 warning。 */
+  proteinMinG: 160,
+  /** 单日步数下限。低于即标 warning。 */
+  stepsMinSteps: 8000,
+}
+
+export const shoulderProtectionTips = [
+  '推举不追疼痛，优先选择可控、稳定、无明显不适的动作。',
+  '胸推动作优先器械或中立握，必要时缩小动作范围。',
+  '睡眠不足或疲劳高时，训练保留更多余力，不冲力竭。',
+  '如果出现夜间痛醒、麻木、明显无力或疼痛持续加重，应停止相关训练并就医。',
+]
+
+export const workoutPlans: Record<DayKey, WorkoutPlan> = {
+  0: {
+    day: 0,
+    name: '推 A',
+    focus: '胸部主刺激',
+    exercises: [
+      { id: 'bench-press', name: '杠铃卧推', prescription: '4 组 × 5-8 次', note: '保留 1-2 次余力' },
+      { id: 'low-incline-press', name: '低上斜哑铃或器械卧推', prescription: '3 组 × 6-10 次', note: '倾角 15-30°，肩不舒服就换器械中立握' },
+      { id: 'cable-fly', name: '绳索夹胸或飞鸟', prescription: '2 组 × 12-15 次' },
+      { id: 'lateral-raise-a', name: '侧平举', prescription: '3 组 × 12-20 次' },
+      { id: 'triceps-pushdown', name: '绳索下压', prescription: '2 组 × 10-15 次' },
+      { id: 'face-pull-a', name: '面拉或外旋', prescription: '2 组 × 12-20 次' },
+    ],
+  },
+  1: {
+    day: 1,
+    name: '拉 A',
+    focus: '背阔 + 后束',
+    exercises: [
+      { id: 'neutral-pulldown', name: '中立握下拉 / 引体', prescription: '4 组 × 6-10 次' },
+      { id: 'chest-supported-row', name: '胸托划船', prescription: '3 组 × 8-12 次' },
+      { id: 'single-arm-cable-pulldown', name: '单臂钢线下拉', prescription: '2 组 × 10-15 次' },
+      { id: 'rear-delt-fly-a', name: '反向飞鸟 / 后束钢线', prescription: '3 组 × 12-20 次' },
+      { id: 'curl-a', name: '弯举', prescription: '3 组 × 8-12 次' },
+      { id: 'y-raise', name: '低斜方或 Y raise', prescription: '2 组 × 12-15 次' },
+    ],
+  },
+  2: {
+    day: 2,
+    name: '腿',
+    focus: '完整下肢',
+    exercises: [
+      { id: 'squat-variant', name: '前蹲 / 哈克深蹲 / 史密斯深蹲', prescription: '4 组 × 5-8 次' },
+      { id: 'romanian-deadlift', name: '罗马尼亚硬拉', prescription: '3 组 × 6-10 次' },
+      { id: 'split-squat-or-leg-press', name: '保加利亚分腿蹲或腿举', prescription: '3 组 × 8-12 次' },
+      { id: 'leg-curl-a', name: '腿弯举', prescription: '3 组 × 10-15 次' },
+      { id: 'back-extension-or-hip-thrust', name: '山羊挺身或臀推', prescription: '2 组 × 8-12 次' },
+      { id: 'calf-raise-a', name: '小腿提踵', prescription: '3 组 × 10-15 次' },
+    ],
+  },
+  3: {
+    day: 3,
+    name: '推 B',
+    focus: '上胸与胸型',
+    exercises: [
+      { id: 'machine-chest-press', name: '中立握器械胸推 / 低上斜史密斯', prescription: '3 组 × 8-12 次' },
+      { id: 'push-up-variant', name: '把手俯卧撑 / 负重俯卧撑 / 平板器械胸推', prescription: '2 组 × 10-15 次' },
+      { id: 'low-to-high-fly', name: '低到高绳索飞鸟', prescription: '3 组 × 12-15 次' },
+      { id: 'landmine-press', name: '地雷管推举', prescription: '2 组 × 8-12 次', note: '仅无痛时保留' },
+      { id: 'lateral-raise-b', name: '侧平举', prescription: '3 组 × 12-20 次' },
+      { id: 'overhead-cable-extension', name: '过顶绳索臂屈伸', prescription: '2 组 × 12-15 次' },
+    ],
+  },
+  4: {
+    day: 4,
+    name: '拉 B + 腿部补量',
+    focus: '背部 + 下肢补量',
+    exercises: [
+      { id: 'seated-row', name: '坐姿划船', prescription: '3 组 × 8-12 次' },
+      { id: 'pulldown-or-straight-arm', name: '下拉或直臂下压', prescription: '3 组 × 10-12 次' },
+      { id: 'single-arm-machine-row', name: '单臂器械划船', prescription: '2 组 × 10-12 次' },
+      { id: 'rear-delt-fly-b', name: '后束飞鸟', prescription: '3 组 × 12-20 次' },
+      { id: 'hammer-curl', name: '锤式弯举', prescription: '2-3 组 × 10-12 次' },
+      { id: 'leg-extension', name: '腿伸', prescription: '2 组 × 12-15 次' },
+      { id: 'leg-curl-or-calf', name: '腿弯举或小腿', prescription: '2 组 × 12-15 次' },
+    ],
+  },
+  5: {
+    day: 5,
+    name: '休息 / 自由饮食',
+    focus: '恢复与活动量',
+    exercises: [
+      { id: 'protein-floor-fri', name: '蛋白质达标', prescription: '至少 160 g' },
+      { id: 'free-meal-control-fri', name: '控制自由饮食', prescription: '尽量不超过 3000 kcal' },
+      { id: 'steps-fri', name: '步数', prescription: '至少 8000 步' },
+      { id: 'walk-fri', name: '饭后步行', prescription: '20-30 分钟' },
+    ],
+  },
+  6: {
+    day: 6,
+    name: '休息 / 自由饮食',
+    focus: '恢复与活动量',
+    exercises: [
+      { id: 'protein-floor-sat', name: '蛋白质达标', prescription: '至少 160 g' },
+      { id: 'free-meal-control-sat', name: '控制自由饮食', prescription: '尽量不超过 3000 kcal' },
+      { id: 'steps-sat', name: '步数', prescription: '至少 8000 步' },
+      { id: 'walk-sat', name: '饭后步行', prescription: '20-30 分钟' },
+    ],
+  },
+}
+
+export function getBuiltinTemplates(): WorkoutTemplate[] {
+  const now = new Date().toISOString()
+  return Object.values(workoutPlans).map((plan) => ({
+    id: `builtin-${plan.day}`,
+    name: plan.name,
+    focus: plan.focus,
+    category: '内置计划',
+    exercises: plan.exercises,
+    createdAt: now,
+    updatedAt: now,
+    isBuiltin: true,
+  }))
+}
+</file>
+
+<file path="src/index.css">
+@import "tailwindcss";
+
+/* 让 dark: 同时支持系统偏好和 .dark class（手动覆盖） */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+  color: #e2e8f0;
+  background: #0f172a;
+}
+
+/* 主题切换柔和过渡：仅过渡颜色相关属性，避免影响 transform/opacity 等。
+   svg 内部（recharts 用大量内联色）排除，避免图表闪烁；
+   尊重 prefers-reduced-motion。 */
+@media (prefers-reduced-motion: no-preference) {
+  html,
+  body,
+  *:not(svg):not(svg *) {
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease,
+      fill 200ms ease,
+      stroke 200ms ease;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+</file>
+
+<file path="src/lib/dates.ts">
+import type { DayKey } from '../types'
+
+export function formatDateInput(date = new Date()): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+export function isValidDateInput(value: string): boolean {
+  if (typeof value !== 'string') return false
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const [year, month, day] = value.split('-').map(Number)
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return false
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false
+  const date = new Date(year, month - 1, day)
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  )
+}
+
+export function parseDateInput(value: string): Date {
+  if (!isValidDateInput(value)) return new Date(NaN)
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+export function getDayKey(dateValue: string): DayKey {
+  const date = parseDateInput(dateValue)
+  if (Number.isNaN(date.getTime())) {
+    return new Date().getDay() as DayKey
+  }
+  return date.getDay() as DayKey
+}
+
+export function addDays(dateValue: string, days: number): string {
+  const date = parseDateInput(dateValue)
+  if (Number.isNaN(date.getTime())) {
+    const fallback = new Date()
+    fallback.setDate(fallback.getDate() + days)
+    return formatDateInput(fallback)
+  }
+  date.setDate(date.getDate() + days)
+  return formatDateInput(date)
+}
+
+export function startOfWeekSunday(dateValue: string): string {
+  const date = parseDateInput(dateValue)
+  if (Number.isNaN(date.getTime())) {
+    const fallback = new Date()
+    fallback.setDate(fallback.getDate() - fallback.getDay())
+    return formatDateInput(fallback)
+  }
+  date.setDate(date.getDate() - date.getDay())
+  return formatDateInput(date)
+}
+
+export function endOfWeekSaturday(dateValue: string): string {
+  return addDays(startOfWeekSunday(dateValue), 6)
+}
+
+export function isDateInRange(dateValue: string, start: string, end: string): boolean {
+  return dateValue >= start && dateValue <= end
+}
+
+export function sortByDateAsc<T extends { date: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => a.date.localeCompare(b.date))
+}
+
+export function sortByDateDesc<T extends { date: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => b.date.localeCompare(a.date))
+}
+
+export function getRecentWindow<T extends { date: string }>(items: T[], endDate: string, days: number): T[] {
+  const start = addDays(endDate, -(days - 1))
+  return sortByDateAsc(items).filter((item) => isDateInRange(item.date, start, endDate))
+}
+</file>
+
+<file path="src/lib/metrics.ts">
+import { dailyTargets, weeklyCalorieTarget } from '../data/plans'
+import type { DailyLog, WorkoutLog, WeeklySummary } from '../types'
+import {
+  addDays,
+  endOfWeekSaturday,
+  getDayKey,
+  getRecentWindow,
+  isDateInRange,
+  sortByDateAsc,
+  sortByDateDesc,
+  startOfWeekSunday,
+} from './dates'
+
+export interface DashboardStats {
+  currentWeight?: number
+  averageWeight7?: number
+  weekAverageCalories?: number
+  proteinMetDays: number
+  trainingCompletionRate: number
+  averageSteps?: number
+  weekTotalCalories: number
+  averageShoulderPain?: number
+  calorieBudget: WeeklyCalorieBudget
+  // 上一周对比，用于 KPI 趋势箭头
+  previous: {
+    averageWeight7?: number
+    weekAverageCalories?: number
+    proteinMetDays: number
+    trainingCompletionRate: number
+    averageSteps?: number
+  }
+}
+
+export interface TrendPoint {
+  date: string
+  fullDate: string
+  weight?: number
+  weightAverage7?: number
+  waist?: number
+  calories?: number
+  proteinMet?: number
+  protein?: number
+  shoulderPain?: number
+}
+
+export interface WeeklyCalorieBudget {
+  target: number
+  consumed: number
+  remaining: number
+  remainingDays: number
+  averagePerRemainingDay: number
+}
+
+export interface TrainingPerformancePoint {
+  date: string
+  fullDate: string
+  benchPress?: number
+  chestPress?: number
+  pulldown?: number
+  row?: number
+  squatOrLegPress?: number
+  romanianDeadlift?: number
+}
+
+function average(values: Array<number | undefined>): number | undefined {
+  const valid = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+  if (valid.length === 0) return undefined
+  return valid.reduce((sum, value) => sum + value, 0) / valid.length
+}
+
+function round(value: number | undefined, digits = 1): number | undefined {
+  if (typeof value !== 'number') return undefined
+  const scale = 10 ** digits
+  return Math.round(value * scale) / scale
+}
+
+export function latestDailyLog(logs: DailyLog[]): DailyLog | undefined {
+  return sortByDateDesc(logs).find(
+    (log) =>
+      log.morningWeightKg !== undefined ||
+      log.calories !== undefined ||
+      log.steps !== undefined ||
+      log.sleepHours !== undefined,
+  )
+}
+
+export function averageWeight(logs: DailyLog[], endDate: string, days: number): number | undefined {
+  return round(average(getRecentWindow(logs, endDate, days).map((log) => log.morningWeightKg)))
+}
+
+export function logsForWeek(logs: DailyLog[], dateValue: string): DailyLog[] {
+  const start = startOfWeekSunday(dateValue)
+  const end = endOfWeekSaturday(dateValue)
+  return sortByDateAsc(logs).filter((log) => isDateInRange(log.date, start, end))
+}
+
+export function calculateDashboardStats(logs: DailyLog[], today: string): DashboardStats {
+  const weekLogs = logsForWeek(logs, today)
+  const currentWeight = sortByDateDesc(logs).find((log) => log.morningWeightKg !== undefined)?.morningWeightKg
+  const calories = weekLogs.map((log) => log.calories)
+  const steps = weekLogs.map((log) => log.steps)
+  const proteinMetDays = weekLogs.filter((log) => {
+    if (log.protein === undefined) return false
+    return log.protein >= dailyTargets[getDayKey(log.date)].protein
+  }).length
+  const trainingDays = weekLogs.filter((log) => dailyTargets[getDayKey(log.date)].isTrainingDay)
+  const completedTraining = trainingDays.filter((log) => log.trained || (log.workoutCompletion ?? 0) >= 80).length
+  const weekTotalCalories = calories.reduce<number>((sum, value) => sum + (value ?? 0), 0)
+  const averageShoulderPain = round(average(weekLogs.map((log) => log.shoulderPainScore)))
+
+  // 上一周对比
+  const previousWeekAnchor = addDays(startOfWeekSunday(today), -1)
+  const previousWeekLogs = logsForWeek(logs, previousWeekAnchor)
+  const previousCalories = previousWeekLogs.map((log) => log.calories)
+  const previousSteps = previousWeekLogs.map((log) => log.steps)
+  const previousProteinMetDays = previousWeekLogs.filter((log) => {
+    if (log.protein === undefined) return false
+    return log.protein >= dailyTargets[getDayKey(log.date)].protein
+  }).length
+  const previousTrainingDays = previousWeekLogs.filter((log) => dailyTargets[getDayKey(log.date)].isTrainingDay)
+  const previousCompletedTraining = previousTrainingDays.filter((log) => log.trained || (log.workoutCompletion ?? 0) >= 80).length
+
+  return {
+    currentWeight: round(currentWeight),
+    averageWeight7: averageWeight(logs, today, 7),
+    weekAverageCalories: round(average(calories), 0),
+    proteinMetDays,
+    trainingCompletionRate: trainingDays.length ? Math.round((completedTraining / trainingDays.length) * 100) : 0,
+    averageSteps: round(average(steps), 0),
+    weekTotalCalories,
+    averageShoulderPain,
+    calorieBudget: calculateWeeklyCalorieBudget(logs, today),
+    previous: {
+      averageWeight7: averageWeight(logs, previousWeekAnchor, 7),
+      weekAverageCalories: round(average(previousCalories), 0),
+      proteinMetDays: previousProteinMetDays,
+      trainingCompletionRate: previousTrainingDays.length
+        ? Math.round((previousCompletedTraining / previousTrainingDays.length) * 100)
+        : 0,
+      averageSteps: round(average(previousSteps), 0),
+    },
+  }
+}
+
+export function buildTrendData(logs: DailyLog[], today: string, days = 30): TrendPoint[] {
+  const sorted = sortByDateAsc(logs)
+  const windowStart = addDays(today, -(days - 1))
+
+  // 用 7 日滑动窗口预计算每个 log 的 7 日均重，避免 O(n²) 的 averageWeight 调用。
+  // 注意：窗口需要看到 trend 范围之外的更早日期（最早的 trend 点也可能要往前 6 天找体重），
+  // 所以遍历整个 sorted。
+  const weightAvgByIndex = new Array<number | undefined>(sorted.length)
+  let left = 0
+  let sumWeight = 0
+  let countWeight = 0
+  for (let i = 0; i < sorted.length; i++) {
+    const currentDate = sorted[i].date
+    const minDate = addDays(currentDate, -6)
+    while (left < i && sorted[left].date < minDate) {
+      const dropping = sorted[left].morningWeightKg
+      if (typeof dropping === 'number' && Number.isFinite(dropping)) {
+        sumWeight -= dropping
+        countWeight -= 1
+      }
+      left++
+    }
+    const incoming = sorted[i].morningWeightKg
+    if (typeof incoming === 'number' && Number.isFinite(incoming)) {
+      sumWeight += incoming
+      countWeight += 1
+    }
+    weightAvgByIndex[i] = countWeight > 0 ? Math.round((sumWeight / countWeight) * 10) / 10 : undefined
+  }
+
+  const result: TrendPoint[] = []
+  for (let i = 0; i < sorted.length; i++) {
+    const log = sorted[i]
+    if (log.date < windowStart || log.date > today) continue
+    const target = dailyTargets[getDayKey(log.date)]
+    result.push({
+      date: log.date.slice(5),
+      fullDate: log.date,
+      weight: log.morningWeightKg,
+      weightAverage7: weightAvgByIndex[i],
+      waist: log.waistCm,
+      calories: log.calories,
+      protein: log.protein,
+      proteinMet: log.protein !== undefined && log.protein >= target.protein ? 1 : 0,
+      shoulderPain: log.shoulderPainScore,
+    })
+  }
+  return result
+}
+
+export function calculateWeeklyCalorieBudget(logs: DailyLog[], today: string): WeeklyCalorieBudget {
+  const weekLogs = logsForWeek(logs, today)
+  const consumed = weekLogs.reduce((sum, log) => sum + (log.calories ?? 0), 0)
+  const remaining = weeklyCalorieTarget - consumed
+  const remainingDays = Math.max(1, 7 - getDayKey(today))
+  return {
+    target: weeklyCalorieTarget,
+    consumed,
+    remaining,
+    remainingDays,
+    averagePerRemainingDay: Math.round(remaining / remainingDays),
+  }
+}
+
+function bestSetScore(weight: number | undefined, reps: number | undefined): number | undefined {
+  if (!weight || !reps) return undefined
+  return Math.round(weight * (1 + reps / 30) * 10) / 10
+}
+
+function performanceKey(name: string, id: string): keyof Omit<TrainingPerformancePoint, 'date' | 'fullDate'> | undefined {
+  const text = `${id} ${name}`.toLowerCase()
+  if (text.includes('bench') || name.includes('杠铃卧推')) return 'benchPress'
+  if (text.includes('chest-press') || text.includes('machine-chest') || name.includes('胸推')) return 'chestPress'
+  if (text.includes('pulldown') || name.includes('下拉') || name.includes('引体')) return 'pulldown'
+  if (text.includes('row') || name.includes('划船')) return 'row'
+  if (text.includes('squat') || text.includes('leg-press') || name.includes('深蹲') || name.includes('腿举')) return 'squatOrLegPress'
+  if (text.includes('romanian') || name.includes('罗马尼亚硬拉')) return 'romanianDeadlift'
+  return undefined
+}
+
+export function buildTrainingPerformanceData(workoutLogs: WorkoutLog[], today: string, days = 60): TrainingPerformancePoint[] {
+  return getRecentWindow(workoutLogs, today, days).map((log) => {
+    const point: TrainingPerformancePoint = {
+      date: log.date.slice(5),
+      fullDate: log.date,
+    }
+
+    log.exercises.forEach((exercise) => {
+      const key = performanceKey(exercise.name, exercise.exerciseId)
+      if (!key) return
+      const best = Math.max(
+        ...exercise.sets.map((set) => bestSetScore(set.weight, set.reps) ?? 0),
+      )
+      if (best > 0) {
+        point[key] = Math.max(point[key] ?? 0, best)
+      }
+    })
+
+    return point
+  })
+}
+
+export function createWeeklySummary(logs: DailyLog[], today: string): WeeklySummary {
+  const weekStart = startOfWeekSunday(today)
+  const weekEnd = endOfWeekSaturday(today)
+  const previousEnd = addDays(weekStart, -1)
+  const previousStart = addDays(weekStart, -7)
+  const weekLogs = sortByDateAsc(logs.filter((log) => isDateInRange(log.date, weekStart, weekEnd)))
+  const previousLogs = sortByDateAsc(logs.filter((log) => isDateInRange(log.date, previousStart, previousEnd)))
+  const averageCurrentWeight = round(average(weekLogs.map((log) => log.morningWeightKg)))
+  const averagePreviousWeight = round(average(previousLogs.map((log) => log.morningWeightKg)))
+  const firstWaist = weekLogs.find((log) => log.waistCm !== undefined)?.waistCm
+  const lastWaist = sortByDateDesc(weekLogs).find((log) => log.waistCm !== undefined)?.waistCm
+  const totalCalories = weekLogs.reduce((sum, log) => sum + (log.calories ?? 0), 0)
+  const loggedCaloriesDays = weekLogs.filter((log) => log.calories !== undefined).length
+  const weekendLogs = weekLogs.filter((log) => [5, 6].includes(getDayKey(log.date)))
+  const weekendAverageCalories = round(average(weekendLogs.map((log) => log.calories)), 0)
+  const trainingLogs = weekLogs.filter((log) => dailyTargets[getDayKey(log.date)].isTrainingDay)
+  const completedTraining = trainingLogs.filter((log) => log.trained || (log.workoutCompletion ?? 0) >= 80).length
+  const suggestions: string[] = []
+
+  let calorieStatus: WeeklySummary['calorieStatus'] = 'unknown'
+  if (loggedCaloriesDays >= 4) {
+    if (totalCalories < weeklyCalorieTarget - 900) calorieStatus = 'low'
+    else if (totalCalories > weeklyCalorieTarget + 900) calorieStatus = 'high'
+    else calorieStatus = 'on-track'
+  }
+
+  if (calorieStatus === 'on-track') suggestions.push('本周热量接近 16000 kcal，先保持当前节奏。')
+  if (calorieStatus === 'high') suggestions.push('本周热量偏高，优先检查周五周六是否超过自由饮食上限。')
+  if (calorieStatus === 'low') suggestions.push('本周热量偏低，留意训练状态和疲劳，不用用极端节食补偿。')
+  if ((weekendAverageCalories ?? 0) > 3000) suggestions.push('周末两天平均热量超过 3000 kcal，优先控制周末自由饮食，不要用极端压低工作日热量来补偿。')
+  if (trainingLogs.length > 0 && completedTraining / trainingLogs.length < 0.8) suggestions.push('训练完成率偏低，下周优先保证主项和胸部关键动作。')
+  if (suggestions.length === 0) suggestions.push('数据还不够完整，先连续记录体重、热量、步数和训练完成度。')
+
+  return {
+    weekStart,
+    weekEnd,
+    averageWeight: averageCurrentWeight,
+    previousAverageWeight: averagePreviousWeight,
+    weightDelta:
+      averageCurrentWeight !== undefined && averagePreviousWeight !== undefined
+        ? round(averageCurrentWeight - averagePreviousWeight)
+        : undefined,
+    waistDelta: firstWaist !== undefined && lastWaist !== undefined ? round(lastWaist - firstWaist) : undefined,
+    trainingCompletionRate: trainingLogs.length ? Math.round((completedTraining / trainingLogs.length) * 100) : 0,
+    totalCalories,
+    calorieStatus,
+    weekendAverageCalories,
+    weekendOverLimit: (weekendAverageCalories ?? 0) > 3000,
+    suggestions,
+  }
+}
+
+export interface PreviousExerciseRecord {
+  date: string
+  bestWeight: number
+  reps?: number
+  rir?: number
+}
+
+export function findPreviousExerciseRecord(
+  workoutLogs: WorkoutLog[],
+  exerciseId: string,
+  exerciseName: string,
+  beforeDate: string,
+): PreviousExerciseRecord | undefined {
+  const sorted = sortByDateDesc(workoutLogs).filter((log) => log.date < beforeDate)
+  for (const log of sorted) {
+    const match = log.exercises.find(
+      (exercise) =>
+        (exerciseId && exercise.exerciseId === exerciseId) ||
+        (exerciseName.trim() && exercise.name.trim() === exerciseName.trim()),
+    )
+    if (!match) continue
+    const filledSets = match.sets.filter((set) => set.weight !== undefined && set.weight > 0)
+    if (filledSets.length === 0) continue
+    const bestSet = filledSets.reduce((best, current) =>
+      (current.weight ?? 0) > (best.weight ?? 0) ? current : best,
+    )
+    return {
+      date: log.date,
+      bestWeight: bestSet.weight as number,
+      reps: bestSet.reps,
+      rir: bestSet.rir,
+    }
+  }
+  return undefined
+}
+
+export function roundMetric(value: number | undefined, digits = 1): string {
+  return value === undefined ? '暂无' : String(round(value, digits))
+}
+</file>
+
+<file path="src/lib/storage.ts">
+import type { BackupPayload, DailyLog, ServerData, TaskChecks, WorkoutLog, WorkoutTemplate } from '../types'
+
+const DAILY_LOGS_KEY = 'bodybuild:v1:dailyLogs'
+const WORKOUT_LOGS_KEY = 'bodybuild:v1:workoutLogs'
+const TASK_CHECKS_KEY = 'bodybuild:v1:taskChecks'
+const WORKOUT_TEMPLATES_KEY = 'bodybuild:v1:workoutTemplates'
+
+export type SyncState = 'loading' | 'synced' | 'saving' | 'offline'
+
+export interface AppData {
+  dailyLogs: DailyLog[]
+  workoutLogs: WorkoutLog[]
+  taskChecks: Record<string, TaskChecks>
+  workoutTemplates: WorkoutTemplate[]
+}
+
+export interface LoadResult {
+  data: AppData
+  source: 'server' | 'cache'
+  migrated: boolean
+  serverEmptyButLocalHasData: boolean
+}
+
+function readJson<T>(key: string, fallback: T): T {
+  try {
+    const raw = window.localStorage.getItem(key)
+    return raw ? (JSON.parse(raw) as T) : fallback
+  } catch (error) {
+    console.warn(`读取本地缓存 ${key} 失败，将使用默认值：`, error)
+    return fallback
+  }
+}
+
+function writeJson<T>(key: string, value: T): void {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value))
+  } catch (error) {
+    console.warn(`写入本地缓存 ${key} 失败（可能是配额已满或隐私模式）：`, error)
+  }
+}
+
+function hasData(data: AppData): boolean {
+  return data.dailyLogs.length > 0 || data.workoutLogs.length > 0 || Object.keys(data.taskChecks).length > 0 || data.workoutTemplates.length > 0
+}
+
+function toServerData(data: AppData): ServerData {
+  return {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    ...data,
+  }
+}
+
+function fromServerData(data: ServerData): AppData {
+  return {
+    dailyLogs: Array.isArray(data.dailyLogs) ? data.dailyLogs : [],
+    workoutLogs: Array.isArray(data.workoutLogs) ? data.workoutLogs : [],
+    taskChecks: data.taskChecks && typeof data.taskChecks === 'object' ? data.taskChecks : {},
+    workoutTemplates: Array.isArray(data.workoutTemplates) ? data.workoutTemplates : [],
+  }
+}
+
+async function requestData(): Promise<ServerData> {
+  const response = await fetch('/api/data')
+  if (!response.ok) throw new Error('服务器数据读取失败')
+  return (await response.json()) as ServerData
+}
+
+async function writeServerData(data: AppData): Promise<ServerData> {
+  const response = await fetch('/api/data', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(toServerData(data)),
+  })
+  if (response.status === 413) {
+    throw new Error('数据已超过服务器单次接收上限（5MB），请清理旧记录或联系管理员调整上限。')
+  }
+  if (!response.ok) throw new Error('服务器数据保存失败')
+  return (await response.json()) as ServerData
+}
+
+export function loadCachedData(): AppData {
+  return {
+    dailyLogs: readJson<DailyLog[]>(DAILY_LOGS_KEY, []),
+    workoutLogs: readJson<WorkoutLog[]>(WORKOUT_LOGS_KEY, []),
+    taskChecks: readJson<Record<string, TaskChecks>>(TASK_CHECKS_KEY, {}),
+    workoutTemplates: readJson<WorkoutTemplate[]>(WORKOUT_TEMPLATES_KEY, []),
+  }
+}
+
+export function cacheData(data: AppData): void {
+  writeJson(DAILY_LOGS_KEY, data.dailyLogs)
+  writeJson(WORKOUT_LOGS_KEY, data.workoutLogs)
+  writeJson(TASK_CHECKS_KEY, data.taskChecks)
+  writeJson(WORKOUT_TEMPLATES_KEY, data.workoutTemplates)
+}
+
+export async function loadAppData(): Promise<LoadResult> {
+  const cached = loadCachedData()
+
+  try {
+    const serverData = fromServerData(await requestData())
+    if (!hasData(serverData) && hasData(cached)) {
+      return {
+        data: cached,
+        source: 'cache',
+        migrated: false,
+        serverEmptyButLocalHasData: true,
+      }
+    }
+    cacheData(serverData)
+    return {
+      data: serverData,
+      source: 'server',
+      migrated: false,
+      serverEmptyButLocalHasData: false,
+    }
+  } catch {
+    return {
+      data: cached,
+      source: 'cache',
+      migrated: false,
+      serverEmptyButLocalHasData: false,
+    }
+  }
+}
+
+export async function saveAppData(data: AppData): Promise<AppData> {
+  cacheData(data)
+  const saved = fromServerData(await writeServerData(data))
+  cacheData(saved)
+  return saved
+}
+
+export function createBackup(
+  dailyLogs: DailyLog[],
+  workoutLogs: WorkoutLog[],
+  taskChecks: Record<string, TaskChecks>,
+  workoutTemplates: WorkoutTemplate[],
+): BackupPayload {
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    dailyLogs,
+    workoutLogs,
+    taskChecks,
+    workoutTemplates,
+  }
+}
+
+export function downloadBackup(payload: BackupPayload): void {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  const stamp = payload.exportedAt.replace(/[:.]/g, '-')
+  link.download = `bodybuild-backup-${stamp}.json`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+export function parseBackup(raw: string): BackupPayload {
+  const parsed = JSON.parse(raw) as BackupPayload
+  if (
+    parsed.version !== 1 ||
+    !Array.isArray(parsed.dailyLogs) ||
+    !Array.isArray(parsed.workoutLogs) ||
+    typeof parsed.taskChecks !== 'object' ||
+    parsed.taskChecks === null ||
+    (parsed.workoutTemplates !== undefined && !Array.isArray(parsed.workoutTemplates))
+  ) {
+    throw new Error('备份文件格式不正确')
+  }
+  return {
+    ...parsed,
+    workoutTemplates: parsed.workoutTemplates ?? [],
+  }
+}
+</file>
+
+<file path="src/types.ts">
+export type DayKey = 0 | 1 | 2 | 3 | 4 | 5 | 6
+
+export interface UserProfile {
+  sex: 'male'
+  birthDate: string
+  heightCm: number
+  initialWeightKg: number
+  estimatedBodyFatPercent: number
+  targetWeeks: string
+  goal: string
+  sleepHours: number
+  averageSteps: number
+  trainingDays: DayKey[]
+}
+
+export interface DailyTarget {
+  day: DayKey
+  dayName: string
+  workoutName: string
+  calories?: number
+  calorieRange?: [number, number]
+  protein: number
+  carbs?: number
+  fat?: number
+  stepTarget: number
+  notes: string[]
+  isTrainingDay: boolean
+}
+
+export interface ExercisePlan {
+  id: string
+  name: string
+  prescription: string
+  note?: string
+}
+
+export interface WorkoutPlan {
+  day: DayKey
+  name: string
+  focus: string
+  exercises: ExercisePlan[]
+}
+
+export interface WorkoutTemplate {
+  id: string
+  name: string
+  focus: string
+  category: string
+  exercises: ExercisePlan[]
+  createdAt: string
+  updatedAt: string
+  isBuiltin?: boolean
+}
+
+export interface DailyLog {
+  date: string
+  morningWeightKg?: number
+  waistCm?: number
+  chestCm?: number
+  upperArmCm?: number
+  thighCm?: number
+  calories?: number
+  protein?: number
+  carbs?: number
+  fat?: number
+  steps?: number
+  sleepHours?: number
+  trained?: boolean
+  workoutCompletion?: number
+  shoulderPainScore?: number
+  fatigueScore?: number
+  notes?: string
+}
+
+export interface ExerciseSetLog {
+  weight?: number
+  reps?: number
+  rir?: number
+}
+
+export interface ExerciseLog {
+  exerciseId: string
+  name: string
+  target: string
+  completedSets?: number
+  sets: ExerciseSetLog[]
+  notes?: string
+}
+
+export interface WorkoutLog {
+  date: string
+  workoutName: string
+  exercises: ExerciseLog[]
+  notes?: string
+}
+
+export interface TaskChecks {
+  diet: boolean
+  workout: boolean
+  steps: boolean
+  sleep: boolean
+}
+
+export interface WeeklySummary {
+  weekStart: string
+  weekEnd: string
+  averageWeight?: number
+  previousAverageWeight?: number
+  weightDelta?: number
+  waistDelta?: number
+  trainingCompletionRate: number
+  totalCalories: number
+  calorieStatus: 'low' | 'on-track' | 'high' | 'unknown'
+  weekendAverageCalories?: number
+  weekendOverLimit: boolean
+  suggestions: string[]
+}
+
+export type RecommendationTone = 'positive' | 'warning' | 'danger' | 'neutral'
+
+export interface AdjustmentRecommendation {
+  title: string
+  message: string
+  tone: RecommendationTone
+}
+
+export interface BackupPayload {
+  version: 1
+  exportedAt: string
+  dailyLogs: DailyLog[]
+  workoutLogs: WorkoutLog[]
+  taskChecks: Record<string, TaskChecks>
+  workoutTemplates?: WorkoutTemplate[]
+}
+
+export interface ServerData {
+  version: 1
+  updatedAt: string
+  dailyLogs: DailyLog[]
+  workoutLogs: WorkoutLog[]
+  taskChecks: Record<string, TaskChecks>
+  workoutTemplates: WorkoutTemplate[]
+}
+</file>
+
+<file path="tsconfig.app.json">
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "types": ["vite/client", "vite-plugin-pwa/client"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"]
+}
+</file>
+
+<file path="src/main.tsx">
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { PWAUpdatePrompt } from './components/PWAUpdatePrompt'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <ErrorBoundary>
+      <App />
+      <PWAUpdatePrompt />
+    </ErrorBoundary>
+  </StrictMode>,
+)
+</file>
+
+<file path="vite.config.ts">
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import { VitePWA } from 'vite-plugin-pwa'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      manifest: {
+        name: '减脂增肌追踪',
+        short_name: '健身追踪',
+        description: '本地优先的个人减脂增肌追踪工具',
+        theme_color: '#0f172a',
+        background_color: '#0f172a',
+        display: 'standalone',
+        orientation: 'portrait',
+        start_url: '/',
+        scope: '/',
+        lang: 'zh-CN',
+        icons: [
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: 'pwa-maskable-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // 安装新 SW 后立刻激活并接管页面，避免因为旧 SW 缓存指向已经不存在的资源指纹导致白屏
+        clientsClaim: true,
+        skipWaiting: true,
+        // 删除旧版本预缓存
+        cleanupOutdatedCaches: true,
+        // /api/* 走 NetworkFirst：优先用网络，断网时回退到上一次缓存
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 32,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 一周
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
+      },
+      devOptions: {
+        enabled: false, // dev 不启用，避免缓存干扰开发
+      },
+    }),
+  ],
+  server: {
+    watch: {
+      ignored: ['**/data/**'],
+    },
+    proxy: {
+      '/api': 'http://127.0.0.1:8787',
+    },
+  },
+})
+</file>
+
+<file path="src/components/ui.tsx">
+import { forwardRef } from 'react'
+import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes, WheelEvent as ReactWheelEvent } from 'react'
+import type { RecommendationTone } from '../types'
+
+const toneClasses: Record<RecommendationTone, string> = {
+  positive: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200',
+  warning: 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/30 dark:text-amber-100',
+  danger: 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-600/40 dark:bg-rose-900/30 dark:text-rose-100',
+  neutral: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200',
+}
+
+export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <section
+      className={`min-w-0 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-none ${className}`}
+    >
+      {children}
+    </section>
+  )
+}
+
+export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: RecommendationTone }) {
+  return <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${toneClasses[tone]}`}>{children}</span>
+}
+
+export function ProgressBar({ value }: { value: number }) {
+  const bounded = Math.min(100, Math.max(0, value))
+  return (
+    <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+      <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${bounded}%` }} />
+    </div>
+  )
+}
+
+export function StatCard({
+  label,
+  value,
+  helper,
+  delta,
+  size = 'normal',
+}: {
+  label: string
+  value: ReactNode
+  helper?: string
+  delta?: { direction: 'up' | 'down' | 'flat'; text: string; tone?: 'positive' | 'warning' | 'neutral' }
+  /** 'large' 用于关键 KPI（前 4 张），'normal' 是其它较为辅助的指标。 */
+  size?: 'normal' | 'large'
+}) {
+  const deltaTone = delta?.tone ?? 'neutral'
+  const deltaClasses: Record<NonNullable<typeof delta>['tone'] & string, string> = {
+    positive: 'text-emerald-700 dark:text-emerald-300',
+    warning: 'text-rose-600 dark:text-rose-300',
+    neutral: 'text-slate-500 dark:text-slate-400',
+  }
+  const arrow = delta?.direction === 'up' ? '↑' : delta?.direction === 'down' ? '↓' : '→'
+  const isLarge = size === 'large'
+  return (
+    <Card className={isLarge ? 'min-h-32' : 'min-h-24'}>
+      <p className={`${isLarge ? 'text-sm' : 'text-xs'} text-slate-500 dark:text-slate-400`}>{label}</p>
+      <p
+        className={`mt-2 font-semibold text-slate-950 dark:text-slate-50 ${
+          isLarge ? 'text-3xl' : 'text-xl'
+        }`}
+      >
+        {value}
+      </p>
+      {delta ? (
+        <p className={`mt-1 text-xs font-medium ${deltaClasses[deltaTone]}`}>
+          {arrow} {delta.text}
+        </p>
+      ) : null}
+      {helper ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{helper}</p> : null}
+    </Card>
+  )
+}
+
+export function Field({
+  label,
+  children,
+}: {
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <label className="grid min-w-0 gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+      <span>{label}</span>
+      {children}
+    </label>
+  )
+}
+
+export const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function TextInput(props, ref) {
+  const handleWheel = (event: ReactWheelEvent<HTMLInputElement>) => {
+    if (props.onWheel) {
+      props.onWheel(event)
+    }
+    if (event.currentTarget.type === 'number') {
+      event.currentTarget.blur()
+    }
+  }
+  return (
+    <input
+      {...props}
+      ref={ref}
+      onWheel={handleWheel}
+      className={`h-11 min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30 ${props.className ?? ''}`}
+    />
+  )
+})
+
+export function TextArea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      {...props}
+      className={`min-h-24 min-w-0 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30 ${props.className ?? ''}`}
+    />
+  )
+}
+
+export function Button({
+  children,
+  variant = 'primary',
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' }) {
+  const classes = {
+    primary: 'bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400',
+    secondary:
+      'border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700',
+    ghost: 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
+  }
+  return (
+    <button
+      {...props}
+      type={props.type ?? 'button'}
+      className={`inline-flex min-h-11 min-w-0 items-center justify-center rounded-md px-4 py-2 text-center text-sm font-medium leading-5 transition disabled:cursor-not-allowed disabled:opacity-50 ${classes[variant]} ${props.className ?? ''}`}
+    >
+      {children}
+    </button>
+  )
+}
+
+export function RecommendationBox({ title, message, tone }: { title: string; message: string; tone: RecommendationTone }) {
+  return (
+    <div className={`rounded-lg border p-3 ${toneClasses[tone]}`}>
+      <p className="font-medium">{title}</p>
+      <p className="mt-1 text-sm leading-6">{message}</p>
+    </div>
+  )
+}
+</file>
+
+<file path="src/App.tsx">
 import { type ReactElement, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Area,
@@ -39,7 +2893,6 @@ import type { DailyLog, ExerciseLog, ExercisePlan, ExerciseSetLog, TaskChecks, W
 import { Badge, Button, Card, Field, ProgressBar, RecommendationBox, StatCard, TextArea, TextInput } from './components/ui'
 import { useColorScheme, type ColorSchemePreference } from './hooks/useColorScheme'
 import { useConfirm } from './components/ConfirmDialog'
-import { MiniCalendar } from './components/MiniCalendar'
 
 type TabKey = 'today' | 'daily' | 'workout' | 'dashboard' | 'weekly'
 type WorkoutTemplateOption = {
@@ -1407,16 +4260,6 @@ function App() {
               <DateNavigator selectedDate={selectedDate} today={today} onChange={handleDateChange} />
             </div>
 
-            <div className="mt-4">
-              <MiniCalendar
-                selectedDate={selectedDate}
-                today={today}
-                dailyLogs={dailyLogs}
-                workoutLogs={workoutLogs}
-                onSelectDate={handleDateChange}
-              />
-            </div>
-
             <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-700/40 dark:bg-emerald-900/30">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -2775,3 +5618,6 @@ function SummaryRow({ label, value, danger = false }: { label: string; value: st
 }
 
 export default App
+</file>
+
+</files>

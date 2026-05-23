@@ -105,6 +105,16 @@ export const dailyTargets: Record<DayKey, DailyTarget> = {
 
 export const weeklyCalorieTarget = 16000
 
+/** 周末规则阈值，用于"周末规则检查"等显示性判断（非硬性目标）。 */
+export const weekendRules = {
+  /** 单日热量上限：超过即视为周末偏高。与 calorieRange 上限保持一致以便集中维护。 */
+  caloriesUpperKcal: 3000,
+  /** 单日蛋白质下限。低于即标 warning。 */
+  proteinMinG: 160,
+  /** 单日步数下限。低于即标 warning。 */
+  stepsMinSteps: 8000,
+}
+
 export const shoulderProtectionTips = [
   '推举不追疼痛，优先选择可控、稳定、无明显不适的动作。',
   '胸推动作优先器械或中立握，必要时缩小动作范围。',

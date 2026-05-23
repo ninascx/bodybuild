@@ -22,6 +22,22 @@
   background: #0f172a;
 }
 
+/* 主题切换柔和过渡：仅过渡颜色相关属性，避免影响 transform/opacity 等。
+   svg 内部（recharts 用大量内联色）排除，避免图表闪烁；
+   尊重 prefers-reduced-motion。 */
+@media (prefers-reduced-motion: no-preference) {
+  html,
+  body,
+  *:not(svg):not(svg *) {
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease,
+      fill 200ms ease,
+      stroke 200ms ease;
+  }
+}
+
 * {
   box-sizing: border-box;
 }

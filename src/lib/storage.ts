@@ -25,13 +25,18 @@ function readJson<T>(key: string, fallback: T): T {
   try {
     const raw = window.localStorage.getItem(key)
     return raw ? (JSON.parse(raw) as T) : fallback
-  } catch {
+  } catch (error) {
+    console.warn(`读取本地缓存 ${key} 失败，将使用默认值：`, error)
     return fallback
   }
 }
 
 function writeJson<T>(key: string, value: T): void {
-  window.localStorage.setItem(key, JSON.stringify(value))
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value))
+  } catch (error) {
+    console.warn(`写入本地缓存 ${key} 失败（可能是配额已满或隐私模式）：`, error)
+  }
 }
 
 function hasData(data: AppData): boolean {

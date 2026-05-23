@@ -144,20 +144,52 @@ export function calculateDashboardStats(logs: DailyLog[], today: string): Dashbo
 
 export function buildTrendData(logs: DailyLog[], today: string, days = 30): TrendPoint[] {
   const sorted = sortByDateAsc(logs)
-  return getRecentWindow(sorted, today, days).map((log) => {
+  const windowStart = addDays(today, -(days - 1))
+
+  // 用 7 日滑动窗口预计算每个 log 的 7 日均重，避免 O(n²) 的 averageWeight 调用。
+  // 注意：窗口需要看到 trend 范围之外的更早日期（最早的 trend 点也可能要往前 6 天找体重），
+  // 所以遍历整个 sorted。
+  const weightAvgByIndex = new Array<number | undefined>(sorted.length)
+  let left = 0
+  let sumWeight = 0
+  let countWeight = 0
+  for (let i = 0; i < sorted.length; i++) {
+    const currentDate = sorted[i].date
+    const minDate = addDays(currentDate, -6)
+    while (left < i && sorted[left].date < minDate) {
+      const dropping = sorted[left].morningWeightKg
+      if (typeof dropping === 'number' && Number.isFinite(dropping)) {
+        sumWeight -= dropping
+        countWeight -= 1
+      }
+      left++
+    }
+    const incoming = sorted[i].morningWeightKg
+    if (typeof incoming === 'number' && Number.isFinite(incoming)) {
+      sumWeight += incoming
+      countWeight += 1
+    }
+    weightAvgByIndex[i] = countWeight > 0 ? Math.round((sumWeight / countWeight) * 10) / 10 : undefined
+  }
+
+  const result: TrendPoint[] = []
+  for (let i = 0; i < sorted.length; i++) {
+    const log = sorted[i]
+    if (log.date < windowStart || log.date > today) continue
     const target = dailyTargets[getDayKey(log.date)]
-    return {
+    result.push({
       date: log.date.slice(5),
       fullDate: log.date,
       weight: log.morningWeightKg,
-      weightAverage7: averageWeight(sorted, log.date, 7),
+      weightAverage7: weightAvgByIndex[i],
       waist: log.waistCm,
       calories: log.calories,
       protein: log.protein,
       proteinMet: log.protein !== undefined && log.protein >= target.protein ? 1 : 0,
       shoulderPain: log.shoulderPainScore,
-    }
-  })
+    })
+  }
+  return result
 }
 
 export function calculateWeeklyCalorieBudget(logs: DailyLog[], today: string): WeeklyCalorieBudget {
