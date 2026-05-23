@@ -1,21 +1,23 @@
-import { type ReactElement, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { dailyTargets, dayNames, weeklyCalorieTarget, workoutPlans } from './data/plans'
+import { formatDateInput, getDayKey, isValidDateInput } from './lib/dates'
+import { calculateDashboardStats, buildTrainingPerformanceData, buildTrendData, createWeeklySummary, findPreviousExerciseRecord, logsForWeek } from './lib/metrics'
+import type { PreviousExerciseRecord } from './lib/metrics'
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
-import { dailyTargets, dayNames, shoulderProtectionTips, weeklyCalorieTarget, weekendRules, workoutPlans } from './data/plans'
-import { addDays, formatDateInput, getDayKey, isValidDateInput, startOfWeekSunday } from './lib/dates'
-import { calculateDashboardStats, buildTrainingPerformanceData, buildTrendData, createWeeklySummary, findPreviousExerciseRecord, logsForWeek, roundMetric } from './lib/metrics'
-import type { PreviousExerciseRecord, TrendPoint } from './lib/metrics'
+  buildDailyCopyText,
+  builtinTemplateOptions,
+  createBlankExercise,
+  createWorkoutFromPlan,
+  createWorkoutFromTemplate,
+  customTemplateToOption,
+  estimateSetCount,
+  hasWorkoutContent,
+  isExerciseFilled,
+  newTemplateFromWorkout,
+  summarizeWorkout,
+  upsertByDate,
+  type WorkoutTemplateOption,
+} from './lib/workout'
 import {
   getDailyRecommendations,
   getPushDayShoulderRecommendation,
@@ -36,26 +38,18 @@ import {
 import { createId } from './lib/ids'
 import { getBuiltinTemplates } from './data/plans'
 import type { DailyLog, ExerciseLog, ExercisePlan, ExerciseSetLog, TaskChecks, WorkoutLog, WorkoutTemplate } from './types'
-import { Badge, Button, Card, Field, ProgressBar, RecommendationBox, StatCard, TextArea, TextInput } from './components/ui'
-import { useColorScheme, type ColorSchemePreference } from './hooks/useColorScheme'
+import { Button } from './components/ui'
+import { useColorScheme } from './hooks/useColorScheme'
 import { useConfirm } from './components/ConfirmDialog'
-import { MiniCalendar } from './components/MiniCalendar'
+import { ThemeToggle } from './components/ThemeToggle'
+import { CopyPreviewDialog } from './components/CopyPreviewDialog'
+import { TodayTab } from './tabs/TodayTab'
+import { DailyRecordTab } from './tabs/DailyRecordTab'
+import { WorkoutTab } from './tabs/WorkoutTab'
+import { DashboardTab } from './tabs/DashboardTab'
+import { WeeklyTab } from './tabs/WeeklyTab'
 
 type TabKey = 'today' | 'daily' | 'workout' | 'dashboard' | 'weekly'
-type WorkoutTemplateOption = {
-  id: string
-  name: string
-  focus: string
-  source: 'builtin' | 'custom'
-  exercises: ExercisePlan[]
-}
-type WorkoutSummary = {
-  exerciseCount: number
-  filledSets: number
-  totalSets: number
-  completionPercent: number
-  totalVolume: number
-}
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: 'today', label: '今日' },
@@ -88,60 +82,9 @@ const defaultChecks: TaskChecks = {
   sleep: false,
 }
 
-type NumberRange = {
-  min?: number
-  max?: number
-  allowZero?: boolean
-}
 
-function displayNumber(value: number | undefined): string {
-  return value === undefined ? '' : String(value)
-}
 
-type StatDelta = { direction: 'up' | 'down' | 'flat'; text: string; tone: 'positive' | 'warning' | 'neutral' }
 
-function formatDeltaText(diff: number, unit: string, digits = 1): string {
-  const scale = 10 ** digits
-  const rounded = Math.round(diff * scale) / scale
-  const abs = Math.abs(rounded)
-  if (abs === 0) return `较上周持平`
-  return `较上周 ${rounded > 0 ? '+' : '−'}${abs}${unit}`
-}
-
-// 体重：变化方向不简单代表好坏，用中性色显示，但箭头方向真实反映上下
-function buildWeightDelta(current: number | undefined, previous: number | undefined): StatDelta | undefined {
-  if (current === undefined || previous === undefined) return undefined
-  const diff = current - previous
-  const direction: StatDelta['direction'] = diff > 0.05 ? 'up' : diff < -0.05 ? 'down' : 'flat'
-  return { direction, text: formatDeltaText(diff, ' kg', 1), tone: 'neutral' }
-}
-
-// 越高越好：达标天数 / 完成率 / 步数
-function buildHigherIsBetterDelta(
-  current: number | undefined,
-  previous: number | undefined,
-  unit: string,
-  digits = 0,
-): StatDelta | undefined {
-  if (current === undefined || previous === undefined) return undefined
-  const diff = current - previous
-  const direction: StatDelta['direction'] = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat'
-  const tone: StatDelta['tone'] = diff > 0 ? 'positive' : diff < 0 ? 'warning' : 'neutral'
-  return { direction, text: formatDeltaText(diff, unit ? ` ${unit}` : '', digits), tone }
-}
-
-// 中性指标（如热量），只显示方向不评价好坏
-function buildNeutralDelta(
-  current: number | undefined,
-  previous: number | undefined,
-  unit: string,
-  digits = 0,
-): StatDelta | undefined {
-  if (current === undefined || previous === undefined) return undefined
-  const diff = current - previous
-  const direction: StatDelta['direction'] = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat'
-  return { direction, text: formatDeltaText(diff, unit ? ` ${unit}` : '', digits), tone: 'neutral' }
-}
 
 function signedRemaining(targetValue: number | undefined, actualValue: number | undefined): string {
   if (targetValue === undefined) return '无固定目标'
@@ -153,160 +96,6 @@ function signedRemaining(targetValue: number | undefined, actualValue: number | 
 function remainingTone(targetValue: number | undefined, actualValue: number | undefined): 'positive' | 'warning' | 'neutral' {
   if (targetValue === undefined || actualValue === undefined) return 'neutral'
   return actualValue <= targetValue ? 'positive' : 'warning'
-}
-
-function checkText(value: boolean): string {
-  return value ? '已完成' : '未完成'
-}
-
-function upsertByDate<T extends { date: string }>(items: T[], date: string, patch: Partial<T>): T[] {
-  const existing = items.find((item) => item.date === date)
-  if (existing) {
-    return items.map((item) => (item.date === date ? { ...item, ...patch } : item))
-  }
-  return [...items, { date, ...patch } as T]
-}
-
-function estimateSetCount(target: string): number {
-  if (typeof target !== 'string') return 3
-  const cnMatch = target.match(/(\d+)(?:-\d+)?\s*组/)
-  if (cnMatch) return Number(cnMatch[1])
-  const enMatch = target.match(/(\d+)\s*(?:sets?|×|x|\*)/i)
-  if (enMatch) return Number(enMatch[1])
-  return 3
-}
-
-function createWorkoutFromPlan(date: string): WorkoutLog {
-  const plan = workoutPlans[getDayKey(date)]
-  return createWorkoutFromTemplate(date, {
-    id: `builtin-${plan.day}`,
-    name: plan.name,
-    focus: plan.focus,
-    source: 'builtin',
-    exercises: plan.exercises,
-  })
-}
-
-function createWorkoutFromTemplate(date: string, template: WorkoutTemplateOption): WorkoutLog {
-  return {
-    date,
-    workoutName: template.name,
-    exercises: template.exercises.map((exercise) => {
-      const setCount = estimateSetCount(exercise.prescription)
-      return {
-        exerciseId: exercise.id,
-        name: exercise.name,
-        target: exercise.note ? `${exercise.prescription}，${exercise.note}` : exercise.prescription,
-        completedSets: 0,
-        sets: Array.from({ length: setCount }, () => ({})),
-      }
-    }),
-  }
-}
-
-function builtinTemplateOptions(): WorkoutTemplateOption[] {
-  return getBuiltinTemplates().map((template) => ({
-    id: template.id,
-    name: template.name,
-    focus: template.focus,
-    source: 'builtin',
-    exercises: template.exercises,
-  }))
-}
-
-function customTemplateToOption(template: WorkoutTemplate): WorkoutTemplateOption {
-  return {
-    id: template.id,
-    name: template.name,
-    focus: template.focus,
-    source: 'custom',
-    exercises: template.exercises,
-  }
-}
-
-function hasWorkoutContent(workout: WorkoutLog | undefined): boolean {
-  if (!workout) return false
-  if (workout.notes?.trim()) return true
-  return workout.exercises.some(
-    (exercise) =>
-      exercise.name.trim() ||
-      exercise.target.trim() ||
-      exercise.notes?.trim() ||
-      exercise.sets.some((set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined),
-  )
-}
-
-function createBlankExercise(): ExerciseLog {
-  return {
-    exerciseId: createId('custom-exercise'),
-    name: '新动作',
-    target: '3 组 × 8-12 次',
-    completedSets: 0,
-    sets: Array.from({ length: 3 }, () => ({})),
-  }
-}
-
-function newTemplateFromWorkout(workout: WorkoutLog): WorkoutTemplate {
-  const now = new Date().toISOString()
-  return {
-    id: createId('template'),
-    name: `${workout.workoutName || '自定义训练'} 模板`,
-    focus: '自定义',
-    category: '自定义',
-    exercises: workout.exercises.length
-      ? workout.exercises.map((exercise, index) => ({
-          id: exercise.exerciseId || createId('template-exercise'),
-          name: exercise.name || `动作 ${index + 1}`,
-          prescription: exercise.target || '3 组 × 8-12 次',
-          note: exercise.notes,
-        }))
-      : [{ id: createId('template-exercise'), name: '新动作', prescription: '3 组 × 8-12 次' }],
-    createdAt: now,
-    updatedAt: now,
-  }
-}
-
-function summarizeWorkout(workout: WorkoutLog | undefined): WorkoutSummary {
-  if (!workout) {
-    return {
-      exerciseCount: 0,
-      filledSets: 0,
-      totalSets: 0,
-      completionPercent: 0,
-      totalVolume: 0,
-    }
-  }
-
-  const totalSets = workout.exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0)
-  const filledSets = workout.exercises.reduce(
-    (sum, exercise) =>
-      sum + exercise.sets.filter((set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined).length,
-    0,
-  )
-  const totalVolume = workout.exercises.reduce((sum, exercise) => {
-    return sum + exercise.sets.reduce((setSum, set) => {
-      if (set.weight !== undefined && set.reps !== undefined) {
-        return setSum + set.weight * set.reps
-      }
-      return setSum
-    }, 0)
-  }, 0)
-
-  return {
-    exerciseCount: workout.exercises.length,
-    filledSets,
-    totalSets,
-    completionPercent: totalSets ? Math.round((filledSets / totalSets) * 100) : 0,
-    totalVolume,
-  }
-}
-
-function isExerciseFilled(exercise: ExerciseLog): boolean {
-  return exercise.sets.some((set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined)
-}
-
-function hasChartData<T extends object>(data: T[], keys: Array<keyof T>, minPoints = 2): boolean {
-  return data.filter((point) => keys.some((key) => typeof point[key] === 'number')).length >= minPoints
 }
 
 function weeklyConclusion(summary: ReturnType<typeof createWeeklySummary>, twoWeekTitle: string) {
@@ -343,137 +132,6 @@ function weeklyConclusion(summary: ReturnType<typeof createWeeklySummary>, twoWe
     message: '本周热量接近目标区间，继续保持记录、训练完成度和周末活动量。',
     tone: 'positive' as const,
   }
-}
-
-function buildDailyCopyText({
-  date,
-  dayName,
-  log,
-  workout,
-  checks,
-  completion,
-}: {
-  date: string
-  dayName: string
-  log: DailyLog | undefined
-  workout: WorkoutLog | undefined
-  checks: TaskChecks
-  completion: number
-}): string {
-  // 仅展示已记录的字段，跳过 undefined 值
-  const recordPairs: Array<[string, number | string | undefined, string]> = [
-    ['体重', log?.morningWeightKg, ' kg'],
-    ['腰围', log?.waistCm, ' cm'],
-    ['热量', log?.calories, ' kcal'],
-    ['蛋白质', log?.protein, ' g'],
-    ['碳水', log?.carbs, ' g'],
-    ['脂肪', log?.fat, ' g'],
-    ['步数', log?.steps, ' 步'],
-    ['睡眠', log?.sleepHours, ' h'],
-    ['训练完成度', log?.workoutCompletion, '%'],
-    ['肩痛评分', log?.shoulderPainScore, '/10'],
-    ['疲劳评分', log?.fatigueScore, '/10'],
-  ]
-  const recordLines = recordPairs
-    .filter(([, value]) => value !== undefined)
-    .map(([label, value, unit]) => `${label}：${value}${unit}`)
-  if (log?.trained !== undefined) recordLines.push(`是否训练：${log.trained ? '是' : '否'}`)
-  if (log?.notes?.trim()) recordLines.push(`备注：${log.notes.trim()}`)
-
-  // 训练记录：跳过没填的组
-  const workoutLines = workout?.exercises.length
-    ? workout.exercises
-        .map((exercise, index) => {
-          const filledSets = exercise.sets
-            .map((set, setIndex) => {
-              const hasAny = set.weight !== undefined || set.reps !== undefined || set.rir !== undefined
-              if (!hasAny) return null
-              const parts: string[] = []
-              if (set.weight !== undefined) parts.push(`${set.weight}kg`)
-              if (set.reps !== undefined) parts.push(`${set.reps}次`)
-              if (set.rir !== undefined) parts.push(`RIR${set.rir}`)
-              return `第${setIndex + 1}组 ${parts.join(' × ')}`
-            })
-            .filter((value): value is string => value !== null)
-          if (filledSets.length === 0) return null
-          return `${index + 1}. ${exercise.name}：${filledSets.join('；')}`
-        })
-        .filter((value): value is string => value !== null)
-    : []
-
-  const sections: string[] = []
-  sections.push(`【${date} ${dayName} 健身记录】`)
-  if (recordLines.length > 0) {
-    sections.push('', '实际记录', ...recordLines)
-  }
-  sections.push(
-    '',
-    '任务完成',
-    `饮食：${checkText(checks.diet)}`,
-    `训练：${checkText(checks.workout)}`,
-    `步数：${checkText(checks.steps)}`,
-    `睡眠：${checkText(checks.sleep)}`,
-    `总完成度：${Math.round(completion)}%`,
-  )
-  if (workout?.workoutName?.trim() || workoutLines.length > 0) {
-    sections.push('', '训练记录')
-    if (workout?.workoutName?.trim()) sections.push(`训练名称：${workout.workoutName.trim()}`)
-    if (workoutLines.length > 0) sections.push(...workoutLines)
-  }
-
-  return sections.join('\n')
-}
-
-function TipsDetails({
-  defaultOpen,
-  summary,
-  children,
-}: {
-  defaultOpen: boolean
-  summary: ReactNode
-  children: ReactNode
-}) {
-  const [open, setOpen] = useState(defaultOpen)
-  return (
-    <details
-      open={open}
-      onToggle={(event) => setOpen((event.target as HTMLDetailsElement).open)}
-      className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-none"
-    >
-      <summary className="cursor-pointer text-lg font-semibold text-slate-950 dark:text-slate-50">{summary}</summary>
-      {children}
-    </details>
-  )
-}
-
-function ThemeToggle({
-  preference,
-  resolved,
-  onCycle,
-}: {
-  preference: ColorSchemePreference
-  resolved: 'light' | 'dark'
-  onCycle: () => void
-}) {
-  const label =
-    preference === 'system'
-      ? `跟随系统（当前${resolved === 'dark' ? '深色' : '浅色'}）`
-      : preference === 'dark'
-        ? '深色'
-        : '浅色'
-  const icon = preference === 'system' ? '🖥️' : preference === 'dark' ? '🌙' : '☀️'
-  return (
-    <button
-      type="button"
-      onClick={onCycle}
-      title={`主题：${label}（点击切换）`}
-      aria-label={`主题：${label}`}
-      className="inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-    >
-      <span aria-hidden="true">{icon}</span>
-      <span className="hidden sm:inline">主题</span>
-    </button>
-  )
 }
 
 function App() {
@@ -720,7 +378,6 @@ function App() {
   // 保存 / 加载超过 3 秒还没结束，提示用户网络较慢，避免无声卡住的体验。
   useEffect(() => {
     if (syncState !== 'saving' && syncState !== 'loading') {
-      setSlowSave(false)
       return
     }
     const timer = window.setTimeout(() => setSlowSave(true), 3000)
@@ -844,6 +501,10 @@ function App() {
 
   async function replaceWorkoutFromTemplate(template: WorkoutTemplateOption | undefined) {
     if (!template) return
+    if (template.exercises.length === 0) {
+      setImportMessage('这是休息日模板，没有训练动作可填入。如需自由训练，请点"空白训练"。')
+      return
+    }
     if (hasWorkoutContent(selectedWorkout)) {
       const ok = await confirm({
         title: '覆盖当天训练？',
@@ -934,7 +595,6 @@ function App() {
       index === exerciseIndex
         ? {
             ...item,
-            completedSets: 0,
             sets: Array.from({ length: setCount }, () => ({})),
           }
         : item,
@@ -963,6 +623,8 @@ function App() {
   }
 
   function updateTemplate(templateId: string, patch: Partial<WorkoutTemplate>) {
+    const target = workoutTemplates.find((template) => template.id === templateId)
+    if (!target || target.isBuiltin) return
     const now = new Date().toISOString()
     const nextTemplates = workoutTemplates.map((template) => {
       if (template.id === templateId) {
@@ -979,6 +641,8 @@ function App() {
   }
 
   function updateTemplateExercise(templateId: string, exerciseIndex: number, patch: Partial<ExercisePlan>) {
+    const target = workoutTemplates.find((template) => template.id === templateId)
+    if (!target || target.isBuiltin) return
     const nextTemplates = workoutTemplates.map((template) => {
       if (template.id !== templateId) return template
       return {
@@ -991,6 +655,8 @@ function App() {
   }
 
   function addTemplateExercise(templateId: string) {
+    const target = workoutTemplates.find((template) => template.id === templateId)
+    if (!target || target.isBuiltin) return
     const nextTemplates = workoutTemplates.map((template) =>
       template.id === templateId
         ? {
@@ -1007,6 +673,8 @@ function App() {
   }
 
   async function deleteTemplateExercise(templateId: string, exerciseIndex: number) {
+    const target = workoutTemplates.find((template) => template.id === templateId)
+    if (!target || target.isBuiltin) return
     const ok = await confirm({
       title: '删除模板动作？',
       message: '只删除模板里的这个动作；已有训练记录不受影响。',
@@ -1026,6 +694,8 @@ function App() {
   }
 
   async function deleteTemplate(templateId: string) {
+    const target = workoutTemplates.find((template) => template.id === templateId)
+    if (!target || target.isBuiltin) return
     const ok = await confirm({
       title: '删除训练模板？',
       message: '此操作仅删除模板，历史训练记录会保留。',
@@ -1267,572 +937,106 @@ function App() {
         </nav>
 
         {activeTab === 'today' ? (
-          <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-            <Card className="bg-slate-950 text-white dark:bg-slate-800">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm text-emerald-200">{today} · {dayNames[todayKey]}</p>
-                  <h2 className="mt-2 text-3xl font-semibold">{target.workoutName}</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">{plan.focus}</p>
-                </div>
-                <Badge tone={target.isTrainingDay ? 'positive' : 'neutral'}>{target.isTrainingDay ? '训练日' : '休息日'}</Badge>
-              </div>
-              <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
-                <div className="rounded-lg bg-white/10 p-3">
-                  <p className="text-xs text-slate-300">热量</p>
-                  <p className="mt-1 text-xl font-semibold">{target.calories ?? `${target.calorieRange?.[0]}-${target.calorieRange?.[1]}`}</p>
-                  <p className="text-xs text-slate-300">kcal</p>
-                </div>
-                <div className="rounded-lg bg-white/10 p-3">
-                  <p className="text-xs text-slate-300">蛋白质</p>
-                  <p className="mt-1 text-xl font-semibold">{target.protein}</p>
-                  <p className="text-xs text-slate-300">g</p>
-                </div>
-                <div className="rounded-lg bg-white/10 p-3">
-                  <p className="text-xs text-slate-300">步数</p>
-                  <p className="mt-1 text-xl font-semibold">{target.stepTarget}</p>
-                  <p className="text-xs text-slate-300">步</p>
-                </div>
-              </div>
-              <div className="mt-5">
-                <div className="flex items-center justify-between text-sm">
-                  <span>今日完成度</span>
-                  <span>{Math.round(completion)}%</span>
-                </div>
-                <div className="mt-2">
-                  <ProgressBar value={completion} />
-                </div>
-              </div>
-            </Card>
-
-            <Card>
-              <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">一键勾选</h2>
-              <div className="mt-4 grid gap-2">
-                {[
-                  ['diet', '饮食记录完成'],
-                  ['workout', target.isTrainingDay ? '训练完成' : '休息日任务完成'],
-                  ['steps', `步数完成 · ${target.stepTarget} 步`],
-                  ['sleep', '睡眠记录完成'],
-                ].map(([key, label]) => (
-                  <label key={key} className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-3">
-                    <input
-                      type="checkbox"
-                      checked={checks[key as keyof TaskChecks]}
-                      onChange={() => toggleTask(key as keyof TaskChecks)}
-                      className="h-5 w-5 rounded border-slate-300 text-emerald-600"
-                    />
-                    <span className="text-sm font-medium">{label}</span>
-                  </label>
-                ))}
-              </div>
-            </Card>
-
-            <Card>
-              <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">本周热量预算</h2>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <BudgetTile label="已摄入" value={`${dashboardStats.calorieBudget.consumed} kcal`} />
-                <BudgetTile
-                  label="剩余额度"
-                  value={`${dashboardStats.calorieBudget.remaining} kcal`}
-                  danger={dashboardStats.calorieBudget.remaining < 0}
-                />
-                <BudgetTile label="剩余天数" value={`${dashboardStats.calorieBudget.remainingDays} 天`} />
-                <BudgetTile
-                  label="平均还能吃"
-                  value={hasWeeklyCalorieLogs ? `${dashboardStats.calorieBudget.averagePerRemainingDay} kcal/天` : '本周暂无摄入记录'}
-                  danger={hasWeeklyCalorieLogs && dashboardStats.calorieBudget.averagePerRemainingDay < 1500}
-                />
-              </div>
-              <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                {hasWeeklyCalorieLogs
-                  ? `预算按周日到周六、约 ${weeklyCalorieTarget} kcal 计算；如果周末偏高，优先控制周末自由饮食，不建议极端压低工作日热量。`
-                  : '先记录今天热量后，这里会开始计算本周剩余额度和剩余天数平均值。'}
-              </p>
-            </Card>
-
-            <Card>
-              <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">今日宏量营养剩余额度</h2>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <MacroTile label="热量" value={signedRemaining(todayCalorieTarget, todayLog?.calories)} unit="kcal" tone={remainingTone(todayCalorieTarget, todayLog?.calories)} />
-                <MacroTile label="蛋白质" value={signedRemaining(target.protein, todayLog?.protein)} unit="g" tone={remainingTone(target.protein, todayLog?.protein)} />
-                <MacroTile label="碳水" value={signedRemaining(target.carbs, todayLog?.carbs)} unit="g" tone={remainingTone(target.carbs, todayLog?.carbs)} />
-                <MacroTile label="脂肪" value={signedRemaining(target.fat, todayLog?.fat)} unit="g" tone={remainingTone(target.fat, todayLog?.fat)} />
-              </div>
-              <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">在“每日记录”输入已吃数据后，这里会自动更新。</p>
-            </Card>
-
-            <Card className="lg:col-span-2">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">今日训练动作</h2>
-                <Badge tone="neutral">{plan.name}</Badge>
-              </div>
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                {plan.exercises.map((exercise, index) => (
-                  <div key={exercise.id} className="rounded-lg border border-slate-200 p-3">
-                    <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">{index + 1}. {exercise.name}</p>
-                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{exercise.prescription}</p>
-                    {exercise.note ? <p className="mt-1 text-xs text-amber-700">{exercise.note}</p> : null}
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            <TipsDetails defaultOpen={false} summary="肩部保护提醒">
-              <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                {shoulderProtectionTips.map((tip) => (
-                  <li key={tip} className="rounded-md bg-slate-50 px-3 py-2 dark:bg-slate-800">{tip}</li>
-                ))}
-              </ul>
-            </TipsDetails>
-
-            <TipsDetails defaultOpen={weekendRisk.tone !== 'positive'} summary="今日提示">
-              <div className="mt-3 grid gap-2">
-                <RecommendationBox title={weekendRisk.title} message={weekendRisk.message} tone={weekendRisk.tone} />
-                <RecommendationBox title={pushShoulderRisk.title} message={pushShoulderRisk.message} tone={pushShoulderRisk.tone} />
-                {dailyRecommendations.map((item) => (
-                  <RecommendationBox key={item.title} title={item.title} message={item.message} tone={item.tone} />
-                ))}
-              </div>
-            </TipsDetails>
-          </div>
+          <TodayTab
+            today={today}
+            todayKey={todayKey}
+            target={target}
+            plan={plan}
+            todayLog={todayLog}
+            todayWorkout={todayWorkout}
+            checks={checks}
+            completion={completion}
+            dashboardStats={dashboardStats}
+            dailyRecommendations={dailyRecommendations}
+            weekendRisk={weekendRisk}
+            pushShoulderRisk={pushShoulderRisk}
+            hasWeeklyCalorieLogs={hasWeeklyCalorieLogs}
+            weeklyCalorieTarget={weeklyCalorieTarget}
+            todayCalorieTarget={todayCalorieTarget}
+            signedRemaining={signedRemaining}
+            remainingTone={remainingTone}
+            onToggleTask={toggleTask}
+          />
         ) : null}
 
         {activeTab === 'daily' ? (
-          <Card>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-slate-950 dark:text-slate-50">每日记录</h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">手机端先填快捷项，完整围度和备注有时间再补。</p>
-              </div>
-              <DateNavigator selectedDate={selectedDate} today={today} onChange={handleDateChange} />
-            </div>
-
-            <div className="mt-4">
-              <MiniCalendar
-                selectedDate={selectedDate}
-                today={today}
-                dailyLogs={dailyLogs}
-                workoutLogs={workoutLogs}
-                onSelectDate={handleDateChange}
-              />
-            </div>
-
-            <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-700/40 dark:bg-emerald-900/30">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h3 className="font-semibold text-emerald-950 dark:text-emerald-100">1 分钟快捷记录</h3>
-                  <p className="mt-1 text-xs text-emerald-800 dark:text-emerald-200">优先填这些字段，足够支撑今日预算、周报和趋势判断。</p>
-                </div>
-                <Badge tone="positive">快捷</Badge>
-              </div>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                <NumberField label="体重 kg" value={selectedLog.morningWeightKg} step="0.1" kind="decimal" range={{ min: 20, max: 300 }} onChange={(value) => updateDailyLog({ morningWeightKg: value })} />
-                <NumberField label="热量 kcal" value={selectedLog.calories} range={{ min: 0, max: 10000, allowZero: true }} onChange={(value) => updateDailyLog({ calories: value })} />
-                <NumberField label="蛋白质 g" value={selectedLog.protein} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => updateDailyLog({ protein: value })} />
-                <NumberField label="步数" value={selectedLog.steps} range={{ min: 0, max: 100000, allowZero: true }} onChange={(value) => updateDailyLog({ steps: value })} />
-                <NumberField label="睡眠 h" value={selectedLog.sleepHours} step="0.1" kind="decimal" range={{ min: 0, max: 24, allowZero: true }} onChange={(value) => updateDailyLog({ sleepHours: value })} />
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="secondary" className="px-3" onClick={() => quickDailyAction({ sleepHours: 7 })}>睡眠 7h</Button>
-                <Button variant="secondary" className="px-3" onClick={() => quickDailyAction({ trained: true, workoutCompletion: 100 })}>训练 100%</Button>
-                <Button variant="secondary" className="px-3" onClick={() => quickDailyAction({ steps: selectedTarget.stepTarget })}>步数达标</Button>
-                <span className="self-center text-xs text-emerald-800 dark:text-emerald-200">
-                  {syncState === 'synced' ? '已保存到服务器' : syncState === 'saving' ? '保存中...' : '离线缓存中'}
-                </span>
-              </div>
-            </div>
-
-            <details className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-600/40 dark:bg-amber-900/30">
-              <summary className="cursor-pointer text-sm font-semibold text-amber-950">身体状态</summary>
-              <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                <NumberField label="训练完成度 %" value={selectedLog.workoutCompletion} range={{ min: 0, max: 100, allowZero: true }} onChange={(value) => updateDailyLog({ workoutCompletion: value })} />
-                <NumberField label="肩痛评分 0-10（可选）" value={selectedLog.shoulderPainScore} range={{ min: 0, max: 10, allowZero: true }} onChange={(value) => updateDailyLog({ shoulderPainScore: value })} />
-                <NumberField label="疲劳评分 0-10（可选）" value={selectedLog.fatigueScore} range={{ min: 0, max: 10, allowZero: true }} onChange={(value) => updateDailyLog({ fatigueScore: value })} />
-              </div>
-            </details>
-
-            <details className="mt-5 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-3">
-              <summary className="cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">更多记录</summary>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <NumberField label="腰围 cm" value={selectedLog.waistCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => updateDailyLog({ waistCm: value })} />
-                <NumberField label="胸围 cm（可选）" value={selectedLog.chestCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => updateDailyLog({ chestCm: value })} />
-                <NumberField label="上臂围 cm（可选）" value={selectedLog.upperArmCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => updateDailyLog({ upperArmCm: value })} />
-                <NumberField label="大腿围 cm（可选）" value={selectedLog.thighCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => updateDailyLog({ thighCm: value })} />
-                <NumberField label="实际碳水 g" value={selectedLog.carbs} range={{ min: 0, max: 1000, allowZero: true }} onChange={(value) => updateDailyLog({ carbs: value })} />
-                <NumberField label="实际脂肪 g" value={selectedLog.fat} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => updateDailyLog({ fat: value })} />
-                <Field label="是否训练">
-                  <select
-                    value={selectedLog.trained === undefined ? '' : selectedLog.trained ? 'yes' : 'no'}
-                    onChange={(event) => updateDailyLog({ trained: event.target.value === '' ? undefined : event.target.value === 'yes' })}
-                    className="h-11 rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 px-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30"
-                  >
-                    <option value="">未填写</option>
-                    <option value="yes">是</option>
-                    <option value="no">否</option>
-                  </select>
-                </Field>
-              </div>
-              <div className="mt-4">
-                <Field label="备注">
-                  <TextArea value={selectedLog.notes ?? ''} onChange={(event) => updateDailyLog({ notes: event.target.value })} />
-                </Field>
-              </div>
-            </details>
-          </Card>
+          <DailyRecordTab
+            selectedDate={selectedDate}
+            today={today}
+            selectedLog={selectedLog}
+            selectedTarget={selectedTarget}
+            dailyLogs={dailyLogs}
+            workoutLogs={workoutLogs}
+            syncState={syncState}
+            onDateChange={handleDateChange}
+            onUpdateDailyLog={updateDailyLog}
+            onQuickAction={quickDailyAction}
+          />
         ) : null}
 
         {activeTab === 'workout' ? (
-          <div className="grid gap-4">
-            <WorkoutControlPanel
-              selectedDate={selectedDate}
-              today={today}
-              selectedWorkout={selectedWorkout}
-              workoutSummary={workoutSummary}
-              selectedTemplate={selectedTemplate}
-              onDateChange={handleDateChange}
-              onPrimaryAction={() => {
-                if (selectedWorkout) addExerciseToWorkout()
-                else void replaceWorkoutFromTemplate(selectedTemplate)
-              }}
-              onBlankWorkout={addExerciseToWorkout}
-            />
-
-            <WorkoutPlanPicker
-              selectedDate={selectedDate}
-              selectedTemplateId={selectedTemplateId}
-              selectedTemplate={selectedTemplate}
-              templateOptions={templateOptions}
-              hasWorkout={Boolean(selectedWorkout)}
-              onTemplateChange={setSelectedTemplateId}
-              onApplySelected={() => void replaceWorkoutFromTemplate(selectedTemplate)}
-              onApplyRecommended={() => void replaceWorkoutFromTemplate(templateOptions.find((template) => template.id === `builtin-${getDayKey(selectedDate)}`))}
-            />
-
-            <Card>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-950 dark:text-slate-50">当天动作记录</h2>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">先记组数和表现；动作名称、目标和备注放在每张卡的编辑区。</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {selectedWorkout ? <Badge tone="positive">已记录</Badge> : <Badge tone="neutral">未开始</Badge>}
-                  {selectedWorkout ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowOnlyUnfinishedExercises((value) => !value)}
-                      className={`min-h-10 rounded-md border px-3 text-sm font-medium transition ${
-                        showOnlyUnfinishedExercises
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200'
-                          : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      {showOnlyUnfinishedExercises ? '显示全部动作' : '只看未填写'}
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-
-              {selectedWorkout ? (
-                <div className="mt-5 grid gap-4">
-                  <Field label="训练名称">
-                    <TextInput value={selectedWorkout.workoutName} onChange={(event) => updateWorkoutLog({ ...selectedWorkout, workoutName: event.target.value })} />
-                  </Field>
-
-                  <ExerciseQuickJumpStrip
-                    exercises={selectedWorkout.exercises}
-                    visibleIndexes={visibleWorkoutExercises.map((entry) => entry.exerciseIndex)}
-                  />
-
-                  {visibleWorkoutExercises.map(({ exercise, exerciseIndex }) => (
-                    <ExerciseRecordCard
-                      key={`${exercise.exerciseId}-${exerciseIndex}`}
-                      exercise={exercise}
-                      exerciseIndex={exerciseIndex}
-                      previousRecord={previousRecordsByExerciseKey.get(`${exercise.exerciseId}::${exercise.name.trim()}`)}
-                      onUpdateExercise={updateExercise}
-                      onUpdateSet={updateExerciseSet}
-                      onAddSet={addSetToExercise}
-                      onDeleteLastSet={deleteLastSetFromExercise}
-                      onRebuildSets={rebuildSetsFromTarget}
-                      onDeleteExercise={deleteExerciseFromWorkout}
-                    />
-                  ))}
-
-                  {visibleWorkoutExercises.length === 0 ? (
-                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-100">
-                      当前筛选下没有未填写动作。可以切回“显示全部动作”继续查看或修改。
-                    </div>
-                  ) : null}
-
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-3">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">训练操作</p>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                      <Button onClick={addExerciseToWorkout}>新增当天动作</Button>
-                      <Button variant="secondary" onClick={saveCurrentWorkoutAsTemplate}>保存为模板</Button>
-                    </div>
-                  </div>
-                  <Field label="训练备注">
-                    <TextArea value={selectedWorkout.notes ?? ''} onChange={(event) => updateWorkoutLog({ ...selectedWorkout, notes: event.target.value })} />
-                  </Field>
-                </div>
-              ) : (
-                <div className="mt-5 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center dark:border-slate-600 dark:bg-slate-800">
-                  <p className="text-base font-semibold text-slate-900 dark:text-slate-100">还没有这一天的训练记录</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">选择计划开始会生成完整动作列表；临时改练也可以直接新增空白动作。</p>
-                  <div className="mt-4 grid gap-2 sm:mx-auto sm:max-w-md sm:grid-cols-2">
-                    <Button onClick={() => void replaceWorkoutFromTemplate(selectedTemplate)}>选择计划开始</Button>
-                    <Button variant="secondary" onClick={addExerciseToWorkout}>新增空白训练</Button>
-                  </div>
-                </div>
-              )}
-            </Card>
-
-            <WorkoutTemplateManager
-              templates={workoutTemplates}
-              selectedWorkout={selectedWorkout}
-              onCreateTemplate={createCustomTemplate}
-              onSaveCurrent={saveCurrentWorkoutAsTemplate}
-              onUpdateTemplate={updateTemplate}
-              onUpdateTemplateExercise={updateTemplateExercise}
-              onAddTemplateExercise={addTemplateExercise}
-              onDeleteTemplateExercise={deleteTemplateExercise}
-              onApplyTemplate={(template) => void replaceWorkoutFromTemplate(customTemplateToOption(template))}
-              onDeleteTemplate={deleteTemplate}
-            />
-          </div>
+          <WorkoutTab
+            selectedDate={selectedDate}
+            today={today}
+            selectedWorkout={selectedWorkout}
+            selectedTemplate={selectedTemplate}
+            selectedTemplateId={selectedTemplateId}
+            templateOptions={templateOptions}
+            workoutSummary={workoutSummary}
+            visibleWorkoutExercises={visibleWorkoutExercises}
+            previousRecordsByExerciseKey={previousRecordsByExerciseKey}
+            showOnlyUnfinishedExercises={showOnlyUnfinishedExercises}
+            workoutTemplates={workoutTemplates}
+            onDateChange={handleDateChange}
+            onTemplateChange={setSelectedTemplateId}
+            onApplyTemplate={(template) => void replaceWorkoutFromTemplate(template)}
+            onApplyRecommended={() => void replaceWorkoutFromTemplate(templateOptions.find((template) => template.id === `builtin-${getDayKey(selectedDate)}`))}
+            onToggleShowUnfinished={() => setShowOnlyUnfinishedExercises((value) => !value)}
+            onUpdateWorkout={updateWorkoutLog}
+            onUpdateExercise={updateExercise}
+            onUpdateSet={updateExerciseSet}
+            onAddSet={addSetToExercise}
+            onDeleteLastSet={deleteLastSetFromExercise}
+            onRebuildSets={rebuildSetsFromTarget}
+            onDeleteExercise={deleteExerciseFromWorkout}
+            onAddExercise={addExerciseToWorkout}
+            onSaveAsTemplate={saveCurrentWorkoutAsTemplate}
+            onCreateTemplate={createCustomTemplate}
+            onUpdateTemplate={updateTemplate}
+            onUpdateTemplateExercise={updateTemplateExercise}
+            onAddTemplateExercise={addTemplateExercise}
+            onDeleteTemplateExercise={deleteTemplateExercise}
+            onDeleteTemplate={deleteTemplate}
+          />
         ) : null}
 
         {activeTab === 'dashboard' ? (
-          <div className="grid gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-3 shadow-sm">
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">趋势图时间范围</p>
-              <div className="flex flex-wrap gap-1">
-                {([7, 14, 30, 90] as const).map((days) => (
-                  <button
-                    key={days}
-                    type="button"
-                    onClick={() => setTrendDays(days)}
-                    className={`min-h-9 rounded-md border px-3 text-sm font-medium transition ${
-                      trendDays === days
-                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:border-emerald-400 dark:bg-emerald-900/30 dark:text-emerald-200'
-                        : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    {days} 天
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* 关键 KPI（前 4 张）：体重 / 7 日均重 / 本周平均热量 / 训练完成率，使用大尺寸更醒目。 */}
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard size="large" label="当前体重" value={`${roundMetric(dashboardStats.currentWeight)} kg`} />
-              <StatCard
-                size="large"
-                label="7 日平均体重"
-                value={`${roundMetric(dashboardStats.averageWeight7)} kg`}
-                delta={buildWeightDelta(dashboardStats.averageWeight7, dashboardStats.previous.averageWeight7)}
-              />
-              <StatCard
-                size="large"
-                label="本周平均热量"
-                value={`${roundMetric(dashboardStats.weekAverageCalories, 0)} kcal`}
-                delta={buildNeutralDelta(dashboardStats.weekAverageCalories, dashboardStats.previous.weekAverageCalories, 'kcal', 0)}
-              />
-              <StatCard
-                size="large"
-                label="训练完成率"
-                value={`${dashboardStats.trainingCompletionRate}%`}
-                delta={buildHigherIsBetterDelta(dashboardStats.trainingCompletionRate, dashboardStats.previous.trainingCompletionRate, '%')}
-              />
-            </div>
-            {/* 次要指标，紧凑展示。 */}
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard
-                label="蛋白质达标天数"
-                value={`${dashboardStats.proteinMetDays} 天`}
-                helper="按每天目标判断"
-                delta={buildHigherIsBetterDelta(dashboardStats.proteinMetDays, dashboardStats.previous.proteinMetDays, '天')}
-              />
-              <StatCard
-                label="本周平均步数"
-                value={`${roundMetric(dashboardStats.averageSteps, 0)} 步`}
-                delta={buildHigherIsBetterDelta(dashboardStats.averageSteps, dashboardStats.previous.averageSteps, '步', 0)}
-              />
-              <StatCard label="肩痛平均分" value={`${roundMetric(dashboardStats.averageShoulderPain)} / 10`} helper="只统计已填写日期" />
-              <StatCard label="周总热量进度" value={`${dashboardStats.weekTotalCalories} kcal`} helper={`目标约 ${weeklyCalorieTarget} kcal`} />
-            </div>
-            <Card>
-              <p className="text-sm text-slate-500 dark:text-slate-400">两周建议</p>
-              <p className="mt-2 font-semibold text-slate-950 dark:text-slate-50">{twoWeekAdjustment.title}</p>
-              <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">{twoWeekAdjustment.message}</p>
-            </Card>
-            <div className="grid gap-4 lg:grid-cols-2">
-              <ChartCard title="体重趋势" isEmpty={!hasChartData(trendData, ['weight', 'weightAverage7'])}>
-                <LineChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
-                  <Tooltip content={<WeightTrendTooltip />} />
-                  <Line type="monotone" name="每日体重" dataKey="weight" stroke="#059669" strokeWidth={2} dot={false} />
-                  <Line type="monotone" name="7 日均重" dataKey="weightAverage7" stroke="#0f172a" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                </LineChart>
-              </ChartCard>
-              <ChartCard title="腰围趋势" isEmpty={!hasChartData(trendData, ['waist'])}>
-                <LineChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="waist" stroke="#2563eb" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ChartCard>
-              <ChartCard title="热量摄入趋势" isEmpty={!hasChartData(trendData, ['calories'])}>
-                <AreaChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="calories" stroke="#ea580c" fill="#fed7aa" />
-                </AreaChart>
-              </ChartCard>
-              <ChartCard title="蛋白质达标趋势" isEmpty={!hasChartData(trendData, ['proteinMet'])}>
-                <BarChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis ticks={[0, 1]} />
-                  <Tooltip />
-                  <Bar dataKey="proteinMet" fill="#10b981" />
-                </BarChart>
-              </ChartCard>
-              <ChartCard title="肩痛趋势" isEmpty={!hasChartData(trendData, ['shoulderPain'])}>
-                <LineChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[0, 10]} />
-                  <Tooltip />
-                  <Line type="monotone" name="肩痛评分" dataKey="shoulderPain" stroke="#e11d48" strokeWidth={2} dot />
-                </LineChart>
-              </ChartCard>
-              <ChartCard
-                title="训练表现趋势（估算最佳工作组）"
-                isEmpty={!hasChartData(trainingPerformanceData, ['benchPress', 'chestPress', 'pulldown', 'row', 'squatOrLegPress', 'romanianDeadlift'])}
-                action={
-                  <button
-                    type="button"
-                    onClick={() => setShowAllPerformanceLines((value) => !value)}
-                    className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                  >
-                    {showAllPerformanceLines ? '只看主要动作' : '显示全部动作'}
-                  </button>
-                }
-              >
-                <LineChart data={trainingPerformanceData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" name="卧推" dataKey="benchPress" stroke="#059669" strokeWidth={2} dot={false} />
-                  <Line type="monotone" name="胸推" dataKey="chestPress" stroke="#2563eb" strokeWidth={2} dot={false} />
-                  {showAllPerformanceLines ? <Line type="monotone" name="下拉" dataKey="pulldown" stroke="#7c3aed" strokeWidth={2} dot={false} /> : null}
-                  {showAllPerformanceLines ? <Line type="monotone" name="划船" dataKey="row" stroke="#ea580c" strokeWidth={2} dot={false} /> : null}
-                  {showAllPerformanceLines ? <Line type="monotone" name="深蹲/腿举" dataKey="squatOrLegPress" stroke="#0f766e" strokeWidth={2} dot={false} /> : null}
-                  {showAllPerformanceLines ? <Line type="monotone" name="罗马尼亚硬拉" dataKey="romanianDeadlift" stroke="#be123c" strokeWidth={2} dot={false} /> : null}
-                </LineChart>
-              </ChartCard>
-            </div>
-          </div>
+          <DashboardTab
+            dashboardStats={dashboardStats}
+            trendData={trendData}
+            trainingPerformanceData={trainingPerformanceData}
+            trendDays={trendDays}
+            showAllPerformanceLines={showAllPerformanceLines}
+            twoWeekAdjustment={twoWeekAdjustment}
+            weekendRisk={weekendRisk}
+            pushShoulderRisk={pushShoulderRisk}
+            onTrendDaysChange={setTrendDays}
+            onTogglePerformanceLines={() => setShowAllPerformanceLines((value) => !value)}
+          />
         ) : null}
 
         {activeTab === 'weekly' ? (
-          <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="lg:col-span-2 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-3 shadow-sm">
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">查看周次</p>
-              <div className="flex flex-wrap gap-1">
-                <Button
-                  variant="secondary"
-                  className="px-3"
-                  onClick={() => setWeeklyAnchorDate(addDays(weeklyAnchorDate, -7))}
-                  aria-label="上一周"
-                >
-                  ‹ 上一周
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="px-3"
-                  onClick={() => setWeeklyAnchorDate(today)}
-                  disabled={startOfWeekSunday(weeklyAnchorDate) === startOfWeekSunday(today)}
-                >
-                  本周
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="px-3"
-                  onClick={() => setWeeklyAnchorDate(addDays(weeklyAnchorDate, 7))}
-                  disabled={addDays(weeklyAnchorDate, 7) > today}
-                  aria-label="下一周"
-                >
-                  下一周 ›
-                </Button>
-              </div>
-            </div>
-            <div className="lg:col-span-2">
-              <RecommendationBox title={weeklyConclusionCard.title} message={weeklyConclusionCard.message} tone={weeklyConclusionCard.tone} />
-            </div>
-            <Card>
-              <h2 className="text-xl font-semibold text-slate-950 dark:text-slate-50">本周总结</h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{weeklySummary.weekStart} 至 {weeklySummary.weekEnd}</p>
-              <div className="mt-5 grid gap-3">
-                <SummaryRow label="本周平均体重" value={`${roundMetric(weeklySummary.averageWeight)} kg`} />
-                <SummaryRow label="较上周 7 日均值" value={weeklySummary.weightDelta === undefined ? '暂无' : `${weeklySummary.weightDelta > 0 ? '+' : ''}${weeklySummary.weightDelta} kg`} />
-                <SummaryRow label="本周腰围变化" value={weeklySummary.waistDelta === undefined ? '暂无' : `${weeklySummary.waistDelta > 0 ? '+' : ''}${weeklySummary.waistDelta} cm`} />
-                <SummaryRow label="训练完成率" value={`${weeklySummary.trainingCompletionRate}%`} />
-                <SummaryRow label="本周总热量" value={`${weeklySummary.totalCalories} kcal`} />
-                <SummaryRow label="周末平均热量" value={weeklySummary.weekendAverageCalories === undefined ? '暂无' : `${weeklySummary.weekendAverageCalories} kcal`} danger={weeklySummary.weekendOverLimit} />
-              </div>
-            </Card>
-            <div className="grid gap-4">
-              <RecommendationBox title={twoWeekAdjustment.title} message={twoWeekAdjustment.message} tone={twoWeekAdjustment.tone} />
-              <RecommendationBox title={weekendRisk.title} message={weekendRisk.message} tone={weekendRisk.tone} />
-              <RecommendationBox title={pushShoulderRisk.title} message={pushShoulderRisk.message} tone={pushShoulderRisk.tone} />
-              <Card>
-                <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">下一周建议</h2>
-                <div className="mt-3 grid gap-2">
-                  {weeklySummary.suggestions.map((suggestion) => (
-                    <div
-                      key={suggestion}
-                      className={`rounded-lg border p-3 text-sm leading-6 ${
-                        weeklySummary.weekendOverLimit && suggestion.includes('周末')
-                          ? 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-600/40 dark:bg-rose-900/30 dark:text-rose-100'
-                          : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 text-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      {suggestion}
-                    </div>
-                  ))}
-                </div>
-              </Card>
-              <Card>
-                <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">周末规则检查</h2>
-                <div className="mt-3 grid gap-2">
-                  {dailyLogs
-                    .filter((log) => log.date >= weeklySummary.weekStart && log.date <= weeklySummary.weekEnd && [5, 6].includes(getDayKey(log.date)))
-                    .map((log) => (
-                      <div key={log.date} className="rounded-lg border border-slate-200 p-3 text-sm">
-                        <p className="font-medium text-slate-950 dark:text-slate-50">{log.date} · {dayNames[getDayKey(log.date)]}</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <Badge tone={(log.calories ?? 0) > weekendRules.caloriesUpperKcal ? 'danger' : 'positive'}>热量 {log.calories ?? '未填'} kcal</Badge>
-                          <Badge tone={log.protein !== undefined && log.protein < weekendRules.proteinMinG ? 'warning' : 'positive'}>蛋白质 {log.protein ?? '未填'} g</Badge>
-                          <Badge tone={log.steps !== undefined && log.steps < weekendRules.stepsMinSteps ? 'warning' : 'positive'}>步数 {log.steps ?? '未填'}</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  {dailyLogs.filter((log) => log.date >= weeklySummary.weekStart && log.date <= weeklySummary.weekEnd && [5, 6].includes(getDayKey(log.date))).length === 0 ? (
-                    <p className="text-sm text-slate-500 dark:text-slate-400">本周还没有周五/周六记录。</p>
-                  ) : null}
-                </div>
-              </Card>
-            </div>
-          </div>
+          <WeeklyTab
+            weeklySummary={weeklySummary}
+            weeklyAnchorDate={weeklyAnchorDate}
+            today={today}
+            twoWeekAdjustment={twoWeekAdjustment}
+            weekendRisk={weekendRisk}
+            pushShoulderRisk={pushShoulderRisk}
+            weeklyConclusionCard={weeklyConclusionCard}
+            dailyLogs={dailyLogs}
+            onAnchorChange={setWeeklyAnchorDate}
+          />
         ) : null}
       </div>
       {confirmDialog}
@@ -1844,933 +1048,6 @@ function App() {
         />
       ) : null}
     </main>
-  )
-}
-
-function WorkoutControlPanel({
-  selectedDate,
-  today,
-  selectedWorkout,
-  workoutSummary,
-  selectedTemplate,
-  onDateChange,
-  onPrimaryAction,
-  onBlankWorkout,
-}: {
-  selectedDate: string
-  today: string
-  selectedWorkout: WorkoutLog | undefined
-  workoutSummary: WorkoutSummary
-  selectedTemplate: WorkoutTemplateOption | undefined
-  onDateChange: (date: string) => void
-  onPrimaryAction: () => void
-  onBlankWorkout: () => void
-}) {
-  return (
-    <Card className="border-slate-300 dark:border-slate-600">
-      <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={selectedWorkout ? 'positive' : 'neutral'}>{selectedWorkout ? '已记录' : '未开始'}</Badge>
-            <Badge tone={selectedTemplate?.source === 'custom' ? 'warning' : 'neutral'}>
-              {selectedTemplate?.source === 'custom' ? '自定义模板' : '内置计划'}
-            </Badge>
-          </div>
-          <h2 className="mt-3 text-2xl font-semibold text-slate-950 dark:text-slate-50">{selectedWorkout?.workoutName ?? selectedTemplate?.name ?? '选择今天的训练'}</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-            今日训练优先：先确定练什么，再记录每组表现；模板管理放在页面底部。
-          </p>
-        </div>
-
-        <div className="grid gap-2 sm:grid-cols-2 lg:w-80">
-          <Field label="训练日期">
-            <TextInput type="date" value={selectedDate} onChange={(event) => onDateChange(event.target.value)} />
-          </Field>
-          <div className="grid grid-cols-3 gap-1 sm:col-span-2">
-            <Button
-              variant="secondary"
-              className="px-2"
-              onClick={() => onDateChange(addDays(selectedDate, -1))}
-              aria-label="前一天"
-            >
-              ‹ 前一天
-            </Button>
-            <Button
-              variant="secondary"
-              className="px-2"
-              onClick={() => onDateChange(today)}
-              disabled={selectedDate === today}
-            >
-              今天
-            </Button>
-            <Button
-              variant="secondary"
-              className="px-2"
-              onClick={() => onDateChange(addDays(selectedDate, 1))}
-              disabled={selectedDate >= today}
-              aria-label="后一天"
-            >
-              后一天 ›
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:col-span-2">
-            <Button onClick={onPrimaryAction}>{selectedWorkout ? '新增动作' : '选择计划开始'}</Button>
-            <Button variant="secondary" onClick={onBlankWorkout}>空白训练</Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <WorkoutMetric label="动作数" value={`${workoutSummary.exerciseCount}`} />
-        <WorkoutMetric label="已填组数" value={`${workoutSummary.filledSets}/${workoutSummary.totalSets}`} />
-        <WorkoutMetric label="记录进度" value={`${workoutSummary.completionPercent}%`} />
-        <WorkoutMetric label="本次训练量" value={`${Math.round(workoutSummary.totalVolume)} kg`} />
-      </div>
-    </Card>
-  )
-}
-
-function WorkoutMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-3">
-      <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-950 dark:text-slate-50">{value}</p>
-    </div>
-  )
-}
-
-function CopyPreviewDialog({
-  text,
-  onClose,
-  onConfirm,
-}: {
-  text: string
-  onClose: () => void
-  onConfirm: () => void
-}) {
-  const ref = useRef<HTMLDialogElement | null>(null)
-  const closeRef = useRef(onClose)
-  closeRef.current = onClose
-
-  useEffect(() => {
-    const dialog = ref.current
-    if (!dialog) return
-    if (!dialog.open) dialog.showModal()
-    const onCancel = (event: Event) => {
-      event.preventDefault()
-      closeRef.current()
-    }
-    dialog.addEventListener('cancel', onCancel)
-    return () => {
-      dialog.removeEventListener('cancel', onCancel)
-      if (dialog.open) dialog.close()
-    }
-  }, [])
-
-  const handleBackdropClick = (event: React.MouseEvent<HTMLDialogElement>) => {
-    if (event.target === event.currentTarget) onClose()
-  }
-
-  return (
-    <dialog
-      ref={ref}
-      onClick={handleBackdropClick}
-      className="m-auto w-[min(560px,calc(100vw-2rem))] rounded-lg border border-slate-200 bg-white p-0 text-slate-900 shadow-xl backdrop:bg-slate-900/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:backdrop:bg-black/60"
-    >
-      <div className="p-5">
-        <h2 className="text-base font-semibold text-slate-950 dark:text-slate-50">复制预览</h2>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">确认无误后再点击"复制"，或直接选中文本手动复制。</p>
-        <textarea
-          value={text}
-          readOnly
-          className="mt-3 h-72 w-full resize-none rounded-md border border-slate-200 bg-slate-50 p-3 font-mono text-xs leading-5 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-          onFocus={(event) => event.currentTarget.select()}
-        />
-        <div className="mt-4 flex flex-wrap justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>
-            取消
-          </Button>
-          <Button onClick={onConfirm}>复制</Button>
-        </div>
-      </div>
-    </dialog>
-  )
-}
-
-function ExerciseQuickJumpStrip({
-  exercises,
-  visibleIndexes,
-}: {
-  exercises: ExerciseLog[]
-  visibleIndexes: number[]
-}) {
-  if (exercises.length <= 1) return null
-  const visible = new Set(visibleIndexes)
-  return (
-    <div className="sticky top-14 z-[5] -mx-3 overflow-x-auto rounded-md border border-slate-200 bg-white/95 px-3 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
-      <div className="flex min-w-max gap-1.5">
-        {exercises.map((exercise, index) => {
-          const filled = exercise.sets.some(
-            (set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined,
-          )
-          const fullyFilled =
-            exercise.sets.length > 0 &&
-            exercise.sets.every(
-              (set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined,
-            )
-          const tone = fullyFilled
-            ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-700/40'
-            : filled
-              ? 'bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-900/30 dark:text-amber-100 dark:border-amber-600/40'
-              : 'bg-white text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
-          const dim = !visible.has(index) ? 'opacity-50' : ''
-          return (
-            <button
-              key={`jump-${exercise.exerciseId}-${index}`}
-              type="button"
-              onClick={() => {
-                const target = document.getElementById(`exercise-${index}`)
-                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              }}
-              title={exercise.name}
-              aria-label={`跳转到 ${exercise.name}`}
-              className={`min-h-8 shrink-0 rounded-full border px-2.5 text-xs font-medium transition ${tone} ${dim}`}
-            >
-              {index + 1}. {exercise.name.length > 6 ? exercise.name.slice(0, 6) + '…' : exercise.name}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function WorkoutPlanPicker({
-  selectedDate,
-  selectedTemplateId,
-  selectedTemplate,
-  templateOptions,
-  hasWorkout,
-  onTemplateChange,
-  onApplySelected,
-  onApplyRecommended,
-}: {
-  selectedDate: string
-  selectedTemplateId: string
-  selectedTemplate: WorkoutTemplateOption | undefined
-  templateOptions: WorkoutTemplateOption[]
-  hasWorkout: boolean
-  onTemplateChange: (templateId: string) => void
-  onApplySelected: () => void
-  onApplyRecommended: () => void
-}) {
-  const recommendedId = `builtin-${getDayKey(selectedDate)}`
-  const previewExercises = selectedTemplate?.exercises ?? []
-  // 当天还没开练时默认展开，让用户第一眼就能选计划；已经记录了则保持折叠。
-  // 用 state + onToggle 而不是受控 open，让用户手动展开/折叠后能保留选择。
-  const [open, setOpen] = useState(!hasWorkout)
-  const lastHasWorkoutRef = useRef(hasWorkout)
-  useEffect(() => {
-    // hasWorkout 切换（比如换日期到一个还没记录的日子）时重新按规则展开/折叠。
-    if (lastHasWorkoutRef.current !== hasWorkout) {
-      setOpen(!hasWorkout)
-      lastHasWorkoutRef.current = hasWorkout
-    }
-  }, [hasWorkout])
-
-  return (
-    <details
-      open={open}
-      onToggle={(event) => setOpen((event.target as HTMLDetailsElement).open)}
-      className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-4 shadow-sm"
-    >
-      <summary className="cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">选择 / 切换训练计划</summary>
-      <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-end">
-        <Field label={`训练计划（今日推荐：${workoutPlans[getDayKey(selectedDate)].name}）`}>
-          <select
-            value={selectedTemplateId}
-            onChange={(event) => onTemplateChange(event.target.value)}
-            className="h-11 rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 px-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30"
-          >
-            <optgroup label="内置计划">
-              {templateOptions
-                .filter((template) => template.source === 'builtin')
-                .map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.id === recommendedId ? '今日推荐 · ' : ''}
-                    {template.name} · {template.focus}
-                  </option>
-                ))}
-            </optgroup>
-            <optgroup label="自定义模板">
-              {templateOptions
-                .filter((template) => template.source === 'custom')
-                .map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.name} · {template.focus}
-                  </option>
-                ))}
-            </optgroup>
-          </select>
-        </Field>
-        <Button onClick={onApplySelected}>填入所选计划</Button>
-        <Button variant="secondary" onClick={onApplyRecommended}>填入今日推荐</Button>
-      </div>
-
-      {selectedTemplate ? (
-        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="font-semibold text-slate-950 dark:text-slate-50">{selectedTemplate.name}</p>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{selectedTemplate.focus} · {selectedTemplate.exercises.length} 个动作</p>
-            </div>
-            <Badge tone={selectedTemplate.id === recommendedId ? 'positive' : selectedTemplate.source === 'custom' ? 'warning' : 'neutral'}>
-              {selectedTemplate.id === recommendedId ? '今日推荐' : selectedTemplate.source === 'custom' ? '自定义模板' : '内置计划'}
-            </Badge>
-          </div>
-          <div className="mt-3 grid gap-2 md:grid-cols-2">
-            {previewExercises.map((exercise, index) => (
-              <div key={`${exercise.id}-${index}`} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-2 rounded-md bg-white px-3 py-2 text-sm dark:bg-slate-900">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
-                  {index + 1}
-                </div>
-                <div className="min-w-0">
-                  <p className="font-medium text-slate-800 dark:text-slate-200">{exercise.name}</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{exercise.prescription}</p>
-                  {exercise.note ? <p className="mt-1 text-xs leading-5 text-amber-700">{exercise.note}</p> : null}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-    </details>
-  )
-}
-
-function ExerciseRecordCard({
-  exercise,
-  exerciseIndex,
-  previousRecord,
-  onUpdateExercise,
-  onUpdateSet,
-  onAddSet,
-  onDeleteLastSet,
-  onRebuildSets,
-  onDeleteExercise,
-}: {
-  exercise: ExerciseLog
-  exerciseIndex: number
-  previousRecord?: PreviousExerciseRecord
-  onUpdateExercise: (index: number, patch: Partial<ExerciseLog>) => void
-  onUpdateSet: (exerciseIndex: number, setIndex: number, patch: Partial<ExerciseSetLog>) => void
-  onAddSet: (exerciseIndex: number) => void
-  onDeleteLastSet: (exerciseIndex: number) => void
-  onRebuildSets: (exerciseIndex: number) => void
-  onDeleteExercise: (exerciseIndex: number) => void
-}) {
-  const filledSets = exercise.sets.filter((set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined).length
-  const totalSets = exercise.sets.length
-  const isFullyFilled = totalSets > 0 && filledSets === totalSets
-  const previousSetCountRef = useRef(totalSets)
-  const lastAddedSetRef = useRef<HTMLInputElement | null>(null)
-  const [collapsed, setCollapsed] = useState(isFullyFilled)
-  const userToggledRef = useRef(false)
-
-  useEffect(() => {
-    if (totalSets > previousSetCountRef.current) {
-      // 新加了一组：聚焦到该组的 weight 输入，并展开
-      setCollapsed(false)
-      userToggledRef.current = false
-      window.requestAnimationFrame(() => {
-        lastAddedSetRef.current?.focus()
-        lastAddedSetRef.current?.select()
-      })
-    }
-    previousSetCountRef.current = totalSets
-  }, [totalSets])
-
-  // 全部填完后自动折叠（除非用户已手动展开过）
-  useEffect(() => {
-    if (isFullyFilled && !userToggledRef.current) {
-      setCollapsed(true)
-    } else if (!isFullyFilled && !userToggledRef.current) {
-      setCollapsed(false)
-    }
-  }, [isFullyFilled])
-
-  const handleToggleCollapsed = () => {
-    userToggledRef.current = true
-    setCollapsed((value) => !value)
-  }
-
-  const handleCopyPrevious = (setIndex: number) => {
-    if (setIndex <= 0) return
-    const previous = exercise.sets[setIndex - 1]
-    if (!previous) return
-    onUpdateSet(exerciseIndex, setIndex, {
-      weight: previous.weight,
-      reps: previous.reps,
-      rir: previous.rir,
-    })
-  }
-
-  // 一键套用上次成绩到所有空组
-  const handleApplyPreviousToEmpty = () => {
-    if (!previousRecord) return
-    exercise.sets.forEach((set, setIndex) => {
-      const isEmpty = set.weight === undefined && set.reps === undefined && set.rir === undefined
-      if (isEmpty) {
-        onUpdateSet(exerciseIndex, setIndex, {
-          weight: previousRecord.bestWeight,
-          reps: previousRecord.reps,
-          rir: previousRecord.rir,
-        })
-      }
-    })
-  }
-
-  // 当前已记录的最重组
-  const currentBestWeight = exercise.sets.reduce<number>((best, set) => {
-    if (set.weight !== undefined && set.weight > best) return set.weight
-    return best
-  }, 0)
-  const isPersonalRecord =
-    previousRecord !== undefined &&
-    currentBestWeight > 0 &&
-    currentBestWeight > previousRecord.bestWeight
-
-  // 已记录组的训练量（kg × 次）
-  const totalVolume = exercise.sets.reduce<number>((sum, set) => {
-    if (set.weight !== undefined && set.reps !== undefined) {
-      return sum + set.weight * set.reps
-    }
-    return sum
-  }, 0)
-
-  const hasEmptySet = exercise.sets.some(
-    (set) => set.weight === undefined && set.reps === undefined && set.rir === undefined,
-  )
-
-  return (
-    <div
-      id={`exercise-${exerciseIndex}`}
-      className="min-w-0 scroll-mt-20 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-3"
-    >
-      <button
-        type="button"
-        onClick={handleToggleCollapsed}
-        className="flex w-full flex-col gap-2 text-left sm:flex-row sm:items-start sm:justify-between"
-        aria-expanded={!collapsed}
-      >
-        <div className="min-w-0">
-          <p className="flex flex-wrap items-center gap-2 text-base font-semibold text-slate-950 dark:text-slate-50">
-            <span>{exerciseIndex + 1}. {exercise.name}</span>
-            {isPersonalRecord ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-500/30 dark:text-amber-200">
-                🎉 PR
-              </span>
-            ) : null}
-          </p>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{exercise.target}</p>
-          {previousRecord ? (
-            <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">
-              上次（{previousRecord.date.slice(5)}）：{previousRecord.bestWeight} kg
-              {previousRecord.reps !== undefined ? ` × ${previousRecord.reps} 次` : ''}
-              {previousRecord.rir !== undefined ? ` · RIR ${previousRecord.rir}` : ''}
-            </p>
-          ) : null}
-          {totalVolume > 0 ? (
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              本次训练量 {Math.round(totalVolume)} kg
-              {currentBestWeight > 0 ? ` · 最重 ${currentBestWeight} kg` : ''}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex flex-shrink-0 items-center gap-2">
-          <Badge tone={filledSets > 0 ? 'positive' : 'neutral'}>{filledSets}/{totalSets} 组</Badge>
-          <span className="text-slate-400" aria-hidden="true">{collapsed ? '▾' : '▴'}</span>
-        </div>
-      </button>
-
-      {collapsed ? null : (
-        <>
-          {previousRecord && hasEmptySet ? (
-            <div className="mt-3">
-              <button
-                type="button"
-                onClick={handleApplyPreviousToEmpty}
-                className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800 transition hover:bg-emerald-100 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200 dark:hover:bg-emerald-900/50"
-              >
-                套用上次到空组（{previousRecord.bestWeight} kg
-                {previousRecord.reps !== undefined ? ` × ${previousRecord.reps}` : ''}）
-              </button>
-            </div>
-          ) : null}
-
-          <div className="mt-3 grid gap-2">
-            {exercise.sets.map((set, setIndex) => {
-              const isLast = setIndex === exercise.sets.length - 1
-              const previous = setIndex > 0 ? exercise.sets[setIndex - 1] : undefined
-              const canCopy =
-                previous !== undefined &&
-                (previous.weight !== undefined || previous.reps !== undefined || previous.rir !== undefined)
-              return (
-                <div key={setIndex} className="grid min-w-0 gap-2 rounded-md bg-slate-50 p-2 dark:bg-slate-800">
-                  <div className="grid min-w-0 grid-cols-3 gap-2">
-                    <NumberField
-                      label={`${setIndex + 1}组 kg`}
-                      value={set.weight}
-                      step="0.5"
-                      kind="decimal"
-                      range={{ min: 0, max: 500, allowZero: true }}
-                      onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { weight: value })}
-                      inputRef={isLast ? (el) => { lastAddedSetRef.current = el } : undefined}
-                    />
-                    <NumberField
-                      label="次数"
-                      value={set.reps}
-                      range={{ min: 1, max: 100 }}
-                      onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { reps: value })}
-                    />
-                    <NumberField
-                      label="RIR"
-                      value={set.rir}
-                      range={{ min: 0, max: 10, allowZero: true }}
-                      onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { rir: value })}
-                    />
-                  </div>
-                  {setIndex > 0 ? (
-                    <button
-                      type="button"
-                      onClick={() => handleCopyPrevious(setIndex)}
-                      disabled={!canCopy}
-                      className="self-start rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-2 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      复制上一组
-                    </button>
-                  ) : null}
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-            <Button variant="secondary" className="px-2" onClick={() => onAddSet(exerciseIndex)}>加一组</Button>
-            <Button variant="secondary" className="px-2" onClick={() => onDeleteLastSet(exerciseIndex)} disabled={exercise.sets.length <= 1}>删最后组</Button>
-          </div>
-
-          <details className="mt-3 rounded-md border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-3">
-            <summary className="cursor-pointer text-sm font-semibold text-slate-700 dark:text-slate-300">编辑动作</summary>
-            <div className="mt-3 grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_120px]">
-              <Field label="动作名称">
-                <TextInput value={exercise.name} onChange={(event) => onUpdateExercise(exerciseIndex, { name: event.target.value })} />
-              </Field>
-              <Field label="目标组次">
-                <TextInput value={exercise.target} onChange={(event) => onUpdateExercise(exerciseIndex, { target: event.target.value })} />
-              </Field>
-              <NumberField
-                label="完成组数"
-                value={exercise.completedSets}
-                min={0}
-                onChange={(value) => onUpdateExercise(exerciseIndex, { completedSets: value })}
-              />
-            </div>
-            <div className="mt-3">
-              <Field label="动作备注">
-                <TextInput value={exercise.notes ?? ''} onChange={(event) => onUpdateExercise(exerciseIndex, { notes: event.target.value })} />
-              </Field>
-            </div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <Button variant="secondary" onClick={() => onRebuildSets(exerciseIndex)}>按目标重建组</Button>
-              <Button variant="ghost" onClick={() => onDeleteExercise(exerciseIndex)}>删除动作</Button>
-            </div>
-          </details>
-        </>
-      )}
-    </div>
-  )
-}
-
-function WorkoutTemplateManager({
-  templates,
-  selectedWorkout,
-  onCreateTemplate,
-  onSaveCurrent,
-  onUpdateTemplate,
-  onUpdateTemplateExercise,
-  onAddTemplateExercise,
-  onDeleteTemplateExercise,
-  onApplyTemplate,
-  onDeleteTemplate,
-}: {
-  templates: WorkoutTemplate[]
-  selectedWorkout: WorkoutLog | undefined
-  onCreateTemplate: () => void
-  onSaveCurrent: () => void
-  onUpdateTemplate: (templateId: string, patch: Partial<WorkoutTemplate>) => void
-  onUpdateTemplateExercise: (templateId: string, exerciseIndex: number, patch: Partial<ExercisePlan>) => void
-  onAddTemplateExercise: (templateId: string) => void
-  onDeleteTemplateExercise: (templateId: string, exerciseIndex: number) => void
-  onApplyTemplate: (template: WorkoutTemplate) => void
-  onDeleteTemplate: (templateId: string) => void
-}) {
-  const customTemplates = templates.filter((t) => !t.isBuiltin)
-  const builtinTemplates = templates.filter((t) => t.isBuiltin)
-
-  return (
-    <details className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-4 shadow-sm">
-      <summary className="cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">模板管理 · {customTemplates.length} 个自定义模板</summary>
-      <div className="mt-4 grid gap-4">
-        <div className="grid gap-2 sm:grid-cols-[auto_auto] sm:justify-start">
-          <Button onClick={onCreateTemplate}>新建模板</Button>
-          <Button variant="secondary" onClick={onSaveCurrent} disabled={!selectedWorkout || selectedWorkout.exercises.length === 0}>
-            从当前训练保存为模板
-          </Button>
-        </div>
-
-        {builtinTemplates.length > 0 ? (
-          <details className="rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-3">
-            <summary className="cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">内置计划 · {builtinTemplates.length} 个</summary>
-            <div className="mt-3 grid gap-3">
-              {builtinTemplates.map((template) => (
-                <div key={template.id} className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-3">
-                  <div className="grid gap-3 lg:grid-cols-3">
-                    <Field label="计划名称">
-                      <TextInput value={template.name} onChange={(event) => onUpdateTemplate(template.id, { name: event.target.value })} />
-                    </Field>
-                    <Field label="重点">
-                      <TextInput value={template.focus} onChange={(event) => onUpdateTemplate(template.id, { focus: event.target.value })} />
-                    </Field>
-                    <Field label="分类">
-                      <TextInput value={template.category} onChange={(event) => onUpdateTemplate(template.id, { category: event.target.value })} />
-                    </Field>
-                  </div>
-
-                  <div className="mt-3 grid gap-2">
-                    {template.exercises.map((exercise, exerciseIndex) => (
-                      <div key={`${template.id}-${exercise.id}-${exerciseIndex}`} className="grid gap-2 rounded-md bg-slate-50 p-2 dark:bg-slate-800 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
-                        <Field label="动作名称">
-                          <TextInput value={exercise.name} onChange={(event) => onUpdateTemplateExercise(template.id, exerciseIndex, { name: event.target.value })} />
-                        </Field>
-                        <Field label="目标组次">
-                          <TextInput value={exercise.prescription} onChange={(event) => onUpdateTemplateExercise(template.id, exerciseIndex, { prescription: event.target.value })} />
-                        </Field>
-                        <Field label="备注">
-                          <TextInput value={exercise.note ?? ''} onChange={(event) => onUpdateTemplateExercise(template.id, exerciseIndex, { note: event.target.value })} />
-                        </Field>
-                        <Button variant="ghost" onClick={() => onDeleteTemplateExercise(template.id, exerciseIndex)} disabled={template.exercises.length <= 1}>
-                          删除
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
-                    <Button variant="secondary" onClick={() => onAddTemplateExercise(template.id)}>添加动作</Button>
-                    <Button variant="secondary" onClick={() => onApplyTemplate(template)}>填入当天</Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </details>
-        ) : null}
-
-        {customTemplates.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400">还没有自定义模板。</p>
-        ) : null}
-
-        {customTemplates.map((template) => (
-          <div key={template.id} className="rounded-lg border border-slate-200 p-3">
-            <div className="grid gap-3 lg:grid-cols-3">
-              <Field label="模板名称">
-                <TextInput value={template.name} onChange={(event) => onUpdateTemplate(template.id, { name: event.target.value })} />
-              </Field>
-              <Field label="重点">
-                <TextInput value={template.focus} onChange={(event) => onUpdateTemplate(template.id, { focus: event.target.value })} />
-              </Field>
-              <Field label="分类">
-                <TextInput value={template.category} onChange={(event) => onUpdateTemplate(template.id, { category: event.target.value })} />
-              </Field>
-            </div>
-
-            <div className="mt-3 grid gap-2">
-              {template.exercises.map((exercise, exerciseIndex) => (
-                <div key={`${template.id}-${exercise.id}-${exerciseIndex}`} className="grid gap-2 rounded-md bg-slate-50 p-2 dark:bg-slate-800 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
-                  <Field label="动作名称">
-                    <TextInput value={exercise.name} onChange={(event) => onUpdateTemplateExercise(template.id, exerciseIndex, { name: event.target.value })} />
-                  </Field>
-                  <Field label="目标组次">
-                    <TextInput value={exercise.prescription} onChange={(event) => onUpdateTemplateExercise(template.id, exerciseIndex, { prescription: event.target.value })} />
-                  </Field>
-                  <Field label="备注">
-                    <TextInput value={exercise.note ?? ''} onChange={(event) => onUpdateTemplateExercise(template.id, exerciseIndex, { note: event.target.value })} />
-                  </Field>
-                  <Button variant="ghost" onClick={() => onDeleteTemplateExercise(template.id, exerciseIndex)} disabled={template.exercises.length <= 1}>
-                    删除
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
-              <Button variant="secondary" onClick={() => onAddTemplateExercise(template.id)}>添加模板动作</Button>
-              <Button variant="secondary" onClick={() => onApplyTemplate(template)}>填入当天</Button>
-              <Button variant="ghost" onClick={() => onDeleteTemplate(template.id)}>删除模板</Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </details>
-  )
-}
-
-function DateNavigator({
-  selectedDate,
-  today,
-  onChange,
-}: {
-  selectedDate: string
-  today: string
-  onChange: (date: string) => void
-}) {
-  const isToday = selectedDate === today
-  const isFuture = selectedDate >= today
-  return (
-    <div className="flex flex-wrap items-end gap-2">
-      <Field label="日期">
-        <TextInput type="date" value={selectedDate} onChange={(event) => onChange(event.target.value)} />
-      </Field>
-      <div className="flex gap-1">
-        <Button
-          variant="secondary"
-          className="px-2"
-          onClick={() => onChange(addDays(selectedDate, -1))}
-          aria-label="前一天"
-        >
-          ‹
-        </Button>
-        <Button
-          variant="secondary"
-          className="px-3"
-          onClick={() => onChange(today)}
-          disabled={isToday}
-        >
-          今天
-        </Button>
-        <Button
-          variant="secondary"
-          className="px-2"
-          onClick={() => onChange(addDays(selectedDate, 1))}
-          disabled={isFuture}
-          aria-label="后一天"
-        >
-          ›
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-function NumberField({
-  label,
-  value,
-  onChange,
-  min,
-  max,
-  step = '1',
-  range,
-  kind = 'integer',
-  inputRef,
-}: {
-  label: string
-  value?: number
-  onChange: (value: number | undefined) => void
-  min?: number
-  max?: number
-  step?: string
-  range?: NumberRange
-  kind?: 'decimal' | 'integer'
-  inputRef?: (el: HTMLInputElement | null) => void
-}) {
-  const effectiveRange: NumberRange | undefined =
-    range ?? (min !== undefined || max !== undefined ? { min, max, allowZero: min === 0 } : undefined)
-  const inputMode = kind === 'decimal' ? 'decimal' : 'numeric'
-  const pattern = kind === 'decimal' ? '[0-9]*[.,]?[0-9]*' : '[0-9]*'
-  const [rawValue, setRawValue] = useState(displayNumber(value))
-  const [outOfRange, setOutOfRange] = useState(false)
-
-  useEffect(() => {
-    const display = displayNumber(value)
-    setRawValue((current) => {
-      // If the parsed numeric value matches the current raw input, keep the user's text
-      const parsed = Number(current)
-      if (current.trim() !== '' && Number.isFinite(parsed) && parsed === value) {
-        return current
-      }
-      return display
-    })
-    if (value !== undefined) setOutOfRange(false)
-  }, [value])
-
-  const handleChange = (next: string) => {
-    setRawValue(next)
-    if (next.trim() === '') {
-      // 主动清空属于合法操作，写入 undefined。
-      setOutOfRange(false)
-      onChange(undefined)
-      return
-    }
-    const parsed = Number(next)
-    if (!Number.isFinite(parsed)) {
-      // 非法字符：保留输入与提示，但不覆盖原记录值。
-      setOutOfRange(true)
-      return
-    }
-    if (effectiveRange) {
-      if (effectiveRange.min !== undefined && parsed < effectiveRange.min) {
-        setOutOfRange(true)
-        return
-      }
-      if (effectiveRange.max !== undefined && parsed > effectiveRange.max) {
-        setOutOfRange(true)
-        return
-      }
-    }
-    setOutOfRange(false)
-    onChange(parsed)
-  }
-
-  const rangeHint =
-    effectiveRange && (effectiveRange.min !== undefined || effectiveRange.max !== undefined)
-      ? `应在 ${effectiveRange.min ?? '−∞'}${effectiveRange.max !== undefined ? `–${effectiveRange.max}` : '+'} 之间`
-      : '请输入有效数字'
-
-  return (
-    <Field label={label}>
-      <TextInput
-        type="text"
-        inputMode={inputMode}
-        pattern={pattern}
-        value={rawValue}
-        data-min={min}
-        data-max={max}
-        data-step={step}
-        ref={inputRef}
-        aria-invalid={outOfRange}
-        className={outOfRange ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-100 dark:border-rose-500 dark:focus:border-rose-400 dark:focus:ring-rose-900/40' : ''}
-        onChange={(event) => handleChange(event.target.value)}
-      />
-      {outOfRange ? <p className="text-xs text-rose-600 dark:text-rose-400">{rangeHint}</p> : null}
-    </Field>
-  )
-}
-
-function BudgetTile({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {
-  return (
-    <div className={`rounded-lg border p-3 ${danger ? 'border-rose-200 bg-rose-50 dark:border-rose-600/40 dark:bg-rose-900/30' : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800'}`}>
-      <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
-      <p className={`mt-1 text-lg font-semibold ${danger ? 'text-rose-700' : 'text-slate-950'}`}>{value}</p>
-    </div>
-  )
-}
-
-function MacroTile({
-  label,
-  value,
-  unit,
-  tone,
-}: {
-  label: string
-  value: string
-  unit: string
-  tone: 'positive' | 'warning' | 'neutral'
-}) {
-  const classes = {
-    positive: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200',
-    warning: 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/30 dark:text-amber-100',
-    neutral: 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 text-slate-700',
-  }
-
-  return (
-    <div className={`rounded-lg border p-3 ${classes[tone]}`}>
-      <p className="text-xs opacity-75">{label}</p>
-      <p className="mt-1 text-lg font-semibold">{value}</p>
-      <p className="text-xs opacity-75">{unit}</p>
-    </div>
-  )
-}
-
-function ChartCard({
-  title,
-  children,
-  isEmpty = false,
-  action,
-}: {
-  title: string
-  children: ReactElement
-  isEmpty?: boolean
-  action?: ReactNode
-}) {
-  return (
-    <Card>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">{title}</h2>
-        {action}
-      </div>
-      <div className="mt-4 h-56 sm:h-64">
-        {isEmpty ? (
-          <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 text-center text-sm leading-6 text-slate-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400">
-            连续记录两天以上后，这里会显示趋势。
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            {children}
-          </ResponsiveContainer>
-        )}
-      </div>
-    </Card>
-  )
-}
-
-interface TooltipPayloadItem {
-  payload?: TrendPoint
-  value?: number
-}
-
-function WeightTrendTooltip({ active, payload }: { active?: boolean; payload?: TooltipPayloadItem[] }) {
-  if (!active || !payload?.length) return null
-  const point = payload[0].payload
-  if (!point) return null
-  return (
-    <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs leading-5 shadow dark:border-slate-700 dark:bg-slate-900">
-      <p className="font-semibold text-slate-950 dark:text-slate-50">{point.fullDate}</p>
-      {point.weight !== undefined ? (
-        <p className="text-slate-700 dark:text-slate-200">
-          每日体重：<span className="font-medium">{point.weight} kg</span>
-        </p>
-      ) : null}
-      {point.weightAverage7 !== undefined ? (
-        <p className="text-slate-700 dark:text-slate-200">
-          7 日均重：<span className="font-medium">{point.weightAverage7} kg</span>
-        </p>
-      ) : null}
-      {point.calories !== undefined ? (
-        <p className="text-slate-500 dark:text-slate-400">当天热量：{point.calories} kcal</p>
-      ) : null}
-      {point.protein !== undefined ? (
-        <p className="text-slate-500 dark:text-slate-400">当天蛋白质：{point.protein} g</p>
-      ) : null}
-    </div>
-  )
-}
-
-function SummaryRow({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-lg bg-slate-50 px-3 py-2">
-      <span className="text-sm text-slate-500 dark:text-slate-400">{label}</span>
-      <span className={`text-sm font-semibold ${danger ? 'text-rose-700' : 'text-slate-950'}`}>{value}</span>
-    </div>
   )
 }
 

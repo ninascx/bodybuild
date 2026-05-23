@@ -335,3 +335,48 @@ export function findPreviousExerciseRecord(
 export function roundMetric(value: number | undefined, digits = 1): string {
   return value === undefined ? '暂无' : String(round(value, digits))
 }
+
+export type StatDelta = { direction: 'up' | 'down' | 'flat'; text: string; tone: 'positive' | 'warning' | 'neutral' }
+
+function formatDeltaText(diff: number, unit: string, digits = 1): string {
+  const scale = 10 ** digits
+  const rounded = Math.round(diff * scale) / scale
+  const abs = Math.abs(rounded)
+  if (abs === 0) return `较上周持平`
+  return `较上周 ${rounded > 0 ? '+' : '−'}${abs}${unit}`
+}
+
+// 体重：变化方向不简单代表好坏，用中性色显示，但箭头方向真实反映上下
+export function buildWeightDelta(current: number | undefined, previous: number | undefined): StatDelta | undefined {
+  if (current === undefined || previous === undefined) return undefined
+  const diff = current - previous
+  const direction: StatDelta['direction'] = diff > 0.05 ? 'up' : diff < -0.05 ? 'down' : 'flat'
+  return { direction, text: formatDeltaText(diff, ' kg', 1), tone: 'neutral' }
+}
+
+// 越高越好：达标天数 / 完成率 / 步数
+export function buildHigherIsBetterDelta(
+  current: number | undefined,
+  previous: number | undefined,
+  unit: string,
+  digits = 0,
+): StatDelta | undefined {
+  if (current === undefined || previous === undefined) return undefined
+  const diff = current - previous
+  const direction: StatDelta['direction'] = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat'
+  const tone: StatDelta['tone'] = diff > 0 ? 'positive' : diff < 0 ? 'warning' : 'neutral'
+  return { direction, text: formatDeltaText(diff, unit ? ` ${unit}` : '', digits), tone }
+}
+
+// 中性指标（如热量），只显示方向不评价好坏
+export function buildNeutralDelta(
+  current: number | undefined,
+  previous: number | undefined,
+  unit: string,
+  digits = 0,
+): StatDelta | undefined {
+  if (current === undefined || previous === undefined) return undefined
+  const diff = current - previous
+  const direction: StatDelta['direction'] = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat'
+  return { direction, text: formatDeltaText(diff, unit ? ` ${unit}` : '', digits), tone: 'neutral' }
+}

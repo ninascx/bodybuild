@@ -29,12 +29,15 @@ export function PWAUpdatePrompt() {
 
   useEffect(() => {
     if (offlineReady) {
-      setShowOffline(true)
-      const timer = window.setTimeout(() => {
+      const showTimer = window.setTimeout(() => setShowOffline(true), 0)
+      const hideTimer = window.setTimeout(() => {
         setShowOffline(false)
         setOfflineReady(false)
       }, 4000)
-      return () => window.clearTimeout(timer)
+      return () => {
+        window.clearTimeout(showTimer)
+        window.clearTimeout(hideTimer)
+      }
     }
   }, [offlineReady, setOfflineReady])
 

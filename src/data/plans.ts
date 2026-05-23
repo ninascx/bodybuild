@@ -193,23 +193,13 @@ export const workoutPlans: Record<DayKey, WorkoutPlan> = {
     day: 5,
     name: '休息 / 自由饮食',
     focus: '恢复与活动量',
-    exercises: [
-      { id: 'protein-floor-fri', name: '蛋白质达标', prescription: '至少 160 g' },
-      { id: 'free-meal-control-fri', name: '控制自由饮食', prescription: '尽量不超过 3000 kcal' },
-      { id: 'steps-fri', name: '步数', prescription: '至少 8000 步' },
-      { id: 'walk-fri', name: '饭后步行', prescription: '20-30 分钟' },
-    ],
+    exercises: [],
   },
   6: {
     day: 6,
     name: '休息 / 自由饮食',
     focus: '恢复与活动量',
-    exercises: [
-      { id: 'protein-floor-sat', name: '蛋白质达标', prescription: '至少 160 g' },
-      { id: 'free-meal-control-sat', name: '控制自由饮食', prescription: '尽量不超过 3000 kcal' },
-      { id: 'steps-sat', name: '步数', prescription: '至少 8000 步' },
-      { id: 'walk-sat', name: '饭后步行', prescription: '20-30 分钟' },
-    ],
+    exercises: [],
   },
 }
 

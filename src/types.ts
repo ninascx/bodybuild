@@ -82,7 +82,6 @@ export interface ExerciseLog {
   exerciseId: string
   name: string
   target: string
-  completedSets?: number
   sets: ExerciseSetLog[]
   notes?: string
 }
