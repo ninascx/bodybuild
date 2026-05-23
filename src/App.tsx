@@ -1,4 +1,4 @@
-import { type ReactElement, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactElement, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Area,
   AreaChart,
@@ -13,7 +13,7 @@ import {
   YAxis,
 } from 'recharts'
 import { dailyTargets, dayNames, shoulderProtectionTips, userProfile, weeklyCalorieTarget, workoutPlans } from './data/plans'
-import { formatDateInput, getDayKey } from './lib/dates'
+import { formatDateInput, getDayKey, isValidDateInput } from './lib/dates'
 import { calculateDashboardStats, buildTrainingPerformanceData, buildTrendData, createWeeklySummary, logsForWeek, roundMetric } from './lib/metrics'
 import {
   getDailyRecommendations,
@@ -32,6 +32,7 @@ import {
   parseBackup,
   saveAppData,
 } from './lib/storage'
+import { createId } from './lib/ids'
 import type { DailyLog, ExerciseLog, ExercisePlan, ExerciseSetLog, TaskChecks, WorkoutLog, WorkoutTemplate } from './types'
 import { Badge, Button, Card, Field, ProgressBar, RecommendationBox, StatCard, TextArea, TextInput } from './components/ui'
 
@@ -80,10 +81,24 @@ const defaultChecks: TaskChecks = {
   sleep: false,
 }
 
-function numberValue(value: string): number | undefined {
+type NumberRange = {
+  min?: number
+  max?: number
+  allowZero?: boolean
+}
+
+function numberValue(value: string, range?: NumberRange): number | undefined {
   if (value.trim() === '') return undefined
   const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : undefined
+  if (!Number.isFinite(parsed)) return undefined
+  if (range) {
+    if (!range.allowZero && parsed === 0 && range.min !== undefined && range.min > 0) {
+      return undefined
+    }
+    if (range.min !== undefined && parsed < range.min) return undefined
+    if (range.max !== undefined && parsed > range.max) return undefined
+  }
+  return parsed
 }
 
 function displayNumber(value: number | undefined): string {
@@ -92,7 +107,8 @@ function displayNumber(value: number | undefined): string {
 
 function signedRemaining(targetValue: number | undefined, actualValue: number | undefined): string {
   if (targetValue === undefined) return '无固定目标'
-  const diff = targetValue - (actualValue ?? 0)
+  if (actualValue === undefined) return '未记录'
+  const diff = targetValue - actualValue
   return diff >= 0 ? `还差 ${Math.round(diff)}` : `超出 ${Math.abs(Math.round(diff))}`
 }
 
@@ -123,8 +139,12 @@ function upsertByDate<T extends { date: string }>(items: T[], date: string, patc
 }
 
 function estimateSetCount(target: string): number {
-  const match = target.match(/(\d+)(?:-\d+)?\s*组/)
-  return match ? Number(match[1]) : 3
+  if (typeof target !== 'string') return 3
+  const cnMatch = target.match(/(\d+)(?:-\d+)?\s*组/)
+  if (cnMatch) return Number(cnMatch[1])
+  const enMatch = target.match(/(\d+)\s*(?:sets?|×|x|\*)/i)
+  if (enMatch) return Number(enMatch[1])
+  return 3
 }
 
 function createWorkoutFromPlan(date: string): WorkoutLog {
@@ -148,7 +168,7 @@ function createWorkoutFromTemplate(date: string, template: WorkoutTemplateOption
         exerciseId: exercise.id,
         name: exercise.name,
         target: exercise.note ? `${exercise.prescription}，${exercise.note}` : exercise.prescription,
-        completedSets: setCount,
+        completedSets: 0,
         sets: Array.from({ length: setCount }, () => ({})),
       }
     }),
@@ -189,10 +209,10 @@ function hasWorkoutContent(workout: WorkoutLog | undefined): boolean {
 
 function createBlankExercise(): ExerciseLog {
   return {
-    exerciseId: `custom-exercise-${Date.now()}`,
+    exerciseId: createId('custom-exercise'),
     name: '新动作',
     target: '3 组 × 8-12 次',
-    completedSets: 3,
+    completedSets: 0,
     sets: Array.from({ length: 3 }, () => ({})),
   }
 }
@@ -200,18 +220,18 @@ function createBlankExercise(): ExerciseLog {
 function newTemplateFromWorkout(workout: WorkoutLog): WorkoutTemplate {
   const now = new Date().toISOString()
   return {
-    id: `template-${Date.now()}`,
+    id: createId('template'),
     name: `${workout.workoutName || '自定义训练'} 模板`,
     focus: '自定义',
     category: '自定义',
     exercises: workout.exercises.length
       ? workout.exercises.map((exercise, index) => ({
-          id: exercise.exerciseId || `template-exercise-${Date.now()}-${index}`,
+          id: exercise.exerciseId || createId('template-exercise'),
           name: exercise.name || `动作 ${index + 1}`,
           prescription: exercise.target || '3 组 × 8-12 次',
           note: exercise.notes,
         }))
-      : [{ id: `template-exercise-${Date.now()}`, name: '新动作', prescription: '3 组 × 8-12 次' }],
+      : [{ id: createId('template-exercise'), name: '新动作', prescription: '3 组 × 8-12 次' }],
     createdAt: now,
     updatedAt: now,
   }
@@ -352,16 +372,38 @@ function buildDailyCopyText({
   ].join('\n')
 }
 
+function TipsDetails({
+  defaultOpen,
+  summary,
+  children,
+}: {
+  defaultOpen: boolean
+  summary: ReactNode
+  children: ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <details
+      open={open}
+      onToggle={(event) => setOpen((event.target as HTMLDetailsElement).open)}
+      className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+    >
+      <summary className="cursor-pointer text-lg font-semibold text-slate-950">{summary}</summary>
+      {children}
+    </details>
+  )
+}
+
 function App() {
-  const today = useMemo(() => formatDateInput(), [])
+  const [today, setToday] = useState<string>(() => formatDateInput())
   const cachedData = useMemo(() => loadCachedData(), [])
   const [activeTab, setActiveTab] = useState<TabKey>(() => readInitialTab())
-  const [selectedDate, setSelectedDate] = useState(today)
+  const [selectedDate, setSelectedDate] = useState<string>(() => formatDateInput())
   const [dailyLogs, setDailyLogs] = useState<DailyLog[]>(cachedData.dailyLogs)
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>(cachedData.workoutLogs)
   const [taskChecks, setTaskChecks] = useState<Record<string, TaskChecks>>(cachedData.taskChecks)
   const [workoutTemplates, setWorkoutTemplates] = useState<WorkoutTemplate[]>(cachedData.workoutTemplates)
-  const [selectedTemplateId, setSelectedTemplateId] = useState(`builtin-${getDayKey(today)}`)
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(`builtin-${getDayKey(formatDateInput())}`)
   const [syncState, setSyncState] = useState<SyncState>('loading')
   const [syncMessage, setSyncMessage] = useState('正在连接服务器数据文件...')
   const [importMessage, setImportMessage] = useState('')
@@ -370,16 +412,42 @@ function App() {
   const [showAllPerformanceLines, setShowAllPerformanceLines] = useState(false)
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
   const saveVersionRef = useRef(0)
+  const localEditsRef = useRef(false)
+  const pendingDataRef = useRef<AppData | null>(null)
+  const debounceTimerRef = useRef<number | null>(null)
+  const initialLoadedRef = useRef(false)
+
+  useEffect(() => {
+    const tick = () => {
+      const current = formatDateInput()
+      setToday((prev) => (prev === current ? prev : current))
+    }
+    const interval = window.setInterval(tick, 60_000)
+    const onVisibility = () => {
+      if (!document.hidden) tick()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [])
 
   const todayKey = getDayKey(today)
   const target = dailyTargets[todayKey]
   const plan = workoutPlans[todayKey]
-  const todayLog = dailyLogs.find((log) => log.date === today)
-  const todayWorkout = workoutLogs.find((log) => log.date === today)
-  const selectedLog = dailyLogs.find((log) => log.date === selectedDate) ?? { date: selectedDate }
+  const todayLog = useMemo(() => dailyLogs.find((log) => log.date === today), [dailyLogs, today])
+  const todayWorkout = useMemo(() => workoutLogs.find((log) => log.date === today), [workoutLogs, today])
+  const selectedLog = useMemo(
+    () => dailyLogs.find((log) => log.date === selectedDate) ?? { date: selectedDate },
+    [dailyLogs, selectedDate],
+  )
   const selectedTarget = dailyTargets[getDayKey(selectedDate)]
-  const selectedWorkout = workoutLogs.find((log) => log.date === selectedDate)
-  const workoutSummary = summarizeWorkout(selectedWorkout)
+  const selectedWorkout = useMemo(
+    () => workoutLogs.find((log) => log.date === selectedDate),
+    [workoutLogs, selectedDate],
+  )
+  const workoutSummary = useMemo(() => summarizeWorkout(selectedWorkout), [selectedWorkout])
   const templateOptions = useMemo(
     () => [...builtinTemplateOptions(), ...workoutTemplates.map(customTemplateToOption)],
     [workoutTemplates],
@@ -387,34 +455,164 @@ function App() {
   const selectedTemplate = templateOptions.find((template) => template.id === selectedTemplateId) ?? templateOptions[0]
   const checks = taskChecks[today] ?? defaultChecks
   const completion = (Object.values(checks).filter(Boolean).length / Object.keys(defaultChecks).length) * 100
-  const dashboardStats = calculateDashboardStats(dailyLogs, today)
-  const trendData = buildTrendData(dailyLogs, today)
-  const trainingPerformanceData = buildTrainingPerformanceData(workoutLogs, today)
-  const weeklySummary = createWeeklySummary(dailyLogs, today)
-  const dailyRecommendations = getDailyRecommendations(todayLog, dailyLogs, today)
-  const twoWeekAdjustment = getTwoWeekAdjustment(dailyLogs, today)
-  const weekendRisk = getWeekendRiskRecommendation(dailyLogs, today)
-  const pushShoulderRisk = getPushDayShoulderRecommendation(dailyLogs, today)
+  const dashboardStats = useMemo(() => calculateDashboardStats(dailyLogs, today), [dailyLogs, today])
+  const trendData = useMemo(() => buildTrendData(dailyLogs, today), [dailyLogs, today])
+  const trainingPerformanceData = useMemo(
+    () => buildTrainingPerformanceData(workoutLogs, today),
+    [workoutLogs, today],
+  )
+  const weeklySummary = useMemo(() => createWeeklySummary(dailyLogs, today), [dailyLogs, today])
+  const dailyRecommendations = useMemo(
+    () => getDailyRecommendations(todayLog, dailyLogs, today),
+    [todayLog, dailyLogs, today],
+  )
+  const twoWeekAdjustment = useMemo(() => getTwoWeekAdjustment(dailyLogs, today), [dailyLogs, today])
+  const weekendRisk = useMemo(() => getWeekendRiskRecommendation(dailyLogs, today), [dailyLogs, today])
+  const pushShoulderRisk = useMemo(
+    () => getPushDayShoulderRecommendation(dailyLogs, today),
+    [dailyLogs, today],
+  )
   const todayCalorieTarget = target.calories ?? target.calorieRange?.[1]
-  const currentWeekLogs = logsForWeek(dailyLogs, today)
+  const currentWeekLogs = useMemo(() => logsForWeek(dailyLogs, today), [dailyLogs, today])
   const hasWeeklyCalorieLogs = currentWeekLogs.some((log) => log.calories !== undefined)
-  const weeklyConclusionCard = weeklyConclusion(weeklySummary, twoWeekAdjustment.title)
+  const weeklyConclusionCard = useMemo(
+    () => weeklyConclusion(weeklySummary, twoWeekAdjustment.title),
+    [weeklySummary, twoWeekAdjustment.title],
+  )
   const visibleWorkoutExercises = selectedWorkout?.exercises
     .map((exercise, exerciseIndex) => ({ exercise, exerciseIndex }))
     .filter(({ exercise }) => !showOnlyUnfinishedExercises || !isExerciseFilled(exercise)) ?? []
+
+  const applyData = useCallback((nextData: AppData) => {
+    setDailyLogs(nextData.dailyLogs)
+    setWorkoutLogs(nextData.workoutLogs)
+    setTaskChecks(nextData.taskChecks)
+    setWorkoutTemplates(nextData.workoutTemplates)
+    cacheData(nextData)
+  }, [])
+
+  const persistData = useCallback(
+    async (nextData: AppData) => {
+      localEditsRef.current = true
+      const saveVersion = saveVersionRef.current + 1
+      saveVersionRef.current = saveVersion
+      applyData(nextData)
+      setSyncState('saving')
+      setSyncMessage('正在保存到服务器数据文件...')
+      const saveTask = saveQueueRef.current.then(() => saveAppData(nextData))
+      saveQueueRef.current = saveTask.then(
+        () => undefined,
+        () => undefined,
+      )
+
+      try {
+        const saved = await saveTask
+        if (saveVersion === saveVersionRef.current) {
+          applyData(saved)
+          setSyncState('synced')
+          setSyncMessage('已同步到服务器数据文件。')
+        }
+      } catch (error) {
+        if (saveVersion === saveVersionRef.current) {
+          setSyncState('offline')
+          const message =
+            error instanceof Error && error.message
+              ? `${error.message}（已先保存在浏览器缓存）`
+              : '服务器保存失败，已先保存在浏览器缓存；恢复连接后请再次保存。'
+          setSyncMessage(message)
+        }
+      }
+    },
+    [applyData],
+  )
+
+  const flushPending = useCallback(() => {
+    if (debounceTimerRef.current !== null) {
+      window.clearTimeout(debounceTimerRef.current)
+      debounceTimerRef.current = null
+    }
+    const data = pendingDataRef.current
+    pendingDataRef.current = null
+    if (data) {
+      void persistData(data)
+    }
+  }, [persistData])
+
+  const schedulePersist = useCallback(
+    (nextData: AppData, immediate = false) => {
+      localEditsRef.current = true
+      applyData(nextData)
+      pendingDataRef.current = nextData
+      if (debounceTimerRef.current !== null) {
+        window.clearTimeout(debounceTimerRef.current)
+        debounceTimerRef.current = null
+      }
+      if (immediate) {
+        flushPending()
+      } else {
+        debounceTimerRef.current = window.setTimeout(flushPending, 400)
+      }
+    },
+    [applyData, flushPending],
+  )
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current !== null) {
+        window.clearTimeout(debounceTimerRef.current)
+        debounceTimerRef.current = null
+        const data = pendingDataRef.current
+        pendingDataRef.current = null
+        if (data) {
+          void saveAppData(data).catch(() => {
+            /* best-effort flush on unmount */
+          })
+        }
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (debounceTimerRef.current !== null && pendingDataRef.current) {
+        const data = pendingDataRef.current
+        try {
+          cacheData(data)
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [])
 
   useEffect(() => {
     let canceled = false
 
     void loadAppData().then((result) => {
       if (canceled) return
+      initialLoadedRef.current = true
+      if (localEditsRef.current) {
+        // 本地已开始编辑，保留本地数据，避免服务器响应覆盖用户输入
+        setSyncState((prev) => (prev === 'saving' ? prev : 'synced'))
+        setSyncMessage('服务器已连接，但加载期间检测到本地编辑，已保留本地数据。')
+        return
+      }
+      if (result.serverEmptyButLocalHasData) {
+        setSyncState('offline')
+        setSyncMessage(
+          '检测到服务器数据为空，当前显示本地浏览器缓存。请先点击"导出 JSON"备份，再决定是否手动覆盖服务器。',
+        )
+        return
+      }
       setDailyLogs(result.data.dailyLogs)
       setWorkoutLogs(result.data.workoutLogs)
       setTaskChecks(result.data.taskChecks)
       setWorkoutTemplates(result.data.workoutTemplates)
       if (result.source === 'server') {
         setSyncState('synced')
-        setSyncMessage(result.migrated ? '已把旧浏览器缓存迁移到服务器数据文件。' : '已同步到服务器数据文件。')
+        setSyncMessage('已同步到服务器数据文件。')
       } else {
         setSyncState('offline')
         setSyncMessage('服务器连接失败，当前使用浏览器缓存；恢复连接后请再次保存。')
@@ -426,41 +624,6 @@ function App() {
     }
   }, [])
 
-  function applyData(nextData: AppData) {
-    setDailyLogs(nextData.dailyLogs)
-    setWorkoutLogs(nextData.workoutLogs)
-    setTaskChecks(nextData.taskChecks)
-    setWorkoutTemplates(nextData.workoutTemplates)
-    cacheData(nextData)
-  }
-
-  async function persistData(nextData: AppData) {
-    const saveVersion = saveVersionRef.current + 1
-    saveVersionRef.current = saveVersion
-    applyData(nextData)
-    setSyncState('saving')
-    setSyncMessage('正在保存到服务器数据文件...')
-    const saveTask = saveQueueRef.current.then(() => saveAppData(nextData))
-    saveQueueRef.current = saveTask.then(
-      () => undefined,
-      () => undefined,
-    )
-
-    try {
-      const saved = await saveTask
-      if (saveVersion === saveVersionRef.current) {
-        applyData(saved)
-        setSyncState('synced')
-        setSyncMessage('已同步到服务器数据文件。')
-      }
-    } catch {
-      if (saveVersion === saveVersionRef.current) {
-        setSyncState('offline')
-        setSyncMessage('服务器保存失败，已先保存在浏览器缓存；恢复连接后请再次保存。')
-      }
-    }
-  }
-
   function changeTab(tabKey: TabKey) {
     setActiveTab(tabKey)
     try {
@@ -470,14 +633,31 @@ function App() {
     }
   }
 
-  function updateDailyLog(patch: Partial<DailyLog>) {
-    const nextLogs = upsertByDate(dailyLogs, selectedDate, patch)
-    void persistData({ dailyLogs: nextLogs, workoutLogs, taskChecks, workoutTemplates })
+  function handleDateChange(nextDate: string) {
+    if (nextDate === '') {
+      setSelectedDate(today)
+      return
+    }
+    if (!isValidDateInput(nextDate)) {
+      setSelectedDate(today)
+      return
+    }
+    setSelectedDate(nextDate)
   }
 
-  function updateWorkoutLog(nextLog: WorkoutLog) {
+  function updateDailyLog(patch: Partial<DailyLog>) {
+    const nextLogs = upsertByDate(dailyLogs, selectedDate, patch)
+    schedulePersist({ dailyLogs: nextLogs, workoutLogs, taskChecks, workoutTemplates })
+  }
+
+  function quickDailyAction(patch: Partial<DailyLog>) {
+    const nextLogs = upsertByDate(dailyLogs, selectedDate, patch)
+    schedulePersist({ dailyLogs: nextLogs, workoutLogs, taskChecks, workoutTemplates }, true)
+  }
+
+  function updateWorkoutLog(nextLog: WorkoutLog, immediate = false) {
     const nextLogs = upsertByDate(workoutLogs, nextLog.date, nextLog)
-    void persistData({ dailyLogs, workoutLogs: nextLogs, taskChecks, workoutTemplates })
+    schedulePersist({ dailyLogs, workoutLogs: nextLogs, taskChecks, workoutTemplates }, immediate)
   }
 
   function updateExercise(index: number, patch: Partial<ExerciseLog>) {
@@ -501,7 +681,7 @@ function App() {
     if (hasWorkoutContent(selectedWorkout) && !window.confirm('当天已有训练记录，切换计划会覆盖当前动作和组数据。确定覆盖吗？')) {
       return
     }
-    updateWorkoutLog(createWorkoutFromTemplate(selectedDate, template))
+    updateWorkoutLog(createWorkoutFromTemplate(selectedDate, template), true)
   }
 
   function currentWorkoutOrBlank(): WorkoutLog {
@@ -514,19 +694,25 @@ function App() {
 
   function addExerciseToWorkout() {
     const base = currentWorkoutOrBlank()
-    updateWorkoutLog({
-      ...base,
-      exercises: [...base.exercises, createBlankExercise()],
-    })
+    updateWorkoutLog(
+      {
+        ...base,
+        exercises: [...base.exercises, createBlankExercise()],
+      },
+      true,
+    )
   }
 
   function deleteExerciseFromWorkout(exerciseIndex: number) {
     const base = currentWorkoutOrBlank()
     if (!window.confirm('确定删除这个动作吗？')) return
-    updateWorkoutLog({
-      ...base,
-      exercises: base.exercises.filter((_, index) => index !== exerciseIndex),
-    })
+    updateWorkoutLog(
+      {
+        ...base,
+        exercises: base.exercises.filter((_, index) => index !== exerciseIndex),
+      },
+      true,
+    )
   }
 
   function addSetToExercise(exerciseIndex: number) {
@@ -535,12 +721,11 @@ function App() {
       index === exerciseIndex
         ? {
             ...exercise,
-            completedSets: (exercise.completedSets ?? exercise.sets.length) + 1,
             sets: [...exercise.sets, {}],
           }
         : exercise,
     )
-    updateWorkoutLog({ ...base, exercises })
+    updateWorkoutLog({ ...base, exercises }, true)
   }
 
   function deleteLastSetFromExercise(exerciseIndex: number) {
@@ -549,11 +734,10 @@ function App() {
       if (index !== exerciseIndex || exercise.sets.length <= 1) return exercise
       return {
         ...exercise,
-        completedSets: Math.max(0, (exercise.completedSets ?? exercise.sets.length) - 1),
         sets: exercise.sets.slice(0, -1),
       }
     })
-    updateWorkoutLog({ ...base, exercises })
+    updateWorkoutLog({ ...base, exercises }, true)
   }
 
   function rebuildSetsFromTarget(exerciseIndex: number) {
@@ -565,31 +749,30 @@ function App() {
       index === exerciseIndex
         ? {
             ...item,
-            completedSets: setCount,
+            completedSets: 0,
             sets: Array.from({ length: setCount }, () => ({})),
           }
         : item,
     )
-    updateWorkoutLog({ ...base, exercises })
+    updateWorkoutLog({ ...base, exercises }, true)
   }
 
-  function persistTemplates(nextTemplates: WorkoutTemplate[]) {
-    void persistData({ dailyLogs, workoutLogs, taskChecks, workoutTemplates: nextTemplates })
+  function persistTemplates(nextTemplates: WorkoutTemplate[], immediate = false) {
+    schedulePersist({ dailyLogs, workoutLogs, taskChecks, workoutTemplates: nextTemplates }, immediate)
   }
 
   function createCustomTemplate() {
     const now = new Date().toISOString()
-    const idSeed = now.replace(/\D/g, '')
     const nextTemplate: WorkoutTemplate = {
-      id: `template-${idSeed}`,
+      id: createId('template'),
       name: '新训练模板',
       focus: '自定义',
       category: '自定义',
-      exercises: [{ id: `template-exercise-${idSeed}`, name: '新动作', prescription: '3 组 × 8-12 次' }],
+      exercises: [{ id: createId('template-exercise'), name: '新动作', prescription: '3 组 × 8-12 次' }],
       createdAt: now,
       updatedAt: now,
     }
-    persistTemplates([...workoutTemplates, nextTemplate])
+    persistTemplates([...workoutTemplates, nextTemplate], true)
   }
 
   function updateTemplate(templateId: string, patch: Partial<WorkoutTemplate>) {
@@ -626,16 +809,17 @@ function App() {
             ...template,
             exercises: [
               ...template.exercises,
-              { id: `template-exercise-${Date.now()}`, name: '新动作', prescription: '3 组 × 8-12 次' },
+              { id: createId('template-exercise'), name: '新动作', prescription: '3 组 × 8-12 次' },
             ],
             updatedAt: new Date().toISOString(),
           }
         : template,
     )
-    persistTemplates(nextTemplates)
+    persistTemplates(nextTemplates, true)
   }
 
   function deleteTemplateExercise(templateId: string, exerciseIndex: number) {
+    if (!window.confirm('确定删除这个模板动作吗？')) return
     const nextTemplates = workoutTemplates.map((template) => {
       if (template.id !== templateId || template.exercises.length <= 1) return template
       return {
@@ -644,12 +828,15 @@ function App() {
         updatedAt: new Date().toISOString(),
       }
     })
-    persistTemplates(nextTemplates)
+    persistTemplates(nextTemplates, true)
   }
 
   function deleteTemplate(templateId: string) {
     if (!window.confirm('确定删除这个自定义模板吗？历史训练记录不会被删除。')) return
-    persistTemplates(workoutTemplates.filter((template) => template.id !== templateId))
+    persistTemplates(
+      workoutTemplates.filter((template) => template.id !== templateId),
+      true,
+    )
   }
 
   function saveCurrentWorkoutAsTemplate() {
@@ -657,7 +844,7 @@ function App() {
       window.alert('当前没有可保存的训练动作。')
       return
     }
-    persistTemplates([...workoutTemplates, newTemplateFromWorkout(selectedWorkout)])
+    persistTemplates([...workoutTemplates, newTemplateFromWorkout(selectedWorkout)], true)
   }
 
   function toggleTask(key: keyof TaskChecks) {
@@ -669,7 +856,7 @@ function App() {
         [key]: !checks[key],
       },
     }
-    void persistData({ dailyLogs, workoutLogs, taskChecks: nextChecks, workoutTemplates })
+    schedulePersist({ dailyLogs, workoutLogs, taskChecks: nextChecks, workoutTemplates }, true)
   }
 
   function exportData() {
@@ -680,13 +867,30 @@ function App() {
     if (!file) return
     try {
       const payload = parseBackup(await file.text())
+      const templateCount = payload.workoutTemplates?.length ?? 0
+      const confirmMessage =
+        `准备导入：\n` +
+        `· ${payload.dailyLogs.length} 条每日记录\n` +
+        `· ${payload.workoutLogs.length} 条训练记录\n` +
+        `· ${templateCount} 个训练模板\n\n` +
+        '这会覆盖当前所有数据。是否继续？'
+      if (!window.confirm(confirmMessage)) {
+        setImportMessage('已取消导入。')
+        return
+      }
+      try {
+        downloadBackup(createBackup(dailyLogs, workoutLogs, taskChecks, workoutTemplates))
+      } catch (backupError) {
+        console.warn('导入前自动备份失败：', backupError)
+      }
+      flushPending()
       await persistData({
         dailyLogs: payload.dailyLogs,
         workoutLogs: payload.workoutLogs,
         taskChecks: payload.taskChecks,
         workoutTemplates: payload.workoutTemplates ?? [],
       })
-      setImportMessage('导入成功，数据已写入服务器。')
+      setImportMessage('导入成功，已自动把原数据备份到下载目录。')
     } catch (error) {
       setImportMessage(error instanceof Error ? error.message : '导入失败。')
     }
@@ -900,17 +1104,15 @@ function App() {
               </div>
             </Card>
 
-            <details className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <summary className="cursor-pointer text-lg font-semibold text-slate-950">肩部保护提醒</summary>
+            <TipsDetails defaultOpen={false} summary="肩部保护提醒">
               <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-600">
                 {shoulderProtectionTips.map((tip) => (
                   <li key={tip} className="rounded-md bg-slate-50 px-3 py-2">{tip}</li>
                 ))}
               </ul>
-            </details>
+            </TipsDetails>
 
-            <details className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" open={weekendRisk.tone !== 'positive'}>
-              <summary className="cursor-pointer text-lg font-semibold text-slate-950">今日提示</summary>
+            <TipsDetails defaultOpen={weekendRisk.tone !== 'positive'} summary="今日提示">
               <div className="mt-3 grid gap-2">
                 <RecommendationBox title={weekendRisk.title} message={weekendRisk.message} tone={weekendRisk.tone} />
                 <RecommendationBox title={pushShoulderRisk.title} message={pushShoulderRisk.message} tone={pushShoulderRisk.tone} />
@@ -918,7 +1120,7 @@ function App() {
                   <RecommendationBox key={item.title} title={item.title} message={item.message} tone={item.tone} />
                 ))}
               </div>
-            </details>
+            </TipsDetails>
           </div>
         ) : null}
 
@@ -930,7 +1132,7 @@ function App() {
                 <p className="mt-1 text-sm text-slate-500">手机端先填快捷项，完整围度和备注有时间再补。</p>
               </div>
               <Field label="日期">
-                <TextInput type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} />
+                <TextInput type="date" value={selectedDate} onChange={(event) => handleDateChange(event.target.value)} />
               </Field>
             </div>
 
@@ -943,16 +1145,16 @@ function App() {
                 <Badge tone="positive">快捷</Badge>
               </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                <NumberField label="体重 kg" value={selectedLog.morningWeightKg} step="0.1" onChange={(value) => updateDailyLog({ morningWeightKg: value })} />
-                <NumberField label="热量 kcal" value={selectedLog.calories} onChange={(value) => updateDailyLog({ calories: value })} />
-                <NumberField label="蛋白质 g" value={selectedLog.protein} onChange={(value) => updateDailyLog({ protein: value })} />
-                <NumberField label="步数" value={selectedLog.steps} onChange={(value) => updateDailyLog({ steps: value })} />
-                <NumberField label="睡眠 h" value={selectedLog.sleepHours} step="0.1" onChange={(value) => updateDailyLog({ sleepHours: value })} />
+                <NumberField label="体重 kg" value={selectedLog.morningWeightKg} step="0.1" kind="decimal" range={{ min: 20, max: 300 }} onChange={(value) => updateDailyLog({ morningWeightKg: value })} />
+                <NumberField label="热量 kcal" value={selectedLog.calories} range={{ min: 0, max: 10000, allowZero: true }} onChange={(value) => updateDailyLog({ calories: value })} />
+                <NumberField label="蛋白质 g" value={selectedLog.protein} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => updateDailyLog({ protein: value })} />
+                <NumberField label="步数" value={selectedLog.steps} range={{ min: 0, max: 100000, allowZero: true }} onChange={(value) => updateDailyLog({ steps: value })} />
+                <NumberField label="睡眠 h" value={selectedLog.sleepHours} step="0.1" kind="decimal" range={{ min: 0, max: 24, allowZero: true }} onChange={(value) => updateDailyLog({ sleepHours: value })} />
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="secondary" className="px-3" onClick={() => updateDailyLog({ sleepHours: 7 })}>睡眠 7h</Button>
-                <Button variant="secondary" className="px-3" onClick={() => updateDailyLog({ trained: true, workoutCompletion: 100 })}>训练 100%</Button>
-                <Button variant="secondary" className="px-3" onClick={() => updateDailyLog({ steps: selectedTarget.stepTarget })}>步数达标</Button>
+                <Button variant="secondary" className="px-3" onClick={() => quickDailyAction({ sleepHours: 7 })}>睡眠 7h</Button>
+                <Button variant="secondary" className="px-3" onClick={() => quickDailyAction({ trained: true, workoutCompletion: 100 })}>训练 100%</Button>
+                <Button variant="secondary" className="px-3" onClick={() => quickDailyAction({ steps: selectedTarget.stepTarget })}>步数达标</Button>
                 <span className="self-center text-xs text-emerald-800">
                   {syncState === 'synced' ? '已保存到服务器' : syncState === 'saving' ? '保存中...' : '离线缓存中'}
                 </span>
@@ -962,21 +1164,21 @@ function App() {
             <details className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3">
               <summary className="cursor-pointer text-sm font-semibold text-amber-950">身体状态</summary>
               <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                <NumberField label="训练完成度 %" value={selectedLog.workoutCompletion} min={0} max={100} onChange={(value) => updateDailyLog({ workoutCompletion: value })} />
-                <NumberField label="肩痛评分 0-10（可选）" value={selectedLog.shoulderPainScore} min={0} max={10} onChange={(value) => updateDailyLog({ shoulderPainScore: value })} />
-                <NumberField label="疲劳评分 0-10（可选）" value={selectedLog.fatigueScore} min={0} max={10} onChange={(value) => updateDailyLog({ fatigueScore: value })} />
+                <NumberField label="训练完成度 %" value={selectedLog.workoutCompletion} range={{ min: 0, max: 100, allowZero: true }} onChange={(value) => updateDailyLog({ workoutCompletion: value })} />
+                <NumberField label="肩痛评分 0-10（可选）" value={selectedLog.shoulderPainScore} range={{ min: 0, max: 10, allowZero: true }} onChange={(value) => updateDailyLog({ shoulderPainScore: value })} />
+                <NumberField label="疲劳评分 0-10（可选）" value={selectedLog.fatigueScore} range={{ min: 0, max: 10, allowZero: true }} onChange={(value) => updateDailyLog({ fatigueScore: value })} />
               </div>
             </details>
 
             <details className="mt-5 rounded-lg border border-slate-200 bg-white p-3">
               <summary className="cursor-pointer text-sm font-semibold text-slate-800">更多记录</summary>
               <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <NumberField label="腰围 cm" value={selectedLog.waistCm} onChange={(value) => updateDailyLog({ waistCm: value })} />
-                <NumberField label="胸围 cm（可选）" value={selectedLog.chestCm} onChange={(value) => updateDailyLog({ chestCm: value })} />
-                <NumberField label="上臂围 cm（可选）" value={selectedLog.upperArmCm} onChange={(value) => updateDailyLog({ upperArmCm: value })} />
-                <NumberField label="大腿围 cm（可选）" value={selectedLog.thighCm} onChange={(value) => updateDailyLog({ thighCm: value })} />
-                <NumberField label="实际碳水 g" value={selectedLog.carbs} onChange={(value) => updateDailyLog({ carbs: value })} />
-                <NumberField label="实际脂肪 g" value={selectedLog.fat} onChange={(value) => updateDailyLog({ fat: value })} />
+                <NumberField label="腰围 cm" value={selectedLog.waistCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => updateDailyLog({ waistCm: value })} />
+                <NumberField label="胸围 cm（可选）" value={selectedLog.chestCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => updateDailyLog({ chestCm: value })} />
+                <NumberField label="上臂围 cm（可选）" value={selectedLog.upperArmCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => updateDailyLog({ upperArmCm: value })} />
+                <NumberField label="大腿围 cm（可选）" value={selectedLog.thighCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => updateDailyLog({ thighCm: value })} />
+                <NumberField label="实际碳水 g" value={selectedLog.carbs} range={{ min: 0, max: 1000, allowZero: true }} onChange={(value) => updateDailyLog({ carbs: value })} />
+                <NumberField label="实际脂肪 g" value={selectedLog.fat} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => updateDailyLog({ fat: value })} />
                 <Field label="是否训练">
                   <select
                     value={selectedLog.trained === undefined ? '' : selectedLog.trained ? 'yes' : 'no'}
@@ -1005,7 +1207,7 @@ function App() {
               selectedWorkout={selectedWorkout}
               workoutSummary={workoutSummary}
               selectedTemplate={selectedTemplate}
-              onDateChange={setSelectedDate}
+              onDateChange={handleDateChange}
               onPrimaryAction={() => {
                 if (selectedWorkout) addExerciseToWorkout()
                 else replaceWorkoutFromTemplate(selectedTemplate)
@@ -1447,9 +1649,9 @@ function ExerciseRecordCard({
       <div className="mt-3 grid gap-2">
         {exercise.sets.map((set, setIndex) => (
           <div key={setIndex} className="grid min-w-0 grid-cols-3 gap-2 rounded-md bg-slate-50 p-2">
-            <NumberField label={`${setIndex + 1}组 kg`} value={set.weight} step="0.5" onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { weight: value })} />
-            <NumberField label="次数" value={set.reps} onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { reps: value })} />
-            <NumberField label="RIR" value={set.rir} onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { rir: value })} />
+            <NumberField label={`${setIndex + 1}组 kg`} value={set.weight} step="0.5" kind="decimal" range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { weight: value })} />
+            <NumberField label="次数" value={set.reps} range={{ min: 1, max: 100 }} onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { reps: value })} />
+            <NumberField label="RIR" value={set.rir} range={{ min: 0, max: 10, allowZero: true }} onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { rir: value })} />
           </div>
         ))}
       </div>
@@ -1579,6 +1781,8 @@ function NumberField({
   min,
   max,
   step = '1',
+  range,
+  kind = 'integer',
 }: {
   label: string
   value?: number
@@ -1586,16 +1790,24 @@ function NumberField({
   min?: number
   max?: number
   step?: string
+  range?: NumberRange
+  kind?: 'decimal' | 'integer'
 }) {
+  const effectiveRange: NumberRange | undefined =
+    range ?? (min !== undefined || max !== undefined ? { min, max, allowZero: min === 0 } : undefined)
+  const inputMode = kind === 'decimal' ? 'decimal' : 'numeric'
+  const pattern = kind === 'decimal' ? '[0-9]*[.,]?[0-9]*' : '[0-9]*'
   return (
     <Field label={label}>
       <TextInput
-        type="number"
+        type="text"
+        inputMode={inputMode}
+        pattern={pattern}
         value={displayNumber(value)}
-        min={min}
-        max={max}
-        step={step}
-        onChange={(event) => onChange(numberValue(event.target.value))}
+        data-min={min}
+        data-max={max}
+        data-step={step}
+        onChange={(event) => onChange(numberValue(event.target.value, effectiveRange))}
       />
     </Field>
   )

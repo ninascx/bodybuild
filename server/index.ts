@@ -1,5 +1,5 @@
 import express from 'express'
-import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -11,6 +11,7 @@ const projectRoot = path.resolve(__dirname, '..')
 const port = Number(process.env.PORT ?? 8787)
 const dataFile = path.resolve(process.env.BODYBUILD_DATA_FILE ?? path.join(projectRoot, 'data', 'bodybuild-data.json'))
 const distDir = path.join(projectRoot, 'dist')
+const BACKUP_KEEP = 7
 
 const emptyData = (): ServerData => ({
   version: 1,
@@ -63,8 +64,37 @@ async function readData(): Promise<ServerData> {
   return validateData(JSON.parse(raw))
 }
 
-async function writeData(data: ServerData) {
+async function rotateBackup() {
+  try {
+    const stats = await stat(dataFile)
+    if (!stats.isFile()) return
+    const today = new Date().toISOString().slice(0, 10)
+    const backupPath = `${dataFile}.${today}.bak.json`
+    try {
+      await stat(backupPath)
+    } catch {
+      await copyFile(dataFile, backupPath)
+    }
+    const dir = path.dirname(dataFile)
+    const prefix = `${path.basename(dataFile)}.`
+    const entries = await readdir(dir)
+    const backups = entries
+      .filter((entry) => entry.startsWith(prefix) && entry.endsWith('.bak.json'))
+      .sort()
+    while (backups.length > BACKUP_KEEP) {
+      const name = backups.shift()
+      if (name) {
+        await unlink(path.join(dir, name))
+      }
+    }
+  } catch (err) {
+    console.warn('备份失败', err)
+  }
+}
+
+async function writeData(data: ServerData): Promise<ServerData> {
   await ensureDataFile()
+  await rotateBackup()
   const nextData: ServerData = {
     ...data,
     updatedAt: new Date().toISOString(),
@@ -72,11 +102,12 @@ async function writeData(data: ServerData) {
   const tempFile = `${dataFile}.${process.pid}.${Date.now()}.tmp`
   await writeFile(tempFile, `${JSON.stringify(nextData, null, 2)}\n`, 'utf8')
   await rename(tempFile, dataFile)
+  return nextData
 }
 
 const app = express()
 
-app.use(express.json({ limit: '1mb' }))
+app.use(express.json({ limit: '5mb' }))
 
 app.get('/api/health', (_request, response) => {
   response.json({
@@ -96,11 +127,15 @@ app.get('/api/data', async (_request, response) => {
 app.put('/api/data', async (request, response) => {
   try {
     const data = validateData(request.body)
-    await writeData(data)
-    response.json(await readData())
+    const saved = await writeData(data)
+    response.json(saved)
   } catch (error) {
     response.status(400).json({ error: error instanceof Error ? error.message : 'Failed to save data' })
   }
+})
+
+app.use('/api', (_request, response) => {
+  response.status(404).json({ error: 'API endpoint not found' })
 })
 
 app.use(express.static(distDir))

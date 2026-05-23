@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from 'react'
+import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes, WheelEvent as ReactWheelEvent } from 'react'
 import type { RecommendationTone } from '../types'
 
 const toneClasses: Record<RecommendationTone, string> = {
@@ -51,9 +51,18 @@ export function Field({
 }
 
 export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
+  const handleWheel = (event: ReactWheelEvent<HTMLInputElement>) => {
+    if (props.onWheel) {
+      props.onWheel(event)
+    }
+    if (event.currentTarget.type === 'number') {
+      event.currentTarget.blur()
+    }
+  }
   return (
     <input
       {...props}
+      onWheel={handleWheel}
       className={`h-11 min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 ${props.className ?? ''}`}
     />
   )

@@ -18,6 +18,7 @@ export interface LoadResult {
   data: AppData
   source: 'server' | 'cache'
   migrated: boolean
+  serverEmptyButLocalHasData: boolean
 }
 
 function readJson<T>(key: string, fallback: T): T {
@@ -68,6 +69,9 @@ async function writeServerData(data: AppData): Promise<ServerData> {
     },
     body: JSON.stringify(toServerData(data)),
   })
+  if (response.status === 413) {
+    throw new Error('数据已超过服务器单次接收上限（5MB），请清理旧记录或联系管理员调整上限。')
+  }
   if (!response.ok) throw new Error('服务器数据保存失败')
   return (await response.json()) as ServerData
 }
@@ -94,14 +98,27 @@ export async function loadAppData(): Promise<LoadResult> {
   try {
     const serverData = fromServerData(await requestData())
     if (!hasData(serverData) && hasData(cached)) {
-      const migrated = fromServerData(await writeServerData(cached))
-      cacheData(migrated)
-      return { data: migrated, source: 'server', migrated: true }
+      return {
+        data: cached,
+        source: 'cache',
+        migrated: false,
+        serverEmptyButLocalHasData: true,
+      }
     }
     cacheData(serverData)
-    return { data: serverData, source: 'server', migrated: false }
+    return {
+      data: serverData,
+      source: 'server',
+      migrated: false,
+      serverEmptyButLocalHasData: false,
+    }
   } catch {
-    return { data: cached, source: 'cache', migrated: false }
+    return {
+      data: cached,
+      source: 'cache',
+      migrated: false,
+      serverEmptyButLocalHasData: false,
+    }
   }
 }
 
@@ -133,7 +150,8 @@ export function downloadBackup(payload: BackupPayload): void {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `bodybuild-backup-${payload.exportedAt.slice(0, 10)}.json`
+  const stamp = payload.exportedAt.replace(/[:.]/g, '-')
+  link.download = `bodybuild-backup-${stamp}.json`
   document.body.appendChild(link)
   link.click()
   link.remove()
