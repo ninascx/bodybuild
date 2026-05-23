@@ -49,6 +49,7 @@ export interface WorkoutTemplate {
   exercises: ExercisePlan[]
   createdAt: string
   updatedAt: string
+  isBuiltin?: boolean
 }
 
 export interface DailyLog {

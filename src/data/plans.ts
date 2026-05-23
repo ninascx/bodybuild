@@ -1,4 +1,4 @@
-import type { DailyTarget, DayKey, UserProfile, WorkoutPlan } from '../types'
+import type { DailyTarget, DayKey, UserProfile, WorkoutPlan, WorkoutTemplate } from '../types'
 
 export const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'] as const
 
@@ -201,4 +201,18 @@ export const workoutPlans: Record<DayKey, WorkoutPlan> = {
       { id: 'walk-sat', name: '饭后步行', prescription: '20-30 分钟' },
     ],
   },
+}
+
+export function getBuiltinTemplates(): WorkoutTemplate[] {
+  const now = new Date().toISOString()
+  return Object.values(workoutPlans).map((plan) => ({
+    id: `builtin-${plan.day}`,
+    name: plan.name,
+    focus: plan.focus,
+    category: '内置计划',
+    exercises: plan.exercises,
+    createdAt: now,
+    updatedAt: now,
+    isBuiltin: true,
+  }))
 }

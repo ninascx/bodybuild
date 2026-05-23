@@ -21,6 +21,14 @@ export interface DashboardStats {
   weekTotalCalories: number
   averageShoulderPain?: number
   calorieBudget: WeeklyCalorieBudget
+  // 上一周对比，用于 KPI 趋势箭头
+  previous: {
+    averageWeight7?: number
+    weekAverageCalories?: number
+    proteinMetDays: number
+    trainingCompletionRate: number
+    averageSteps?: number
+  }
 }
 
 export interface TrendPoint {
@@ -100,6 +108,18 @@ export function calculateDashboardStats(logs: DailyLog[], today: string): Dashbo
   const weekTotalCalories = calories.reduce<number>((sum, value) => sum + (value ?? 0), 0)
   const averageShoulderPain = round(average(weekLogs.map((log) => log.shoulderPainScore)))
 
+  // 上一周对比
+  const previousWeekAnchor = addDays(startOfWeekSunday(today), -1)
+  const previousWeekLogs = logsForWeek(logs, previousWeekAnchor)
+  const previousCalories = previousWeekLogs.map((log) => log.calories)
+  const previousSteps = previousWeekLogs.map((log) => log.steps)
+  const previousProteinMetDays = previousWeekLogs.filter((log) => {
+    if (log.protein === undefined) return false
+    return log.protein >= dailyTargets[getDayKey(log.date)].protein
+  }).length
+  const previousTrainingDays = previousWeekLogs.filter((log) => dailyTargets[getDayKey(log.date)].isTrainingDay)
+  const previousCompletedTraining = previousTrainingDays.filter((log) => log.trained || (log.workoutCompletion ?? 0) >= 80).length
+
   return {
     currentWeight: round(currentWeight),
     averageWeight7: averageWeight(logs, today, 7),
@@ -110,6 +130,15 @@ export function calculateDashboardStats(logs: DailyLog[], today: string): Dashbo
     weekTotalCalories,
     averageShoulderPain,
     calorieBudget: calculateWeeklyCalorieBudget(logs, today),
+    previous: {
+      averageWeight7: averageWeight(logs, previousWeekAnchor, 7),
+      weekAverageCalories: round(average(previousCalories), 0),
+      proteinMetDays: previousProteinMetDays,
+      trainingCompletionRate: previousTrainingDays.length
+        ? Math.round((previousCompletedTraining / previousTrainingDays.length) * 100)
+        : 0,
+      averageSteps: round(average(previousSteps), 0),
+    },
   }
 }
 
@@ -233,6 +262,42 @@ export function createWeeklySummary(logs: DailyLog[], today: string): WeeklySumm
     weekendOverLimit: (weekendAverageCalories ?? 0) > 3000,
     suggestions,
   }
+}
+
+export interface PreviousExerciseRecord {
+  date: string
+  bestWeight: number
+  reps?: number
+  rir?: number
+}
+
+export function findPreviousExerciseRecord(
+  workoutLogs: WorkoutLog[],
+  exerciseId: string,
+  exerciseName: string,
+  beforeDate: string,
+): PreviousExerciseRecord | undefined {
+  const sorted = sortByDateDesc(workoutLogs).filter((log) => log.date < beforeDate)
+  for (const log of sorted) {
+    const match = log.exercises.find(
+      (exercise) =>
+        (exerciseId && exercise.exerciseId === exerciseId) ||
+        (exerciseName.trim() && exercise.name.trim() === exerciseName.trim()),
+    )
+    if (!match) continue
+    const filledSets = match.sets.filter((set) => set.weight !== undefined && set.weight > 0)
+    if (filledSets.length === 0) continue
+    const bestSet = filledSets.reduce((best, current) =>
+      (current.weight ?? 0) > (best.weight ?? 0) ? current : best,
+    )
+    return {
+      date: log.date,
+      bestWeight: bestSet.weight as number,
+      reps: bestSet.reps,
+      rir: bestSet.rir,
+    }
+  }
+  return undefined
 }
 
 export function roundMetric(value: number | undefined, digits = 1): string {
