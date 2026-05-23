@@ -1,0 +1,221 @@
+import { dailyTargets } from '../data/plans'
+import type { AdjustmentRecommendation, DailyLog } from '../types'
+import { addDays, getDayKey, getRecentWindow, sortByDateAsc } from './dates'
+
+function average(values: Array<number | undefined>): number | undefined {
+  const valid = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+  if (valid.length === 0) return undefined
+  return valid.reduce((sum, value) => sum + value, 0) / valid.length
+}
+
+function averageWeightForRange(logs: DailyLog[], endDate: string, days: number): number | undefined {
+  return average(getRecentWindow(logs, endDate, days).map((log) => log.morningWeightKg))
+}
+
+export function getDailyRecommendations(log: DailyLog | undefined, logs: DailyLog[], dateValue: string): AdjustmentRecommendation[] {
+  const day = getDayKey(dateValue)
+  const recommendations: AdjustmentRecommendation[] = []
+
+  if (log?.sleepHours !== undefined && log.sleepHours < 6.5) {
+    recommendations.push({
+      title: '睡眠偏少',
+      message: '今天不要冲力竭，训练保留更多余力。',
+      tone: 'warning',
+    })
+  }
+
+  const recentThree = getRecentWindow(logs, dateValue, 3)
+  if (recentThree.length >= 3 && recentThree.every((item) => (item.steps ?? 6500) < 6500)) {
+    recommendations.push({
+      title: '活动量偏低',
+      message: '连续 3 天步数低于 6500，建议增加 10-20 分钟散步。',
+      tone: 'warning',
+    })
+  }
+
+  if ([5, 6].includes(day)) {
+    if ((log?.calories ?? 0) > 3000) {
+      recommendations.push({
+        title: '自由饮食偏高',
+        message: '周五或周六热量超过 3000 kcal，可能抵消周内赤字。优先控制周末，不要用极端压低工作日热量补偿。',
+        tone: 'danger',
+      })
+    }
+    if (log?.protein !== undefined && log.protein < 160) {
+      recommendations.push({
+        title: '蛋白质未达底线',
+        message: '休息日也尽量保证至少 160 g 蛋白质。',
+        tone: 'warning',
+      })
+    }
+    if (log?.steps !== undefined && log.steps < 8000) {
+      recommendations.push({
+        title: '步数未达底线',
+        message: '建议饭后步行 20-30 分钟补足活动量。',
+        tone: 'warning',
+      })
+    }
+  }
+
+  if ([0, 3].includes(day) && log?.shoulderPainScore !== undefined) {
+    if (log.shoulderPainScore >= 5) {
+      recommendations.push({
+        title: '推日肩部压力偏高',
+        message: '今天避免引发不适的推举动作，减少推举总量，优先选择无明显不适的胸推和飞鸟。',
+        tone: 'danger',
+      })
+    } else if (log.shoulderPainScore >= 3) {
+      recommendations.push({
+        title: '推日肩部提醒',
+        message: '降低推举重量，缩小动作范围，优先使用器械和中立握。',
+        tone: 'warning',
+      })
+    }
+  }
+
+  if (recommendations.length === 0) {
+    recommendations.push({
+      title: '今日节奏',
+      message: dailyTargets[day].isTrainingDay ? '按计划完成主项，推举动作保持可控和无明显不适。' : '休息日重点是蛋白质达标、控制自由饮食和补足步数。',
+      tone: 'positive',
+    })
+  }
+
+  return recommendations
+}
+
+export function getWeekendRiskRecommendation(logs: DailyLog[], today: string): AdjustmentRecommendation {
+  const weekLogs = getRecentWindow(logs, today, 7).filter((log) => [5, 6].includes(getDayKey(log.date)))
+  const riskyDays = weekLogs.filter((log) => (log.calories ?? 0) > 3000)
+  const averageWeekendCalories =
+    weekLogs.length > 0
+      ? weekLogs.reduce((sum, log) => sum + (log.calories ?? 0), 0) / weekLogs.length
+      : undefined
+
+  if (riskyDays.length > 0 || (averageWeekendCalories ?? 0) > 3000) {
+    return {
+      title: '周末风险预警',
+      message: '周五周六热量偏高时，优先控制自由饮食结构和步数，不建议用极端压低工作日热量来补偿。',
+      tone: 'danger',
+    }
+  }
+
+  return {
+    title: '周末节奏',
+    message: '目前没有明显周末超标记录。继续守住 2600-3000 kcal、蛋白质 160 g 和 8000 步底线。',
+    tone: 'positive',
+  }
+}
+
+export function getPushDayShoulderRecommendation(logs: DailyLog[], today: string): AdjustmentRecommendation {
+  const pushLogs = sortByDateAsc(logs)
+    .filter((log) => log.date <= today && [0, 3].includes(getDayKey(log.date)) && log.shoulderPainScore !== undefined)
+    .slice(-3)
+
+  const latest = pushLogs.at(-1)
+  if (!latest) {
+    return {
+      title: '推日肩部记录',
+      message: '推日可选记录肩部 0-10 分，用来观察趋势；不适明显时以动作可控和无明显不适为先。',
+      tone: 'neutral',
+    }
+  }
+
+  if (pushLogs.length >= 3 && pushLogs.every((log) => (log.shoulderPainScore ?? 0) >= 4)) {
+    return {
+      title: '连续推日肩部压力偏高',
+      message: '连续 3 次推日肩部评分偏高，建议暂停上斜哑铃卧推和双杠臂屈伸，优先无明显不适的器械胸推；若持续加重，考虑运动医学评估。',
+      tone: 'danger',
+    }
+  }
+
+  if ((latest.shoulderPainScore ?? 0) >= 4) {
+    return {
+      title: '推日肩部提醒',
+      message: '最近一次推日肩部评分偏高。下次推日降低推举重量和总量，优先中立握器械。',
+      tone: 'warning',
+    }
+  }
+
+  return {
+    title: '推日肩部趋势',
+    message: '最近推日肩部评分可控。继续保持充分热身、稳定动作和保留余力。',
+    tone: 'positive',
+  }
+}
+
+export function getTwoWeekAdjustment(logs: DailyLog[], today: string): AdjustmentRecommendation {
+  const sorted = sortByDateAsc(logs)
+  const recentFourteen = getRecentWindow(sorted, today, 14)
+  const previousEnd = addDays(today, -14)
+  const previousFourteen = getRecentWindow(sorted, previousEnd, 14)
+
+  if (recentFourteen.length < 10 || previousFourteen.length < 7) {
+    return {
+      title: '两周调整',
+      message: '连续记录还不够完整。先积累至少 2-4 周体重、腰围、热量和训练完成度，再做热量调整。',
+      tone: 'neutral',
+    }
+  }
+
+  const latestWeight = averageWeightForRange(sorted, today, 7)
+  const previousWeight = averageWeightForRange(sorted, addDays(today, -7), 7)
+  const firstWaist = recentFourteen.find((log) => log.waistCm !== undefined)?.waistCm
+  const lastWaist = [...recentFourteen].reverse().find((log) => log.waistCm !== undefined)?.waistCm
+  const recentCompletion = average(recentFourteen.map((log) => log.workoutCompletion))
+  const previousCompletion = average(previousFourteen.map((log) => log.workoutCompletion))
+  const recentFatigue = average(recentFourteen.map((log) => log.fatigueScore))
+
+  if (latestWeight === undefined || previousWeight === undefined) {
+    return {
+      title: '两周调整',
+      message: '体重数据不足，暂不调整热量。优先保持晨起体重连续记录。',
+      tone: 'neutral',
+    }
+  }
+
+  const weeklyChangeRate = ((latestWeight - previousWeight) / previousWeight) * 100
+  const waistChange = firstWaist !== undefined && lastWaist !== undefined ? lastWaist - firstWaist : undefined
+  const performanceStable = previousCompletion === undefined || recentCompletion === undefined || recentCompletion >= previousCompletion - 8
+  const performanceRising = previousCompletion !== undefined && recentCompletion !== undefined && recentCompletion > previousCompletion + 5
+  const weightFlat = Math.abs(weeklyChangeRate) < 0.15
+  const waistFlat = waistChange === undefined || Math.abs(waistChange) < 0.3
+
+  if (weeklyChangeRate <= -0.25 && weeklyChangeRate >= -0.75 && performanceStable) {
+    return {
+      title: '继续当前方案',
+      message: '7 日平均体重下降速度在合理区间，训练表现稳定，先保持当前热量与训练安排。',
+      tone: 'positive',
+    }
+  }
+
+  if (weightFlat && !waistFlat && waistChange !== undefined && waistChange < 0 && performanceRising) {
+    return {
+      title: '可能正在身体重组',
+      message: '体重变化不大，但腰围下降且训练表现上升，不要急着降热量。',
+      tone: 'positive',
+    }
+  }
+
+  if (weightFlat && waistFlat) {
+    return {
+      title: '优先检查周末',
+      message: '连续两周体重和腰围几乎不变。先检查周五周六是否超过 2800-3000 kcal；如果周末已控制，再把周日至周四每日减少 100-150 kcal。',
+      tone: 'warning',
+    }
+  }
+
+  if (weeklyChangeRate < -0.75 || (recentFatigue ?? 0) >= 7 || !performanceStable) {
+    return {
+      title: '赤字可能过大',
+      message: '体重下降偏快、疲劳偏高或训练完成度下降。建议训练日增加 100-150 kcal 碳水，并减少每周 2-4 组附件训练。',
+      tone: 'warning',
+    }
+  }
+
+  return {
+    title: '保持观察',
+    message: '当前变化不极端。继续记录 1 周，重点看 7 日均重、腰围和训练完成度是否同向改善。',
+    tone: 'neutral',
+  }
+}
