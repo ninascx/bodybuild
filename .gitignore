@@ -16,7 +16,7 @@ dist-ssr
 !.env.example
 
 # Local/server runtime data
-data
+/data
 *.tmp
 
 # Editor directories and files
