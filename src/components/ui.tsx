@@ -9,7 +9,7 @@ const toneClasses: Record<RecommendationTone, string> = {
 }
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-lg border border-slate-200 bg-white p-4 shadow-sm ${className}`}>{children}</section>
+  return <section className={`min-w-0 rounded-lg border border-slate-200 bg-white p-4 shadow-sm ${className}`}>{children}</section>
 }
 
 export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: RecommendationTone }) {
@@ -43,7 +43,7 @@ export function Field({
   children: ReactNode
 }) {
   return (
-    <label className="grid gap-1.5 text-sm font-medium text-slate-700">
+    <label className="grid min-w-0 gap-1.5 text-sm font-medium text-slate-700">
       <span>{label}</span>
       {children}
     </label>
@@ -54,7 +54,7 @@ export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`h-11 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 ${props.className ?? ''}`}
+      className={`h-11 min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 ${props.className ?? ''}`}
     />
   )
 }
@@ -63,7 +63,7 @@ export function TextArea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
       {...props}
-      className={`min-h-24 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 ${props.className ?? ''}`}
+      className={`min-h-24 min-w-0 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 ${props.className ?? ''}`}
     />
   )
 }
@@ -81,7 +81,8 @@ export function Button({
   return (
     <button
       {...props}
-      className={`inline-flex h-11 items-center justify-center rounded-md px-4 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${classes[variant]} ${props.className ?? ''}`}
+      type={props.type ?? 'button'}
+      className={`inline-flex min-h-11 min-w-0 items-center justify-center rounded-md px-4 py-2 text-center text-sm font-medium leading-5 transition disabled:cursor-not-allowed disabled:opacity-50 ${classes[variant]} ${props.className ?? ''}`}
     >
       {children}
     </button>
