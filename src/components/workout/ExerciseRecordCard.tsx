@@ -34,14 +34,19 @@ export function ExerciseRecordCard({
   const isFullyFilled = totalSets > 0 && filledSets === totalSets
   const previousSetCountRef = useRef(totalSets)
   const lastAddedSetRef = useRef<HTMLInputElement | null>(null)
-  const [collapsed, setCollapsed] = useState(isFullyFilled)
-  const userToggledRef = useRef(false)
+  const [userPreference, setUserPreference] = useState<'collapsed' | 'expanded' | null>(null)
 
+  // 衍生折叠状态：forceCollapsed 明确设置时用它；否则尊重用户手动选择；兜底自动折叠
+  const collapsed =
+    forceCollapsed !== undefined ? forceCollapsed
+    : userPreference === 'collapsed' ? true
+    : userPreference === 'expanded' ? false
+    : isFullyFilled
+
+  // 新加了一组：重置偏好并聚焦（聚焦是外部 DOM 操作，适合 effect）
   useEffect(() => {
     if (totalSets > previousSetCountRef.current) {
-      // 新加了一组：聚焦到该组的 weight 输入，并展开
-      setCollapsed(false)
-      userToggledRef.current = false
+      setUserPreference(null)
       window.requestAnimationFrame(() => {
         lastAddedSetRef.current?.focus()
         lastAddedSetRef.current?.select()
@@ -50,22 +55,8 @@ export function ExerciseRecordCard({
     previousSetCountRef.current = totalSets
   }, [totalSets])
 
-  // 全部填完后自动折叠（除非用户已手动展开过，且没有外部强制折叠控制）
-  useEffect(() => {
-    if (forceCollapsed !== undefined) {
-      setCollapsed(forceCollapsed)
-      return
-    }
-    if (isFullyFilled && !userToggledRef.current) {
-      setCollapsed(true)
-    } else if (!isFullyFilled && !userToggledRef.current) {
-      setCollapsed(false)
-    }
-  }, [isFullyFilled, forceCollapsed])
-
   const handleToggleCollapsed = () => {
-    userToggledRef.current = true
-    setCollapsed((value) => !value)
+    setUserPreference(collapsed ? 'expanded' : 'collapsed')
   }
 
   const handleCopyPrevious = (setIndex: number) => {

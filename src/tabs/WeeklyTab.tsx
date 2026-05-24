@@ -3,6 +3,7 @@ import { SummaryRow } from '../components/SummaryRow'
 import { addDays, getDayKey, startOfWeekSunday } from '../lib/dates'
 import { roundMetric } from '../lib/metrics'
 import { dayNames, weekendRules } from '../data/plans'
+import { useMemo } from 'react'
 import type { AdjustmentRecommendation, DailyLog, WeeklySummary } from '../types'
 
 type WeeklyTabProps = {
@@ -18,6 +19,16 @@ type WeeklyTabProps = {
 }
 
 export function WeeklyTab(props: WeeklyTabProps) {
+  const weekendLogs = useMemo(
+    () =>
+      props.dailyLogs.filter(
+        (log) =>
+          log.date >= props.weeklySummary.weekStart &&
+          log.date <= props.weeklySummary.weekEnd &&
+          [5, 6].includes(getDayKey(log.date)),
+      ),
+    [props.dailyLogs, props.weeklySummary.weekStart, props.weeklySummary.weekEnd],
+  )
 
   return (
     <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
@@ -90,9 +101,7 @@ export function WeeklyTab(props: WeeklyTabProps) {
         <Card>
           <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">周末规则检查</h2>
           <div className="mt-3 grid gap-2">
-            {props.dailyLogs
-              .filter((log) => log.date >= props.weeklySummary.weekStart && log.date <= props.weeklySummary.weekEnd && [5, 6].includes(getDayKey(log.date)))
-              .map((log) => (
+            {weekendLogs.map((log) => (
                 <div key={log.date} className="rounded-lg border border-slate-200 p-3 text-sm">
                   <p className="font-medium text-slate-950 dark:text-slate-50">{log.date} · {dayNames[getDayKey(log.date)]}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -102,7 +111,7 @@ export function WeeklyTab(props: WeeklyTabProps) {
                   </div>
                 </div>
               ))}
-            {props.dailyLogs.filter((log) => log.date >= props.weeklySummary.weekStart && log.date <= props.weeklySummary.weekEnd && [5, 6].includes(getDayKey(log.date))).length === 0 ? (
+            {weekendLogs.length === 0 ? (
               <p className="text-sm text-slate-500 dark:text-slate-400">本周还没有周五/周六记录。</p>
             ) : null}
           </div>

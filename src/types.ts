@@ -93,13 +93,6 @@ export interface WorkoutLog {
   notes?: string
 }
 
-export interface TaskChecks {
-  diet: boolean
-  workout: boolean
-  steps: boolean
-  sleep: boolean
-}
-
 export interface WeeklySummary {
   weekStart: string
   weekEnd: string
@@ -128,7 +121,6 @@ export interface BackupPayload {
   exportedAt: string
   dailyLogs: DailyLog[]
   workoutLogs: WorkoutLog[]
-  taskChecks: Record<string, TaskChecks>
   workoutTemplates?: WorkoutTemplate[]
 }
 
@@ -137,6 +129,5 @@ export interface ServerData {
   updatedAt: string
   dailyLogs: DailyLog[]
   workoutLogs: WorkoutLog[]
-  taskChecks: Record<string, TaskChecks>
   workoutTemplates: WorkoutTemplate[]
 }

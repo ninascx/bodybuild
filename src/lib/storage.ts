@@ -1,8 +1,7 @@
-import type { BackupPayload, DailyLog, ServerData, TaskChecks, WorkoutLog, WorkoutTemplate } from '../types'
+import type { BackupPayload, DailyLog, ServerData, WorkoutLog, WorkoutTemplate } from '../types'
 
 const DAILY_LOGS_KEY = 'bodybuild:v1:dailyLogs'
 const WORKOUT_LOGS_KEY = 'bodybuild:v1:workoutLogs'
-const TASK_CHECKS_KEY = 'bodybuild:v1:taskChecks'
 const WORKOUT_TEMPLATES_KEY = 'bodybuild:v1:workoutTemplates'
 
 export type SyncState = 'loading' | 'synced' | 'saving' | 'offline'
@@ -10,7 +9,6 @@ export type SyncState = 'loading' | 'synced' | 'saving' | 'offline'
 export interface AppData {
   dailyLogs: DailyLog[]
   workoutLogs: WorkoutLog[]
-  taskChecks: Record<string, TaskChecks>
   workoutTemplates: WorkoutTemplate[]
 }
 
@@ -40,14 +38,16 @@ function writeJson<T>(key: string, value: T): void {
 }
 
 function hasData(data: AppData): boolean {
-  return data.dailyLogs.length > 0 || data.workoutLogs.length > 0 || Object.keys(data.taskChecks).length > 0 || data.workoutTemplates.length > 0
+  return data.dailyLogs.length > 0 || data.workoutLogs.length > 0 || data.workoutTemplates.length > 0
 }
 
 function toServerData(data: AppData): ServerData {
   return {
     version: 1,
     updatedAt: new Date().toISOString(),
-    ...data,
+    dailyLogs: data.dailyLogs,
+    workoutLogs: data.workoutLogs,
+    workoutTemplates: data.workoutTemplates,
   }
 }
 
@@ -55,7 +55,6 @@ function fromServerData(data: ServerData): AppData {
   return {
     dailyLogs: Array.isArray(data.dailyLogs) ? data.dailyLogs : [],
     workoutLogs: Array.isArray(data.workoutLogs) ? data.workoutLogs : [],
-    taskChecks: data.taskChecks && typeof data.taskChecks === 'object' ? data.taskChecks : {},
     workoutTemplates: Array.isArray(data.workoutTemplates) ? data.workoutTemplates : [],
   }
 }
@@ -85,7 +84,6 @@ export function loadCachedData(): AppData {
   return {
     dailyLogs: readJson<DailyLog[]>(DAILY_LOGS_KEY, []),
     workoutLogs: readJson<WorkoutLog[]>(WORKOUT_LOGS_KEY, []),
-    taskChecks: readJson<Record<string, TaskChecks>>(TASK_CHECKS_KEY, {}),
     workoutTemplates: readJson<WorkoutTemplate[]>(WORKOUT_TEMPLATES_KEY, []),
   }
 }
@@ -93,7 +91,6 @@ export function loadCachedData(): AppData {
 export function cacheData(data: AppData): void {
   writeJson(DAILY_LOGS_KEY, data.dailyLogs)
   writeJson(WORKOUT_LOGS_KEY, data.workoutLogs)
-  writeJson(TASK_CHECKS_KEY, data.taskChecks)
   writeJson(WORKOUT_TEMPLATES_KEY, data.workoutTemplates)
 }
 
@@ -137,7 +134,6 @@ export async function saveAppData(data: AppData): Promise<AppData> {
 export function createBackup(
   dailyLogs: DailyLog[],
   workoutLogs: WorkoutLog[],
-  taskChecks: Record<string, TaskChecks>,
   workoutTemplates: WorkoutTemplate[],
 ): BackupPayload {
   return {
@@ -145,7 +141,6 @@ export function createBackup(
     exportedAt: new Date().toISOString(),
     dailyLogs,
     workoutLogs,
-    taskChecks,
     workoutTemplates,
   }
 }
@@ -169,8 +164,6 @@ export function parseBackup(raw: string): BackupPayload {
     parsed.version !== 1 ||
     !Array.isArray(parsed.dailyLogs) ||
     !Array.isArray(parsed.workoutLogs) ||
-    typeof parsed.taskChecks !== 'object' ||
-    parsed.taskChecks === null ||
     (parsed.workoutTemplates !== undefined && !Array.isArray(parsed.workoutTemplates))
   ) {
     throw new Error('备份文件格式不正确')

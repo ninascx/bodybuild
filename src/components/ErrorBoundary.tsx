@@ -30,7 +30,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   exportCache = () => {
     try {
       const cached = loadCachedData()
-      downloadBackup(createBackup(cached.dailyLogs, cached.workoutLogs, cached.taskChecks, cached.workoutTemplates))
+      downloadBackup(createBackup(cached.dailyLogs, cached.workoutLogs, cached.workoutTemplates))
       this.setState({ exportMessage: '已导出本地缓存到下载目录。' })
     } catch (error) {
       console.error('从缓存导出备份失败：', error)

@@ -1,4 +1,4 @@
-import type { DailyLog, ExerciseLog, ExercisePlan, TaskChecks, WorkoutLog, WorkoutTemplate } from '../types'
+import type { DailyLog, ExerciseLog, ExercisePlan, WorkoutLog, WorkoutTemplate } from '../types'
 import { workoutPlans, getBuiltinTemplates } from '../data/plans'
 import { getDayKey } from './dates'
 import { createId } from './ids'
@@ -167,24 +167,16 @@ export function hasChartData<T extends object>(data: T[], keys: Array<keyof T>, 
   return data.filter((point) => keys.some((key) => typeof point[key] === 'number')).length >= minPoints
 }
 
-function checkText(value: boolean): string {
-  return value ? '已完成' : '未完成'
-}
-
 export function buildDailyCopyText({
   date,
   dayName,
   log,
   workout,
-  checks,
-  completion,
 }: {
   date: string
   dayName: string
   log: DailyLog | undefined
   workout: WorkoutLog | undefined
-  checks: TaskChecks
-  completion: number
 }): string {
   const recordPairs: Array<[string, number | string | undefined, string]> = [
     ['体重', log?.morningWeightKg, ' kg'],
@@ -230,15 +222,6 @@ export function buildDailyCopyText({
   if (recordLines.length > 0) {
     sections.push('', '实际记录', ...recordLines)
   }
-  sections.push(
-    '',
-    '任务完成',
-    `饮食：${checkText(checks.diet)}`,
-    `训练：${checkText(checks.workout)}`,
-    `步数：${checkText(checks.steps)}`,
-    `睡眠：${checkText(checks.sleep)}`,
-    `总完成度：${Math.round(completion)}%`,
-  )
   if (workout?.workoutName?.trim() || workoutLines.length > 0) {
     sections.push('', '训练记录')
     if (workout?.workoutName?.trim()) sections.push(`训练名称：${workout.workoutName.trim()}`)

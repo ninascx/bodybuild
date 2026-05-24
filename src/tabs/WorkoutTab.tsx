@@ -22,6 +22,7 @@ type WorkoutTabProps = {
   showOnlyUnfinishedExercises: boolean
   workoutTemplates: WorkoutTemplate[]
   syncState: SyncState
+  restDay: boolean
   onDateChange: (date: string) => void
   onTemplateChange: (id: string) => void
   onApplyTemplate: (template: WorkoutTemplateOption) => void
@@ -67,6 +68,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
         selectedTemplateId={props.selectedTemplateId}
         templateOptions={props.templateOptions}
         syncState={props.syncState}
+        restDay={props.restDay}
         onDateChange={props.onDateChange}
         onTemplateChange={props.onTemplateChange}
         onApplyTemplate={props.onApplyTemplate}
@@ -74,6 +76,16 @@ export function WorkoutTab(props: WorkoutTabProps) {
         onAddExercise={props.onAddExercise}
       />
 
+      {props.restDay ? (
+        <Card>
+          <div className="py-8 text-center">
+            <p className="text-lg font-semibold text-slate-700 dark:text-slate-300">今天是休息日</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+              已在「记录」页标记为不训练。专注吃好、睡好、走走。
+            </p>
+          </div>
+        </Card>
+      ) : (
       <Card>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -176,6 +188,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
           </div>
         )}
       </Card>
+      )}
 
       <WorkoutTemplateManager
         templates={props.workoutTemplates}

@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { dailyTargets, dayNames, weeklyCalorieTarget, workoutPlans } from './data/plans'
 import { formatDateInput, getDayKey, isValidDateInput } from './lib/dates'
 import { calculateDashboardStats, buildTrainingPerformanceData, buildTrendData, createWeeklySummary, findPreviousExerciseRecord, logsForWeek } from './lib/metrics'
-import type { PreviousExerciseRecord } from './lib/metrics'
+import type { PreviousExerciseRecord, TrendPoint, TrainingPerformancePoint } from './lib/metrics'
 import {
   buildDailyCopyText,
   builtinTemplateOptions,
@@ -37,7 +37,7 @@ import {
 } from './lib/storage'
 import { createId } from './lib/ids'
 import { getBuiltinTemplates } from './data/plans'
-import type { DailyLog, ExerciseLog, ExercisePlan, ExerciseSetLog, TaskChecks, WorkoutLog, WorkoutTemplate } from './types'
+import type { AdjustmentRecommendation, DailyLog, ExerciseLog, ExercisePlan, ExerciseSetLog, WeeklySummary, WorkoutLog, WorkoutTemplate } from './types'
 import { Button } from './components/ui'
 import { useColorScheme } from './hooks/useColorScheme'
 import { useConfirm } from './components/ConfirmDialog'
@@ -46,7 +46,7 @@ import { CopyPreviewDialog } from './components/CopyPreviewDialog'
 import { TodayTab } from './tabs/TodayTab'
 import { DailyRecordTab } from './tabs/DailyRecordTab'
 import { WorkoutTab } from './tabs/WorkoutTab'
-import { DashboardTab } from './tabs/DashboardTab'
+const DashboardTab = lazy(() => import('./tabs/DashboardTab').then((mod) => ({ default: mod.DashboardTab })))
 import { WeeklyTab } from './tabs/WeeklyTab'
 
 type TabKey = 'today' | 'daily' | 'workout' | 'dashboard' | 'weekly'
@@ -74,17 +74,6 @@ function readInitialTab(): TabKey {
     return 'today'
   }
 }
-
-const defaultChecks: TaskChecks = {
-  diet: false,
-  workout: false,
-  steps: false,
-  sleep: false,
-}
-
-
-
-
 
 function signedRemaining(targetValue: number | undefined, actualValue: number | undefined): string {
   if (targetValue === undefined) return '无固定目标'
@@ -143,7 +132,6 @@ function App() {
   const [selectedDate, setSelectedDate] = useState<string>(() => formatDateInput())
   const [dailyLogs, setDailyLogs] = useState<DailyLog[]>(cachedData.dailyLogs)
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>(cachedData.workoutLogs)
-  const [taskChecks, setTaskChecks] = useState<Record<string, TaskChecks>>(cachedData.taskChecks)
   const [workoutTemplates, setWorkoutTemplates] = useState<WorkoutTemplate[]>(cachedData.workoutTemplates)
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(`builtin-${getDayKey(formatDateInput())}`)
   const [syncState, setSyncState] = useState<SyncState>('loading')
@@ -161,7 +149,7 @@ function App() {
   const localEditsRef = useRef(false)
   const pendingDataRef = useRef<AppData | null>(null)
   const debounceTimerRef = useRef<number | null>(null)
-  const initialLoadedRef = useRef(false)
+  const [initialLoaded, setInitialLoaded] = useState(false)
 
   useEffect(() => {
     const tick = () => {
@@ -193,6 +181,7 @@ function App() {
     () => workoutLogs.find((log) => log.date === selectedDate),
     [workoutLogs, selectedDate],
   )
+  const restDay = selectedLog.trained === false
   const workoutSummary = useMemo(() => summarizeWorkout(selectedWorkout), [selectedWorkout])
   const templateOptions = useMemo(
     () => [...builtinTemplateOptions(), ...workoutTemplates.filter((t) => !t.isBuiltin).map(customTemplateToOption)],
@@ -202,21 +191,22 @@ function App() {
     () => templateOptions.find((template) => template.id === selectedTemplateId) ?? templateOptions[0],
     [templateOptions, selectedTemplateId],
   )
-  const checks = useMemo(() => taskChecks[today] ?? defaultChecks, [taskChecks, today])
-  const completion = useMemo(
-    () => (Object.values(checks).filter(Boolean).length / Object.keys(defaultChecks).length) * 100,
-    [checks],
-  )
   const dashboardStats = useMemo(() => calculateDashboardStats(dailyLogs, today), [dailyLogs, today])
-  const trendData = useMemo(() => buildTrendData(dailyLogs, today, trendDays), [dailyLogs, today, trendDays])
-  const trainingPerformanceData = useMemo(
-    () => buildTrainingPerformanceData(workoutLogs, today, Math.max(60, trendDays)),
-    [workoutLogs, today, trendDays],
+  const trendData = useMemo(
+    () => (activeTab === 'dashboard' ? buildTrendData(dailyLogs, today, trendDays) : ([] as TrendPoint[])),
+    [dailyLogs, today, trendDays, activeTab],
   )
-  const weeklySummary = useMemo(() => createWeeklySummary(dailyLogs, weeklyAnchorDate), [dailyLogs, weeklyAnchorDate])
+  const trainingPerformanceData = useMemo(
+    () => (activeTab === 'dashboard' ? buildTrainingPerformanceData(workoutLogs, today, Math.max(60, trendDays)) : ([] as TrainingPerformancePoint[])),
+    [workoutLogs, today, trendDays, activeTab],
+  )
+  const weeklySummary = useMemo(
+    () => (activeTab === 'weekly' ? createWeeklySummary(dailyLogs, weeklyAnchorDate) : ({} as WeeklySummary)),
+    [dailyLogs, weeklyAnchorDate, activeTab],
+  )
   const dailyRecommendations = useMemo(
-    () => getDailyRecommendations(todayLog, dailyLogs, today),
-    [todayLog, dailyLogs, today],
+    () => (activeTab === 'today' ? getDailyRecommendations(todayLog, dailyLogs, today) : ([] as AdjustmentRecommendation[])),
+    [todayLog, dailyLogs, today, activeTab],
   )
   const twoWeekAdjustment = useMemo(() => getTwoWeekAdjustment(dailyLogs, today), [dailyLogs, today])
   const weekendRisk = useMemo(() => getWeekendRiskRecommendation(dailyLogs, today), [dailyLogs, today])
@@ -256,7 +246,6 @@ function App() {
   const applyData = useCallback((nextData: AppData) => {
     setDailyLogs(nextData.dailyLogs)
     setWorkoutLogs(nextData.workoutLogs)
-    setTaskChecks(nextData.taskChecks)
     setWorkoutTemplates(nextData.workoutTemplates)
     cacheData(nextData)
   }, [])
@@ -392,7 +381,7 @@ function App() {
 
     void loadAppData().then((result) => {
       if (canceled) return
-      initialLoadedRef.current = true
+      setInitialLoaded(true)
       if (localEditsRef.current) {
         // 本地已开始编辑，保留本地数据，避免服务器响应覆盖用户输入
         setSyncState((prev) => (prev === 'saving' ? prev : 'synced'))
@@ -408,7 +397,6 @@ function App() {
       }
       setDailyLogs(result.data.dailyLogs)
       setWorkoutLogs(result.data.workoutLogs)
-      setTaskChecks(result.data.taskChecks)
       setWorkoutTemplates(result.data.workoutTemplates)
       if (result.source === 'server') {
         setSyncState('synced')
@@ -442,7 +430,7 @@ function App() {
     setSyncMessage('正在重新同步...')
     flushPending()
     try {
-      const saved = await saveAppData({ dailyLogs, workoutLogs, taskChecks, workoutTemplates })
+      const saved = await saveAppData({ dailyLogs, workoutLogs, workoutTemplates })
       applyData(saved)
       setSyncState('synced')
       setSyncMessage('已同步到服务器数据文件。')
@@ -470,17 +458,17 @@ function App() {
 
   function updateDailyLog(patch: Partial<DailyLog>) {
     const nextLogs = upsertByDate(dailyLogs, selectedDate, patch)
-    schedulePersist({ dailyLogs: nextLogs, workoutLogs, taskChecks, workoutTemplates })
+    schedulePersist({ dailyLogs: nextLogs, workoutLogs, workoutTemplates })
   }
 
   function quickDailyAction(patch: Partial<DailyLog>) {
     const nextLogs = upsertByDate(dailyLogs, selectedDate, patch)
-    schedulePersist({ dailyLogs: nextLogs, workoutLogs, taskChecks, workoutTemplates }, true)
+    schedulePersist({ dailyLogs: nextLogs, workoutLogs, workoutTemplates }, true)
   }
 
   function updateWorkoutLog(nextLog: WorkoutLog, immediate = false) {
     const nextLogs = upsertByDate(workoutLogs, nextLog.date, nextLog)
-    schedulePersist({ dailyLogs, workoutLogs: nextLogs, taskChecks, workoutTemplates }, immediate)
+    schedulePersist({ dailyLogs, workoutLogs: nextLogs, workoutTemplates }, immediate)
   }
 
   function updateExercise(index: number, patch: Partial<ExerciseLog>) {
@@ -625,7 +613,7 @@ function App() {
 
   function persistTemplates(nextTemplates: WorkoutTemplate[], immediate = false) {
     const allTemplates = [...getBuiltinTemplates(), ...nextTemplates.filter((t) => !t.isBuiltin)]
-    schedulePersist({ dailyLogs, workoutLogs, taskChecks, workoutTemplates: allTemplates }, immediate)
+    schedulePersist({ dailyLogs, workoutLogs, workoutTemplates: allTemplates }, immediate)
   }
 
   function createCustomTemplate() {
@@ -745,20 +733,8 @@ function App() {
     persistTemplates(nextTemplates, true)
   }
 
-  function toggleTask(key: keyof TaskChecks) {
-    const nextChecks = {
-      ...taskChecks,
-      [today]: {
-        ...defaultChecks,
-        ...checks,
-        [key]: !checks[key],
-      },
-    }
-    schedulePersist({ dailyLogs, workoutLogs, taskChecks: nextChecks, workoutTemplates }, true)
-  }
-
   function exportData() {
-    downloadBackup(createBackup(dailyLogs, workoutLogs, taskChecks, workoutTemplates))
+    downloadBackup(createBackup(dailyLogs, workoutLogs, workoutTemplates))
   }
 
   async function importData(file: File | undefined) {
@@ -795,7 +771,7 @@ function App() {
         return
       }
       try {
-        downloadBackup(createBackup(dailyLogs, workoutLogs, taskChecks, workoutTemplates))
+        downloadBackup(createBackup(dailyLogs, workoutLogs, workoutTemplates))
       } catch (backupError) {
         console.warn('导入前自动备份失败：', backupError)
       }
@@ -803,7 +779,6 @@ function App() {
       await persistData({
         dailyLogs: payload.dailyLogs,
         workoutLogs: payload.workoutLogs,
-        taskChecks: payload.taskChecks,
         workoutTemplates: payload.workoutTemplates ?? [],
       })
       setImportMessage('导入成功，已自动把原数据备份到下载目录。')
@@ -820,8 +795,6 @@ function App() {
       dayName: dayNames[todayKey],
       log: todayLog,
       workout: todayWorkout,
-      checks,
-      completion,
     })
   }
 
@@ -964,7 +937,7 @@ function App() {
           </div>
         </nav>
 
-        {syncState === 'loading' && dailyLogs.length === 0 && workoutLogs.length === 0 && !initialLoadedRef.current ? (
+        {syncState === 'loading' && dailyLogs.length === 0 && workoutLogs.length === 0 && !initialLoaded ? (
           <div className="grid gap-4">
             <div className="animate-pulse rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <div className="h-6 w-48 rounded bg-slate-200 dark:bg-slate-700" />
@@ -987,8 +960,6 @@ function App() {
             plan={plan}
             todayLog={todayLog}
             todayWorkout={todayWorkout}
-            checks={checks}
-            completion={completion}
             dashboardStats={dashboardStats}
             dailyRecommendations={dailyRecommendations}
             weekendRisk={weekendRisk}
@@ -998,7 +969,6 @@ function App() {
             todayCalorieTarget={todayCalorieTarget}
             signedRemaining={signedRemaining}
             remainingTone={remainingTone}
-            onToggleTask={toggleTask}
           />
         ) : null}
 
@@ -1022,6 +992,7 @@ function App() {
             selectedDate={selectedDate}
             today={today}
             selectedWorkout={selectedWorkout}
+            restDay={restDay}
             selectedTemplate={selectedTemplate}
             selectedTemplateId={selectedTemplateId}
             templateOptions={templateOptions}
@@ -1056,6 +1027,7 @@ function App() {
         ) : null}
 
         {activeTab === 'dashboard' ? (
+          <Suspense fallback={<div className="animate-pulse rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"><div className="h-6 w-48 rounded bg-slate-200 dark:bg-slate-700" /></div>}>
           <DashboardTab
             dashboardStats={dashboardStats}
             trendData={trendData}
@@ -1068,6 +1040,7 @@ function App() {
             onTrendDaysChange={setTrendDays}
             onTogglePerformanceLines={() => setShowAllPerformanceLines((value) => !value)}
           />
+          </Suspense>
         ) : null}
 
         {activeTab === 'weekly' ? (

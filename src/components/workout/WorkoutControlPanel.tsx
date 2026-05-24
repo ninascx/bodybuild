@@ -15,6 +15,7 @@ export function WorkoutControlPanel({
   selectedTemplateId,
   templateOptions,
   syncState,
+  restDay,
   onDateChange,
   onTemplateChange,
   onApplyTemplate,
@@ -29,6 +30,7 @@ export function WorkoutControlPanel({
   selectedTemplateId: string
   templateOptions: WorkoutTemplateOption[]
   syncState: SyncState
+  restDay: boolean
   onDateChange: (date: string) => void
   onTemplateChange: (id: string) => void
   onApplyTemplate: (template: WorkoutTemplateOption) => void
@@ -62,13 +64,15 @@ export function WorkoutControlPanel({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={hasWorkout ? 'positive' : 'neutral'}>{hasWorkout ? '已记录' : '未开始'}</Badge>
-            <Badge tone={selectedTemplate?.source === 'custom' ? 'warning' : 'neutral'}>
-              {selectedTemplate?.source === 'custom' ? '自定义模板' : '内置计划'}
-            </Badge>
+            {restDay ? <Badge tone="neutral">休息日</Badge> : <Badge tone={hasWorkout ? 'positive' : 'neutral'}>{hasWorkout ? '已记录' : '未开始'}</Badge>}
+            {!restDay ? (
+              <Badge tone={selectedTemplate?.source === 'custom' ? 'warning' : 'neutral'}>
+                {selectedTemplate?.source === 'custom' ? '自定义模板' : '内置计划'}
+              </Badge>
+            ) : null}
           </div>
           <h2 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-50">
-            {selectedWorkout?.workoutName ?? selectedTemplate?.name ?? '选择今天的训练'}
+            {restDay ? '休息日' : selectedWorkout?.workoutName ?? selectedTemplate?.name ?? '选择今天的训练'}
           </h2>
         </div>
         <span className={`inline-flex shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${syncBadge.className}`}>
@@ -89,9 +93,29 @@ export function WorkoutControlPanel({
             />
           </label>
           <div className="grid grid-cols-3 gap-1 self-end">
-            <Button variant="secondary" className="px-2" onClick={() => onDateChange(addDays(selectedDate, -1))} aria-label="前一天">‹ 前一天</Button>
-            <Button variant="secondary" className="px-2" onClick={() => onDateChange(today)} disabled={selectedDate === today}>今天</Button>
-            <Button variant="secondary" className="px-2" onClick={() => onDateChange(addDays(selectedDate, 1))} disabled={selectedDate >= today} aria-label="后一天">后一天 ›</Button>
+            <button
+              type="button"
+              onClick={() => onDateChange(addDays(selectedDate, -1))}
+              className="min-h-9 rounded-md border border-slate-200 bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            >
+              ‹ 前一天
+            </button>
+            <button
+              type="button"
+              onClick={() => onDateChange(today)}
+              disabled={selectedDate === today}
+              className="min-h-9 rounded-md border border-slate-200 bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            >
+              今天
+            </button>
+            <button
+              type="button"
+              onClick={() => onDateChange(addDays(selectedDate, 1))}
+              disabled={selectedDate >= today}
+              className="min-h-9 rounded-md border border-slate-200 bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            >
+              后一天 ›
+            </button>
           </div>
         </div>
 

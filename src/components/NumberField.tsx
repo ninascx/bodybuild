@@ -61,8 +61,14 @@ export function NumberField({
       onChange(undefined)
       return
     }
-    const parsed = Number(next)
+    // 逗号小数点规范化（例如 "1,5" → "1.5"）
+    const normalized = next.trim().replace(',', '.')
+    const parsed = Number(normalized)
     if (!Number.isFinite(parsed)) {
+      setOutOfRange(true)
+      return
+    }
+    if (kind === 'integer' && !Number.isInteger(parsed)) {
       setOutOfRange(true)
       return
     }

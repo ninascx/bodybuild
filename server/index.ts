@@ -9,6 +9,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, '..')
 const port = Number(process.env.PORT ?? 8787)
+const bind = process.env.BODYBUILD_BIND ?? '127.0.0.1'
 const dataFile = path.resolve(process.env.BODYBUILD_DATA_FILE ?? path.join(projectRoot, 'data', 'bodybuild-data.json'))
 const distDir = path.join(projectRoot, 'dist')
 const BACKUP_KEEP = 7
@@ -18,7 +19,6 @@ const emptyData = (): ServerData => ({
   updatedAt: new Date().toISOString(),
   dailyLogs: [],
   workoutLogs: [],
-  taskChecks: {},
   workoutTemplates: [],
 })
 
@@ -32,8 +32,6 @@ function validateData(value: unknown): ServerData {
     payload.version !== 1 ||
     !Array.isArray(payload.dailyLogs) ||
     !Array.isArray(payload.workoutLogs) ||
-    typeof payload.taskChecks !== 'object' ||
-    payload.taskChecks === null ||
     (payload.workoutTemplates !== undefined && !Array.isArray(payload.workoutTemplates))
   ) {
     throw new Error('Invalid data payload')
@@ -44,7 +42,6 @@ function validateData(value: unknown): ServerData {
     updatedAt: typeof payload.updatedAt === 'string' ? payload.updatedAt : new Date().toISOString(),
     dailyLogs: payload.dailyLogs,
     workoutLogs: payload.workoutLogs,
-    taskChecks: payload.taskChecks,
     workoutTemplates: payload.workoutTemplates ?? [],
   }
 }
@@ -145,7 +142,7 @@ app.get(/.*/, (_request, response) => {
 
 await ensureDataFile()
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Bodybuild tracker listening on http://127.0.0.1:${port}`)
+app.listen(port, bind, () => {
+  console.log(`Bodybuild tracker listening on http://${bind}:${port}`)
   console.log(`Data file: ${dataFile}`)
 })
