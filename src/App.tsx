@@ -602,6 +602,27 @@ function App() {
     updateWorkoutLog({ ...base, exercises }, true)
   }
 
+  function fillEmptySetsFromLast(exerciseIndex: number) {
+    const base = currentWorkoutOrBlank()
+    const exercise = base.exercises[exerciseIndex]
+    if (!exercise) return
+    const lastFilled = [...exercise.sets].reverse().find(
+      (set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined,
+    )
+    if (!lastFilled) return
+    const exercises = base.exercises.map((ex, i) => {
+      if (i !== exerciseIndex) return ex
+      return {
+        ...ex,
+        sets: ex.sets.map((set) => {
+          const isEmpty = set.weight === undefined && set.reps === undefined && set.rir === undefined
+          return isEmpty ? { ...lastFilled } : set
+        }),
+      }
+    })
+    updateWorkoutLog({ ...base, exercises }, true)
+  }
+
   function persistTemplates(nextTemplates: WorkoutTemplate[], immediate = false) {
     const allTemplates = [...getBuiltinTemplates(), ...nextTemplates.filter((t) => !t.isBuiltin)]
     schedulePersist({ dailyLogs, workoutLogs, taskChecks, workoutTemplates: allTemplates }, immediate)
@@ -619,7 +640,9 @@ function App() {
       updatedAt: now,
       isBuiltin: false,
     }
-    persistTemplates([...workoutTemplates.filter((t) => !t.isBuiltin), nextTemplate], true)
+    const nextTemplates = [...workoutTemplates.filter((t) => !t.isBuiltin), nextTemplate]
+    setWorkoutTemplates([...getBuiltinTemplates(), ...nextTemplates])
+    persistTemplates(nextTemplates, true)
   }
 
   function updateTemplate(templateId: string, patch: Partial<WorkoutTemplate>) {
@@ -637,6 +660,7 @@ function App() {
       }
       return template
     })
+    setWorkoutTemplates(nextTemplates)
     persistTemplates(nextTemplates)
   }
 
@@ -651,6 +675,7 @@ function App() {
         updatedAt: new Date().toISOString(),
       }
     })
+    setWorkoutTemplates(nextTemplates)
     persistTemplates(nextTemplates)
   }
 
@@ -669,6 +694,7 @@ function App() {
           }
         : template,
     )
+    setWorkoutTemplates(nextTemplates)
     persistTemplates(nextTemplates, true)
   }
 
@@ -690,6 +716,7 @@ function App() {
         updatedAt: new Date().toISOString(),
       }
     })
+    setWorkoutTemplates(nextTemplates)
     persistTemplates(nextTemplates, true)
   }
 
@@ -703,10 +730,9 @@ function App() {
       tone: 'danger',
     })
     if (!ok) return
-    persistTemplates(
-      workoutTemplates.filter((template) => template.id !== templateId),
-      true,
-    )
+    const nextTemplates = workoutTemplates.filter((template) => template.id !== templateId)
+    setWorkoutTemplates(nextTemplates)
+    persistTemplates(nextTemplates, true)
   }
 
   function saveCurrentWorkoutAsTemplate() {
@@ -714,7 +740,9 @@ function App() {
       window.alert('当前没有可保存的训练动作。')
       return
     }
-    persistTemplates([...workoutTemplates, newTemplateFromWorkout(selectedWorkout)], true)
+    const nextTemplates = [...workoutTemplates, newTemplateFromWorkout(selectedWorkout)]
+    setWorkoutTemplates(nextTemplates)
+    persistTemplates(nextTemplates, true)
   }
 
   function toggleTask(key: keyof TaskChecks) {
@@ -936,6 +964,21 @@ function App() {
           </div>
         </nav>
 
+        {syncState === 'loading' && dailyLogs.length === 0 && workoutLogs.length === 0 && !initialLoadedRef.current ? (
+          <div className="grid gap-4">
+            <div className="animate-pulse rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+              <div className="h-6 w-48 rounded bg-slate-200 dark:bg-slate-700" />
+              <div className="mt-4 grid grid-cols-3 gap-3">
+                <div className="h-20 rounded-lg bg-slate-100 dark:bg-slate-800" />
+                <div className="h-20 rounded-lg bg-slate-100 dark:bg-slate-800" />
+                <div className="h-20 rounded-lg bg-slate-100 dark:bg-slate-800" />
+              </div>
+              <div className="mt-4 h-3 w-full rounded-full bg-slate-100 dark:bg-slate-800" />
+            </div>
+            <p className="text-center text-sm text-slate-500 dark:text-slate-400">正在连接服务器数据文件…</p>
+          </div>
+        ) : (
+          <>
         {activeTab === 'today' ? (
           <TodayTab
             today={today}
@@ -987,6 +1030,7 @@ function App() {
             previousRecordsByExerciseKey={previousRecordsByExerciseKey}
             showOnlyUnfinishedExercises={showOnlyUnfinishedExercises}
             workoutTemplates={workoutTemplates}
+            syncState={syncState}
             onDateChange={handleDateChange}
             onTemplateChange={setSelectedTemplateId}
             onApplyTemplate={(template) => void replaceWorkoutFromTemplate(template)}
@@ -1000,6 +1044,7 @@ function App() {
             onRebuildSets={rebuildSetsFromTarget}
             onDeleteExercise={deleteExerciseFromWorkout}
             onAddExercise={addExerciseToWorkout}
+            onFillEmptySets={fillEmptySetsFromLast}
             onSaveAsTemplate={saveCurrentWorkoutAsTemplate}
             onCreateTemplate={createCustomTemplate}
             onUpdateTemplate={updateTemplate}
@@ -1038,6 +1083,8 @@ function App() {
             onAnchorChange={setWeeklyAnchorDate}
           />
         ) : null}
+      </>
+      )}
       </div>
       {confirmDialog}
       {copyPreviewText !== null ? (

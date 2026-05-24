@@ -20,6 +20,8 @@ type DailyRecordTabProps = {
 }
 
 export function DailyRecordTab(props: DailyRecordTabProps) {
+  const trainedValue = props.selectedLog.trained
+
   return (
     <Card>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -30,16 +32,7 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         <DateNavigator selectedDate={props.selectedDate} today={props.today} onChange={props.onDateChange} />
       </div>
 
-      <div className="mt-4">
-        <MiniCalendar
-          selectedDate={props.selectedDate}
-          today={props.today}
-          dailyLogs={props.dailyLogs}
-          workoutLogs={props.workoutLogs}
-          onSelectDate={props.onDateChange}
-        />
-      </div>
-
+      {/* 快捷记录 — 放在日历上方，手机端优先看到 */}
       <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-700/40 dark:bg-emerald-900/30">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -55,15 +48,48 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
           <NumberField label="步数" value={props.selectedLog.steps} range={{ min: 0, max: 100000, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ steps: value })} />
           <NumberField label="睡眠 h" value={props.selectedLog.sleepHours} step="0.1" kind="decimal" range={{ min: 0, max: 24, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ sleepHours: value })} />
         </div>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-emerald-800 dark:text-emerald-200">是否训练</span>
+          <div className="inline-flex rounded-md border border-emerald-200 bg-white dark:border-emerald-700/40 dark:bg-slate-900 p-0.5">
+            {([['', '未填'], ['yes', '是'], ['no', '否']] as const).map(([val, label]) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => props.onQuickAction({ trained: val === '' ? undefined : val === 'yes' })}
+                className={`rounded px-2.5 py-1 text-xs font-medium transition ${
+                  (val === '' ? trainedValue === undefined : val === 'yes' ? trainedValue === true : trainedValue === false)
+                    ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500'
+                    : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <span className="text-xs text-emerald-800 dark:text-emerald-200">
+            {props.syncState === 'synced' ? '已保存' : props.syncState === 'saving' ? '保存中…' : '离线缓存中'}
+          </span>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2">
           <Button variant="secondary" className="px-3" onClick={() => props.onQuickAction({ sleepHours: 7 })}>睡眠 7h</Button>
           <Button variant="secondary" className="px-3" onClick={() => props.onQuickAction({ trained: true, workoutCompletion: 100 })}>训练 100%</Button>
           <Button variant="secondary" className="px-3" onClick={() => props.onQuickAction({ steps: props.selectedTarget.stepTarget })}>步数达标</Button>
-          <span className="self-center text-xs text-emerald-800 dark:text-emerald-200">
-            {props.syncState === 'synced' ? '已保存到服务器' : props.syncState === 'saving' ? '保存中...' : '离线缓存中'}
-          </span>
         </div>
       </div>
+
+      {/* 迷你日历 — 折叠以节省手机端空间 */}
+      <details open className="mt-5 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+        <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-slate-800 dark:text-slate-200">最近 6 周日历</summary>
+        <div className="px-3 pb-3">
+          <MiniCalendar
+            selectedDate={props.selectedDate}
+            today={props.today}
+            dailyLogs={props.dailyLogs}
+            workoutLogs={props.workoutLogs}
+            onSelectDate={props.onDateChange}
+          />
+        </div>
+      </details>
 
       <details className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-600/40 dark:bg-amber-900/30">
         <summary className="cursor-pointer text-sm font-semibold text-amber-950">身体状态</summary>
@@ -83,17 +109,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
           <NumberField label="大腿围 cm（可选）" value={props.selectedLog.thighCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => props.onUpdateDailyLog({ thighCm: value })} />
           <NumberField label="实际碳水 g" value={props.selectedLog.carbs} range={{ min: 0, max: 1000, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ carbs: value })} />
           <NumberField label="实际脂肪 g" value={props.selectedLog.fat} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ fat: value })} />
-          <Field label="是否训练">
-            <select
-              value={props.selectedLog.trained === undefined ? '' : props.selectedLog.trained ? 'yes' : 'no'}
-              onChange={(event) => props.onUpdateDailyLog({ trained: event.target.value === '' ? undefined : event.target.value === 'yes' })}
-              className="h-11 rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 px-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30"
-            >
-              <option value="">未填写</option>
-              <option value="yes">是</option>
-              <option value="no">否</option>
-            </select>
-          </Field>
         </div>
         <div className="mt-4">
           <Field label="备注">

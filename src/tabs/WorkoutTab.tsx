@@ -1,11 +1,12 @@
 import { Badge, Button, Card, Field, TextArea, TextInput } from '../components/ui'
+import { useState } from 'react'
 import { ExerciseRecordCard } from '../components/workout/ExerciseRecordCard'
 import { ExerciseQuickJumpStrip } from '../components/workout/ExerciseQuickJumpStrip'
 import { WorkoutControlPanel } from '../components/workout/WorkoutControlPanel'
-import { WorkoutPlanPicker } from '../components/workout/WorkoutPlanPicker'
 import { WorkoutTemplateManager } from '../components/workout/WorkoutTemplateManager'
 import type { ExerciseLog, ExercisePlan, WorkoutLog, WorkoutTemplate } from '../types'
 import type { PreviousExerciseRecord } from '../lib/metrics'
+import type { SyncState } from '../lib/storage'
 import type { WorkoutSummary, WorkoutTemplateOption } from '../lib/workout'
 
 type WorkoutTabProps = {
@@ -20,6 +21,7 @@ type WorkoutTabProps = {
   previousRecordsByExerciseKey: Map<string, PreviousExerciseRecord | undefined>
   showOnlyUnfinishedExercises: boolean
   workoutTemplates: WorkoutTemplate[]
+  syncState: SyncState
   onDateChange: (date: string) => void
   onTemplateChange: (id: string) => void
   onApplyTemplate: (template: WorkoutTemplateOption) => void
@@ -33,6 +35,7 @@ type WorkoutTabProps = {
   onRebuildSets: (exerciseIndex: number) => void
   onDeleteExercise: (exerciseIndex: number) => void
   onAddExercise: () => void
+  onFillEmptySets: (exerciseIndex: number) => void
   onSaveAsTemplate: () => void
   onCreateTemplate: () => void
   onUpdateTemplate: (id: string, patch: Partial<WorkoutTemplate>) => void
@@ -43,6 +46,8 @@ type WorkoutTabProps = {
 }
 
 export function WorkoutTab(props: WorkoutTabProps) {
+  const [collapseMode, setCollapseMode] = useState<'auto' | 'all' | 'none'>('auto')
+
   const templateToOption = (template: WorkoutTemplate): WorkoutTemplateOption => ({
     id: template.id,
     name: template.name,
@@ -59,23 +64,14 @@ export function WorkoutTab(props: WorkoutTabProps) {
         selectedWorkout={props.selectedWorkout}
         workoutSummary={props.workoutSummary}
         selectedTemplate={props.selectedTemplate}
-        onDateChange={props.onDateChange}
-        onPrimaryAction={() => {
-          if (props.selectedWorkout) props.onAddExercise()
-          else props.onApplyTemplate(props.selectedTemplate)
-        }}
-        onBlankWorkout={props.onAddExercise}
-      />
-
-      <WorkoutPlanPicker
-        selectedDate={props.selectedDate}
         selectedTemplateId={props.selectedTemplateId}
-        selectedTemplate={props.selectedTemplate}
         templateOptions={props.templateOptions}
-        hasWorkout={Boolean(props.selectedWorkout)}
+        syncState={props.syncState}
+        onDateChange={props.onDateChange}
         onTemplateChange={props.onTemplateChange}
-        onApplySelected={() => props.onApplyTemplate(props.selectedTemplate)}
+        onApplyTemplate={props.onApplyTemplate}
         onApplyRecommended={props.onApplyRecommended}
+        onAddExercise={props.onAddExercise}
       />
 
       <Card>
@@ -87,16 +83,38 @@ export function WorkoutTab(props: WorkoutTabProps) {
           <div className="flex flex-wrap items-center gap-2">
             {props.selectedWorkout ? <Badge tone="positive">已记录</Badge> : <Badge tone="neutral">未开始</Badge>}
             {props.selectedWorkout ? (
+              <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 dark:border-slate-700 dark:bg-slate-800">
+                <button
+                  type="button"
+                  onClick={props.onToggleShowUnfinished}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                    !props.showOnlyUnfinishedExercises
+                      ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100'
+                      : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                  }`}
+                >
+                  全部动作
+                </button>
+                <button
+                  type="button"
+                  onClick={props.onToggleShowUnfinished}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                    props.showOnlyUnfinishedExercises
+                      ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100'
+                      : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                  }`}
+                >
+                  只看未填写
+                </button>
+              </div>
+            ) : null}
+            {props.selectedWorkout ? (
               <button
                 type="button"
-                onClick={props.onToggleShowUnfinished}
-                className={`min-h-10 rounded-md border px-3 text-sm font-medium transition ${
-                  props.showOnlyUnfinishedExercises
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200'
-                    : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800'
-                }`}
+                onClick={() => setCollapseMode((prev) => (prev === 'auto' ? 'all' : prev === 'all' ? 'none' : 'auto'))}
+                className="min-h-9 rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800"
               >
-                {props.showOnlyUnfinishedExercises ? '显示全部动作' : '只看未填写'}
+                {collapseMode === 'auto' ? '折叠全部' : collapseMode === 'all' ? '展开全部' : '恢复自动'}
               </button>
             ) : null}
           </div>
@@ -125,12 +143,14 @@ export function WorkoutTab(props: WorkoutTabProps) {
                 onDeleteLastSet={props.onDeleteLastSet}
                 onRebuildSets={props.onRebuildSets}
                 onDeleteExercise={props.onDeleteExercise}
+                onFillEmptySets={props.onFillEmptySets}
+                forceCollapsed={collapseMode === 'auto' ? undefined : collapseMode === 'all'}
               />
             ))}
 
             {props.visibleWorkoutExercises.length === 0 ? (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-100">
-                当前筛选下没有未填写动作。可以切回"显示全部动作"继续查看或修改。
+                当前筛选下没有未填写动作。可以切回"全部动作"继续查看或修改。
               </div>
             ) : null}
 
@@ -148,7 +168,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
         ) : (
           <div className="mt-5 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center dark:border-slate-600 dark:bg-slate-800">
             <p className="text-base font-semibold text-slate-900 dark:text-slate-100">还没有这一天的训练记录</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">选择计划开始会生成完整动作列表；临时改练也可以直接新增空白动作。</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">在上方选择计划开始，或点"空白训练"手动添加动作。</p>
             <div className="mt-4 grid gap-2 sm:mx-auto sm:max-w-md sm:grid-cols-2">
               <Button onClick={() => props.onApplyTemplate(props.selectedTemplate)}>选择计划开始</Button>
               <Button variant="secondary" onClick={props.onAddExercise}>新增空白训练</Button>

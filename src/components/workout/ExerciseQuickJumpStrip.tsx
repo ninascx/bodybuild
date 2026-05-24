@@ -39,7 +39,7 @@ export function ExerciseQuickJumpStrip({
               aria-label={`跳转到 ${exercise.name}`}
               className={`min-h-8 shrink-0 rounded-full border px-2.5 text-xs font-medium transition ${tone} ${dim}`}
             >
-              {index + 1}. {exercise.name.length > 6 ? exercise.name.slice(0, 6) + '…' : exercise.name}
+              {index + 1}. {exercise.name.length > 10 ? exercise.name.slice(0, 10) + '…' : exercise.name}
             </button>
           )
         })}
