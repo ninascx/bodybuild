@@ -1,7 +1,7 @@
-import { Badge, Card, RecommendationBox } from '../components/ui'
+import { Badge, Button, Card, RecommendationBox } from '../components/ui'
 import { BudgetTile, MacroTile } from '../components/BudgetTile'
 import { TipsDetails } from '../components/TipsDetails'
-import { shoulderProtectionTips, dayNames } from '../data/plans'
+import { dayNames } from '../data/plans'
 import type { AdjustmentRecommendation, DailyLog, DailyTarget, WorkoutLog, WorkoutPlan } from '../types'
 import type { DashboardStats } from '../lib/metrics'
 
@@ -15,19 +15,19 @@ type TodayTabProps = {
   dashboardStats: DashboardStats
   dailyRecommendations: AdjustmentRecommendation[]
   weekendRisk: AdjustmentRecommendation
-  pushShoulderRisk: AdjustmentRecommendation
   hasWeeklyCalorieLogs: boolean
   weeklyCalorieTarget: number
   todayCalorieTarget: number | undefined
   signedRemaining: (target: number | undefined, actual: number | undefined) => string
   remainingTone: (target: number | undefined, actual: number | undefined) => 'positive' | 'warning' | 'neutral'
+  onRecordToday: () => void
+  onStartWorkout: () => void
 }
 
 export function TodayTab(props: TodayTabProps) {
   const hasRecommendations =
     props.dailyRecommendations.length > 0 ||
-    props.weekendRisk.tone !== 'positive' ||
-    props.pushShoulderRisk.tone !== 'positive'
+    props.weekendRisk.tone !== 'positive'
 
   return (
     <div className="grid gap-4">
@@ -39,7 +39,11 @@ export function TodayTab(props: TodayTabProps) {
             <h2 className="mt-2 text-3xl font-semibold text-slate-950 dark:text-slate-50">{props.target.workoutName}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{props.plan.focus}</p>
           </div>
-          <Badge tone={props.target.isTrainingDay ? 'positive' : 'neutral'}>{props.target.isTrainingDay ? '训练日' : '休息日'}</Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone={props.target.isTrainingDay ? 'positive' : 'neutral'}>{props.target.isTrainingDay ? '训练日' : '休息日'}</Badge>
+            <Button variant="secondary" className="px-3" onClick={props.onRecordToday}>记录今天</Button>
+            <Button className="px-3" onClick={props.onStartWorkout}>{props.target.isTrainingDay ? '开始训练' : '查看训练'}</Button>
+          </div>
         </div>
         <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
           <div className="rounded-lg bg-slate-50 dark:bg-slate-800 p-3">
@@ -112,20 +116,11 @@ export function TodayTab(props: TodayTabProps) {
         )}
       </Card>
 
-      {/* 提示 + 建议 — 桌面端并排 */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <TipsDetails defaultOpen={false} summary="肩部保护提醒">
-          <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-            {shoulderProtectionTips.map((tip) => (
-              <li key={tip} className="rounded-md bg-slate-50 px-3 py-2 dark:bg-slate-800">{tip}</li>
-            ))}
-          </ul>
-        </TipsDetails>
-
+      {/* 提示 + 建议 */}
+      <div className="grid gap-4">
         <TipsDetails defaultOpen={hasRecommendations} summary="今日提示">
           <div className="mt-3 grid gap-2">
             <RecommendationBox title={props.weekendRisk.title} message={props.weekendRisk.message} tone={props.weekendRisk.tone} />
-            <RecommendationBox title={props.pushShoulderRisk.title} message={props.pushShoulderRisk.message} tone={props.pushShoulderRisk.tone} />
             {props.dailyRecommendations.map((item) => (
               <RecommendationBox key={item.title} title={item.title} message={item.message} tone={item.tone} />
             ))}

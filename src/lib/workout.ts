@@ -181,6 +181,9 @@ export function buildDailyCopyText({
   const recordPairs: Array<[string, number | string | undefined, string]> = [
     ['体重', log?.morningWeightKg, ' kg'],
     ['腰围', log?.waistCm, ' cm'],
+    ['胸围', log?.chestCm, ' cm'],
+    ['上臂围', log?.upperArmCm, ' cm'],
+    ['大腿围', log?.thighCm, ' cm'],
     ['热量', log?.calories, ' kcal'],
     ['蛋白质', log?.protein, ' g'],
     ['碳水', log?.carbs, ' g'],
@@ -188,7 +191,6 @@ export function buildDailyCopyText({
     ['步数', log?.steps, ' 步'],
     ['睡眠', log?.sleepHours, ' h'],
     ['训练完成度', log?.workoutCompletion, '%'],
-    ['肩痛评分', log?.shoulderPainScore, '/10'],
     ['疲劳评分', log?.fatigueScore, '/10'],
   ]
   const recordLines = recordPairs

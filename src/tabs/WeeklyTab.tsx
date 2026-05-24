@@ -12,7 +12,6 @@ type WeeklyTabProps = {
   today: string
   twoWeekAdjustment: AdjustmentRecommendation
   weekendRisk: AdjustmentRecommendation
-  pushShoulderRisk: AdjustmentRecommendation
   weeklyConclusionCard: AdjustmentRecommendation
   dailyLogs: DailyLog[]
   onAnchorChange: (date: string) => void
@@ -80,7 +79,6 @@ export function WeeklyTab(props: WeeklyTabProps) {
       <div className="grid gap-4">
         <RecommendationBox title={props.twoWeekAdjustment.title} message={props.twoWeekAdjustment.message} tone={props.twoWeekAdjustment.tone} />
         <RecommendationBox title={props.weekendRisk.title} message={props.weekendRisk.message} tone={props.weekendRisk.tone} />
-        <RecommendationBox title={props.pushShoulderRisk.title} message={props.pushShoulderRisk.message} tone={props.pushShoulderRisk.tone} />
         <Card>
           <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">下一周建议</h2>
           <div className="mt-3 grid gap-2">

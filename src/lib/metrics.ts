@@ -19,7 +19,6 @@ export interface DashboardStats {
   trainingCompletionRate: number
   averageSteps?: number
   weekTotalCalories: number
-  averageShoulderPain?: number
   calorieBudget: WeeklyCalorieBudget
   // 上一周对比，用于 KPI 趋势箭头
   previous: {
@@ -40,7 +39,6 @@ export interface TrendPoint {
   calories?: number
   proteinMet?: number
   protein?: number
-  shoulderPain?: number
 }
 
 export interface WeeklyCalorieBudget {
@@ -106,7 +104,6 @@ export function calculateDashboardStats(logs: DailyLog[], today: string): Dashbo
   const trainingDays = weekLogs.filter((log) => dailyTargets[getDayKey(log.date)].isTrainingDay)
   const completedTraining = trainingDays.filter((log) => log.trained || (log.workoutCompletion ?? 0) >= 80).length
   const weekTotalCalories = calories.reduce<number>((sum, value) => sum + (value ?? 0), 0)
-  const averageShoulderPain = round(average(weekLogs.map((log) => log.shoulderPainScore)))
 
   // 上一周对比
   const previousWeekAnchor = addDays(startOfWeekSunday(today), -1)
@@ -128,7 +125,6 @@ export function calculateDashboardStats(logs: DailyLog[], today: string): Dashbo
     trainingCompletionRate: trainingDays.length ? Math.round((completedTraining / trainingDays.length) * 100) : 0,
     averageSteps: round(average(steps), 0),
     weekTotalCalories,
-    averageShoulderPain,
     calorieBudget: calculateWeeklyCalorieBudget(logs, today),
     previous: {
       averageWeight7: averageWeight(logs, previousWeekAnchor, 7),
@@ -186,7 +182,6 @@ export function buildTrendData(logs: DailyLog[], today: string, days = 30): Tren
       calories: log.calories,
       protein: log.protein,
       proteinMet: log.protein !== undefined && log.protein >= target.protein ? 1 : 0,
-      shoulderPain: log.shoulderPainScore,
     })
   }
   return result

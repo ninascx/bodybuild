@@ -57,22 +57,6 @@ export function getDailyRecommendations(log: DailyLog | undefined, logs: DailyLo
     }
   }
 
-  if ([0, 3].includes(day) && log?.shoulderPainScore !== undefined) {
-    if (log.shoulderPainScore >= 5) {
-      recommendations.push({
-        title: '推日肩部压力偏高',
-        message: '今天避免引发不适的推举动作，减少推举总量，优先选择无明显不适的胸推和飞鸟。',
-        tone: 'danger',
-      })
-    } else if (log.shoulderPainScore >= 3) {
-      recommendations.push({
-        title: '推日肩部提醒',
-        message: '降低推举重量，缩小动作范围，优先使用器械和中立握。',
-        tone: 'warning',
-      })
-    }
-  }
-
   if (recommendations.length === 0) {
     recommendations.push({
       title: '今日节奏',
@@ -103,43 +87,6 @@ export function getWeekendRiskRecommendation(logs: DailyLog[], today: string): A
   return {
     title: '周末节奏',
     message: '目前没有明显周末超标记录。继续守住 2600-3000 kcal、蛋白质 160 g 和 8000 步底线。',
-    tone: 'positive',
-  }
-}
-
-export function getPushDayShoulderRecommendation(logs: DailyLog[], today: string): AdjustmentRecommendation {
-  const pushLogs = sortByDateAsc(logs)
-    .filter((log) => log.date <= today && [0, 3].includes(getDayKey(log.date)) && log.shoulderPainScore !== undefined)
-    .slice(-3)
-
-  const latest = pushLogs.at(-1)
-  if (!latest) {
-    return {
-      title: '推日肩部记录',
-      message: '推日可选记录肩部 0-10 分，用来观察趋势；不适明显时以动作可控和无明显不适为先。',
-      tone: 'neutral',
-    }
-  }
-
-  if (pushLogs.length >= 3 && pushLogs.every((log) => (log.shoulderPainScore ?? 0) >= 4)) {
-    return {
-      title: '连续推日肩部压力偏高',
-      message: '连续 3 次推日肩部评分偏高，建议暂停上斜哑铃卧推和双杠臂屈伸，优先无明显不适的器械胸推；若持续加重，考虑运动医学评估。',
-      tone: 'danger',
-    }
-  }
-
-  if ((latest.shoulderPainScore ?? 0) >= 4) {
-    return {
-      title: '推日肩部提醒',
-      message: '最近一次推日肩部评分偏高。下次推日降低推举重量和总量，优先中立握器械。',
-      tone: 'warning',
-    }
-  }
-
-  return {
-    title: '推日肩部趋势',
-    message: '最近推日肩部评分可控。继续保持充分热身、稳定动作和保留余力。',
     tone: 'positive',
   }
 }

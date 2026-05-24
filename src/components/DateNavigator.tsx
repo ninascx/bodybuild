@@ -15,7 +15,7 @@ export function DateNavigator({
   return (
     <div className="flex flex-wrap items-end gap-2">
       <Field label="日期">
-        <TextInput type="date" value={selectedDate} onChange={(event) => onChange(event.target.value)} />
+        <TextInput type="date" value={selectedDate} max={today} onChange={(event) => onChange(event.target.value)} />
       </Field>
       <div className="flex gap-1">
         <Button

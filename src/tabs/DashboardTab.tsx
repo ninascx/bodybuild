@@ -14,7 +14,6 @@ type DashboardTabProps = {
   showAllPerformanceLines: boolean
   twoWeekAdjustment: { title: string; message: string; tone: string }
   weekendRisk: { title: string; message: string; tone: string }
-  pushShoulderRisk: { title: string; message: string; tone: string }
   onTrendDaysChange: (days: 7 | 14 | 30 | 90) => void
   onTogglePerformanceLines: () => void
 }
@@ -75,7 +74,6 @@ export function DashboardTab(props: DashboardTabProps) {
           value={`${roundMetric(props.dashboardStats.averageSteps, 0)} 步`}
           delta={buildHigherIsBetterDelta(props.dashboardStats.averageSteps, props.dashboardStats.previous.averageSteps, '步', 0)}
         />
-        <StatCard label="肩痛平均分" value={`${roundMetric(props.dashboardStats.averageShoulderPain)} / 10`} helper="只统计已填写日期" />
         <StatCard label="周总热量进度" value={`${props.dashboardStats.weekTotalCalories} kcal`} helper={`目标约 ${weeklyCalorieTarget} kcal`} />
       </div>
       <Card>
@@ -120,15 +118,6 @@ export function DashboardTab(props: DashboardTabProps) {
             <Tooltip />
             <Bar dataKey="proteinMet" fill="#10b981" />
           </BarChart>
-        </ChartCard>
-        <ChartCard title="肩痛趋势" isEmpty={!hasChartData(props.trendData, ['shoulderPain'])}>
-          <LineChart data={props.trendData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis domain={[0, 10]} />
-            <Tooltip />
-            <Line type="monotone" name="肩痛评分" dataKey="shoulderPain" stroke="#e11d48" strokeWidth={2} dot />
-          </LineChart>
         </ChartCard>
         <ChartCard
           title="训练表现趋势（估算最佳工作组）"

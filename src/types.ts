@@ -67,7 +67,6 @@ export interface DailyLog {
   sleepHours?: number
   trained?: boolean
   workoutCompletion?: number
-  shoulderPainScore?: number
   fatigueScore?: number
   notes?: string
 }

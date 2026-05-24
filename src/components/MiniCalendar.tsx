@@ -19,7 +19,6 @@ function hasDailyContent(log: DailyLog | undefined): boolean {
     log.carbs !== undefined ||
     log.fat !== undefined ||
     log.workoutCompletion !== undefined ||
-    log.shoulderPainScore !== undefined ||
     log.fatigueScore !== undefined ||
     log.trained !== undefined ||
     (typeof log.notes === 'string' && log.notes.trim() !== '')

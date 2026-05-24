@@ -20,7 +20,6 @@ import {
 } from './lib/workout'
 import {
   getDailyRecommendations,
-  getPushDayShoulderRecommendation,
   getTwoWeekAdjustment,
   getWeekendRiskRecommendation,
 } from './lib/recommendations'
@@ -135,6 +134,7 @@ function App() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(`builtin-${getDayKey(formatDateInput())}`)
   const [syncState, setSyncState] = useState<SyncState>('loading')
   const [syncMessage, setSyncMessage] = useState('正在连接服务器数据文件...')
+  const [savePending, setSavePending] = useState(false)
   const [slowSave, setSlowSave] = useState(false)
   const [noticeMessage, setNoticeMessage] = useState('')
   const [copyMessage, setCopyMessage] = useState('')
@@ -209,10 +209,6 @@ function App() {
   )
   const twoWeekAdjustment = useMemo(() => getTwoWeekAdjustment(dailyLogs, today), [dailyLogs, today])
   const weekendRisk = useMemo(() => getWeekendRiskRecommendation(dailyLogs, today), [dailyLogs, today])
-  const pushShoulderRisk = useMemo(
-    () => getPushDayShoulderRecommendation(dailyLogs, today),
-    [dailyLogs, today],
-  )
   const todayCalorieTarget = target.calories ?? target.calorieRange?.[1]
   const currentWeekLogs = useMemo(() => logsForWeek(dailyLogs, today), [dailyLogs, today])
   const hasWeeklyCalorieLogs = useMemo(
@@ -255,6 +251,7 @@ function App() {
       const saveVersion = saveVersionRef.current + 1
       saveVersionRef.current = saveVersion
       applyData(nextData)
+      setSavePending(false)
       setSyncState('saving')
       setSyncMessage('正在保存到服务器数据文件...')
       const saveTask = saveQueueRef.current.then(() => saveAppData(nextData))
@@ -267,12 +264,14 @@ function App() {
         const saved = await saveTask
         if (saveVersion === saveVersionRef.current) {
           applyData(saved)
+          setSavePending(false)
           setSyncState('synced')
           setSyncMessage('已同步到服务器数据文件。')
         }
       } catch (error) {
         if (saveVersion === saveVersionRef.current) {
           setSyncState('offline')
+          setSavePending(false)
           const message =
             error instanceof Error && error.message
               ? `${error.message}（已先保存在浏览器缓存）`
@@ -301,6 +300,7 @@ function App() {
       localEditsRef.current = true
       applyData(nextData)
       pendingDataRef.current = nextData
+      setSavePending(!immediate)
       if (debounceTimerRef.current !== null) {
         window.clearTimeout(debounceTimerRef.current)
         debounceTimerRef.current = null
@@ -308,6 +308,7 @@ function App() {
       if (immediate) {
         flushPending()
       } else {
+        setSyncMessage('已在页面记录，稍后保存到服务器数据文件。')
         debounceTimerRef.current = window.setTimeout(flushPending, 400)
       }
     },
@@ -384,11 +385,13 @@ function App() {
       if (localEditsRef.current) {
         // 本地已开始编辑，保留本地数据，避免服务器响应覆盖用户输入
         setSyncState((prev) => (prev === 'saving' ? prev : 'synced'))
+        setSavePending(false)
         setSyncMessage('服务器已连接，但加载期间检测到本地编辑，已保留本地数据。')
         return
       }
       if (result.serverEmptyButLocalHasData) {
         setSyncState('offline')
+        setSavePending(false)
         setSyncMessage(
           '检测到服务器数据为空，当前显示本地浏览器缓存。请先点击"导出 JSON"备份，再决定是否手动覆盖服务器。',
         )
@@ -399,9 +402,11 @@ function App() {
       setWorkoutTemplates(result.data.workoutTemplates)
       if (result.source === 'server') {
         setSyncState('synced')
+        setSavePending(false)
         setSyncMessage('已同步到服务器数据文件。')
       } else {
         setSyncState('offline')
+        setSavePending(false)
         setSyncMessage('服务器连接失败，当前使用浏览器缓存；恢复连接后请再次保存。')
       }
     })
@@ -424,17 +429,30 @@ function App() {
     }
   }
 
+  function openTodayRecord() {
+    setSelectedDate(today)
+    changeTab('daily')
+  }
+
+  function openTodayWorkout() {
+    setSelectedDate(today)
+    changeTab('workout')
+  }
+
   async function retrySync() {
     setSyncState('saving')
+    setSavePending(false)
     setSyncMessage('正在重新同步...')
     flushPending()
     try {
       const saved = await saveAppData({ dailyLogs, workoutLogs, workoutTemplates })
       applyData(saved)
       setSyncState('synced')
+      setSavePending(false)
       setSyncMessage('已同步到服务器数据文件。')
     } catch (error) {
       setSyncState('offline')
+      setSavePending(false)
       const message =
         error instanceof Error && error.message
           ? `${error.message}（已先保存在浏览器缓存）`
@@ -774,12 +792,13 @@ function App() {
 
   const [copyPreviewText, setCopyPreviewText] = useState<string | null>(null)
 
-  function buildTodayCopyText() {
+  function buildCopyTextForDate(date: string) {
+    const dateKey = getDayKey(date)
     return buildDailyCopyText({
-      date: today,
-      dayName: dayNames[todayKey],
-      log: todayLog,
-      workout: todayWorkout,
+      date,
+      dayName: dayNames[dateKey],
+      log: dailyLogs.find((log) => log.date === date),
+      workout: workoutLogs.find((workout) => workout.date === date),
     })
   }
 
@@ -806,7 +825,7 @@ function App() {
   }
 
   async function copyTodayData() {
-    const text = buildTodayCopyText()
+    const text = buildCopyTextForDate(today)
     const ok = await writeToClipboard(text)
     if (ok) {
       setCopyMessage('已复制今天的数据。')
@@ -817,8 +836,20 @@ function App() {
     }
   }
 
+  async function copySelectedDateData() {
+    const text = buildCopyTextForDate(selectedDate)
+    const ok = await writeToClipboard(text)
+    if (ok) {
+      setCopyMessage(`已复制 ${selectedDate} 的数据。`)
+      setCopyStatus('success')
+    } else {
+      setCopyMessage('复制失败，请检查浏览器剪贴板权限。')
+      setCopyStatus('error')
+    }
+  }
+
   function previewTodayData() {
-    setCopyPreviewText(buildTodayCopyText())
+    setCopyPreviewText(buildCopyTextForDate(today))
   }
 
   async function confirmCopyFromPreview() {
@@ -866,7 +897,7 @@ function App() {
                 onClick={() => void copyTodayData()}
                 aria-live="polite"
               >
-                {copyStatus === 'success' ? '✓ 已复制' : copyStatus === 'error' ? '✗ 复制失败' : '复制今日数据'}
+                {copyStatus === 'success' ? '✓ 已复制' : copyStatus === 'error' ? '✗ 复制失败' : '复制今天'}
               </Button>
               <Button className="w-full sm:w-auto" variant="secondary" onClick={previewTodayData}>
                 预览
@@ -936,12 +967,13 @@ function App() {
             dashboardStats={dashboardStats}
             dailyRecommendations={dailyRecommendations}
             weekendRisk={weekendRisk}
-            pushShoulderRisk={pushShoulderRisk}
             hasWeeklyCalorieLogs={hasWeeklyCalorieLogs}
             weeklyCalorieTarget={weeklyCalorieTarget}
             todayCalorieTarget={todayCalorieTarget}
             signedRemaining={signedRemaining}
             remainingTone={remainingTone}
+            onRecordToday={openTodayRecord}
+            onStartWorkout={openTodayWorkout}
           />
         ) : null}
 
@@ -954,9 +986,11 @@ function App() {
             dailyLogs={dailyLogs}
             workoutLogs={workoutLogs}
             syncState={syncState}
+            savePending={savePending}
             onDateChange={handleDateChange}
             onUpdateDailyLog={updateDailyLog}
             onQuickAction={quickDailyAction}
+            onCopySelectedDate={() => void copySelectedDateData()}
           />
         ) : null}
 
@@ -1010,7 +1044,6 @@ function App() {
             showAllPerformanceLines={showAllPerformanceLines}
             twoWeekAdjustment={twoWeekAdjustment}
             weekendRisk={weekendRisk}
-            pushShoulderRisk={pushShoulderRisk}
             onTrendDaysChange={setTrendDays}
             onTogglePerformanceLines={() => setShowAllPerformanceLines((value) => !value)}
           />
@@ -1024,7 +1057,6 @@ function App() {
             today={today}
             twoWeekAdjustment={twoWeekAdjustment}
             weekendRisk={weekendRisk}
-            pushShoulderRisk={pushShoulderRisk}
             weeklyConclusionCard={weeklyConclusionCard}
             dailyLogs={dailyLogs}
             onAnchorChange={setWeeklyAnchorDate}
