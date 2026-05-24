@@ -56,9 +56,7 @@ repomix.config.json
 scripts/boxing-glove-twemoji.svg
 scripts/generate-icons.mjs
 server/index.ts
-src/App.css
 src/App.tsx
-src/assets/hero.png
 src/components/BudgetTile.tsx
 src/components/ChartCard.tsx
 src/components/ConfirmDialog.tsx
@@ -487,193 +485,6 @@ main().catch((error) => {
   console.error('生成失败：', error)
   process.exit(1)
 })
-</file>
-
-<file path="src/App.css">
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
-
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-}
-
-.hero {
-  position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
-}
-
-#center {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
-}
-
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-}
-
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
-}
-
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
-}
-
-.ticks {
-  position: relative;
-  width: 100%;
-
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
-
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
-  }
-}
 </file>
 
 <file path="src/components/BudgetTile.tsx">
@@ -1184,121 +995,6 @@ export function MiniCalendar({
 }
 </file>
 
-<file path="src/components/NumberField.tsx">
-import { useEffect, useState } from 'react'
-import { Field, TextInput } from './ui'
-
-export type NumberRange = {
-  min?: number
-  max?: number
-  allowZero?: boolean
-}
-
-function displayNumber(value: number | undefined): string {
-  return value === undefined ? '' : String(value)
-}
-
-export function NumberField({
-  label,
-  value,
-  onChange,
-  min,
-  max,
-  step = '1',
-  range,
-  kind = 'integer',
-  inputRef,
-}: {
-  label: string
-  value?: number
-  onChange: (value: number | undefined) => void
-  min?: number
-  max?: number
-  step?: string
-  range?: NumberRange
-  kind?: 'decimal' | 'integer'
-  inputRef?: (el: HTMLInputElement | null) => void
-}) {
-  const effectiveRange: NumberRange | undefined =
-    range ?? (min !== undefined || max !== undefined ? { min, max, allowZero: min === 0 } : undefined)
-  const inputMode = kind === 'decimal' ? 'decimal' : 'numeric'
-  const pattern = kind === 'decimal' ? '[0-9]*[.,]?[0-9]*' : '[0-9]*'
-  const [rawValue, setRawValue] = useState(displayNumber(value))
-  const [outOfRange, setOutOfRange] = useState(false)
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const display = displayNumber(value)
-      setRawValue((current) => {
-        const parsed = Number(current)
-        if (current.trim() !== '' && Number.isFinite(parsed) && parsed === value) {
-          return current
-        }
-        return display
-      })
-      if (value !== undefined) setOutOfRange(false)
-    }, 0)
-    return () => window.clearTimeout(timer)
-  }, [value])
-
-  const handleChange = (next: string) => {
-    setRawValue(next)
-    if (next.trim() === '') {
-      setOutOfRange(false)
-      onChange(undefined)
-      return
-    }
-    // 逗号小数点规范化（例如 "1,5" → "1.5"）
-    const normalized = next.trim().replace(',', '.')
-    const parsed = Number(normalized)
-    if (!Number.isFinite(parsed)) {
-      setOutOfRange(true)
-      return
-    }
-    if (kind === 'integer' && !Number.isInteger(parsed)) {
-      setOutOfRange(true)
-      return
-    }
-    if (effectiveRange) {
-      if (effectiveRange.min !== undefined && parsed < effectiveRange.min) {
-        setOutOfRange(true)
-        return
-      }
-      if (effectiveRange.max !== undefined && parsed > effectiveRange.max) {
-        setOutOfRange(true)
-        return
-      }
-    }
-    setOutOfRange(false)
-    onChange(parsed)
-  }
-
-  const rangeHint =
-    effectiveRange && (effectiveRange.min !== undefined || effectiveRange.max !== undefined)
-      ? `应在 ${effectiveRange.min ?? '负无穷'}${effectiveRange.max !== undefined ? `-${effectiveRange.max}` : '+'} 之间`
-      : '请输入有效数字'
-
-  return (
-    <Field label={label}>
-      <TextInput
-        type="text"
-        inputMode={inputMode}
-        pattern={pattern}
-        value={rawValue}
-        data-min={min}
-        data-max={max}
-        data-step={step}
-        ref={inputRef}
-        aria-invalid={outOfRange}
-        className={outOfRange ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-100 dark:border-rose-500 dark:focus:border-rose-400 dark:focus:ring-rose-900/40' : ''}
-        onChange={(event) => handleChange(event.target.value)}
-      />
-      {outOfRange ? <p className="text-xs text-rose-600 dark:text-rose-400">{rangeHint}</p> : null}
-    </Field>
-  )
-}
-</file>
-
 <file path="src/components/SummaryRow.tsx">
 export function SummaryRow({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {
   return (
@@ -1794,6 +1490,743 @@ export function getTwoWeekAdjustment(logs: DailyLog[], today: string): Adjustmen
 }
 </file>
 
+<file path="src/tabs/DashboardTab.tsx">
+import { Card, StatCard } from '../components/ui'
+import { ChartCard, WeightTrendTooltip } from '../components/ChartCard'
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
+import { roundMetric, buildWeightDelta, buildNeutralDelta, buildHigherIsBetterDelta } from '../lib/metrics'
+import { hasChartData } from '../lib/workout'
+import { weeklyCalorieTarget } from '../data/plans'
+import type { TrendPoint, DashboardStats, TrainingPerformancePoint } from '../lib/metrics'
+
+type DashboardTabProps = {
+  dashboardStats: DashboardStats
+  trendData: TrendPoint[]
+  trainingPerformanceData: TrainingPerformancePoint[]
+  trendDays: number
+  showAllPerformanceLines: boolean
+  twoWeekAdjustment: { title: string; message: string; tone: string }
+  weekendRisk: { title: string; message: string; tone: string }
+  pushShoulderRisk: { title: string; message: string; tone: string }
+  onTrendDaysChange: (days: 7 | 14 | 30 | 90) => void
+  onTogglePerformanceLines: () => void
+}
+
+export function DashboardTab(props: DashboardTabProps) {
+
+  return (
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-3 shadow-sm">
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">趋势图时间范围</p>
+        <div className="flex flex-wrap gap-1">
+          {([7, 14, 30, 90] as const).map((days) => (
+            <button
+              key={days}
+              type="button"
+              onClick={() => props.onTrendDaysChange(days)}
+              className={`min-h-9 rounded-md border px-3 text-sm font-medium transition ${
+                props.trendDays === days
+                  ? 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:border-emerald-400 dark:bg-emerald-900/30 dark:text-emerald-200'
+                  : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800'
+              }`}
+            >
+              {days} 天
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard size="large" label="当前体重" value={`${roundMetric(props.dashboardStats.currentWeight)} kg`} />
+        <StatCard
+          size="large"
+          label="7 日平均体重"
+          value={`${roundMetric(props.dashboardStats.averageWeight7)} kg`}
+          delta={buildWeightDelta(props.dashboardStats.averageWeight7, props.dashboardStats.previous.averageWeight7)}
+        />
+        <StatCard
+          size="large"
+          label="本周平均热量"
+          value={`${roundMetric(props.dashboardStats.weekAverageCalories, 0)} kcal`}
+          delta={buildNeutralDelta(props.dashboardStats.weekAverageCalories, props.dashboardStats.previous.weekAverageCalories, 'kcal', 0)}
+        />
+        <StatCard
+          size="large"
+          label="训练完成率"
+          value={`${props.dashboardStats.trainingCompletionRate}%`}
+          delta={buildHigherIsBetterDelta(props.dashboardStats.trainingCompletionRate, props.dashboardStats.previous.trainingCompletionRate, '%')}
+        />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="蛋白质达标天数"
+          value={`${props.dashboardStats.proteinMetDays} 天`}
+          helper="按每天目标判断"
+          delta={buildHigherIsBetterDelta(props.dashboardStats.proteinMetDays, props.dashboardStats.previous.proteinMetDays, '天')}
+        />
+        <StatCard
+          label="本周平均步数"
+          value={`${roundMetric(props.dashboardStats.averageSteps, 0)} 步`}
+          delta={buildHigherIsBetterDelta(props.dashboardStats.averageSteps, props.dashboardStats.previous.averageSteps, '步', 0)}
+        />
+        <StatCard label="肩痛平均分" value={`${roundMetric(props.dashboardStats.averageShoulderPain)} / 10`} helper="只统计已填写日期" />
+        <StatCard label="周总热量进度" value={`${props.dashboardStats.weekTotalCalories} kcal`} helper={`目标约 ${weeklyCalorieTarget} kcal`} />
+      </div>
+      <Card>
+        <p className="text-sm text-slate-500 dark:text-slate-400">两周建议</p>
+        <p className="mt-2 font-semibold text-slate-950 dark:text-slate-50">{props.twoWeekAdjustment.title}</p>
+        <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">{props.twoWeekAdjustment.message}</p>
+      </Card>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ChartCard title="体重趋势" isEmpty={!hasChartData(props.trendData, ['weight', 'weightAverage7'])}>
+          <LineChart data={props.trendData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
+            <Tooltip content={<WeightTrendTooltip />} />
+            <Line type="monotone" name="每日体重" dataKey="weight" stroke="#059669" strokeWidth={2} dot={false} />
+            <Line type="monotone" name="7 日均重" dataKey="weightAverage7" stroke="#0f172a" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+          </LineChart>
+        </ChartCard>
+        <ChartCard title="腰围趋势" isEmpty={!hasChartData(props.trendData, ['waist'])}>
+          <LineChart data={props.trendData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
+            <Tooltip />
+            <Line type="monotone" dataKey="waist" stroke="#2563eb" strokeWidth={2} dot={false} />
+          </LineChart>
+        </ChartCard>
+        <ChartCard title="热量摄入趋势" isEmpty={!hasChartData(props.trendData, ['calories'])}>
+          <AreaChart data={props.trendData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Area type="monotone" dataKey="calories" stroke="#ea580c" fill="#fed7aa" />
+          </AreaChart>
+        </ChartCard>
+        <ChartCard title="蛋白质达标趋势" isEmpty={!hasChartData(props.trendData, ['proteinMet'])}>
+          <BarChart data={props.trendData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis ticks={[0, 1]} />
+            <Tooltip />
+            <Bar dataKey="proteinMet" fill="#10b981" />
+          </BarChart>
+        </ChartCard>
+        <ChartCard title="肩痛趋势" isEmpty={!hasChartData(props.trendData, ['shoulderPain'])}>
+          <LineChart data={props.trendData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis domain={[0, 10]} />
+            <Tooltip />
+            <Line type="monotone" name="肩痛评分" dataKey="shoulderPain" stroke="#e11d48" strokeWidth={2} dot />
+          </LineChart>
+        </ChartCard>
+        <ChartCard
+          title="训练表现趋势（估算最佳工作组）"
+          isEmpty={!hasChartData(props.trainingPerformanceData, ['benchPress', 'chestPress', 'pulldown', 'row', 'squatOrLegPress', 'romanianDeadlift'])}
+          action={
+            <button
+              type="button"
+              onClick={props.onTogglePerformanceLines}
+              className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              {props.showAllPerformanceLines ? '只看主要动作' : '显示全部动作'}
+            </button>
+          }
+        >
+          <LineChart data={props.trainingPerformanceData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Line type="monotone" name="卧推" dataKey="benchPress" stroke="#059669" strokeWidth={2} dot={false} />
+            <Line type="monotone" name="胸推" dataKey="chestPress" stroke="#2563eb" strokeWidth={2} dot={false} />
+            {props.showAllPerformanceLines ? <Line type="monotone" name="下拉" dataKey="pulldown" stroke="#7c3aed" strokeWidth={2} dot={false} /> : null}
+            {props.showAllPerformanceLines ? <Line type="monotone" name="划船" dataKey="row" stroke="#ea580c" strokeWidth={2} dot={false} /> : null}
+            {props.showAllPerformanceLines ? <Line type="monotone" name="深蹲/腿举" dataKey="squatOrLegPress" stroke="#0f766e" strokeWidth={2} dot={false} /> : null}
+            {props.showAllPerformanceLines ? <Line type="monotone" name="罗马尼亚硬拉" dataKey="romanianDeadlift" stroke="#be123c" strokeWidth={2} dot={false} /> : null}
+          </LineChart>
+        </ChartCard>
+      </div>
+    </div>
+  )
+}
+</file>
+
+<file path="tsconfig.json">
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
+</file>
+
+<file path="tsconfig.node.json">
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023"],
+    "module": "esnext",
+    "types": ["node"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["vite.config.ts", "server"]
+}
+</file>
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+.env
+.env.*
+!.env.example
+
+# Local/server runtime data
+/data
+*.tmp
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+</file>
+
+<file path="index.html">
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="健身追踪" />
+    <title>减脂增肌追踪</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="package.json">
+{
+  "name": "bodybuild",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "server:dev": "tsx server/index.ts",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "typecheck": "tsc -b",
+    "test": "npm run lint && npm run typecheck",
+    "preview": "vite preview",
+    "start": "tsx server/index.ts",
+    "icons:generate": "node scripts/generate-icons.mjs"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.0",
+    "express": "^5.2.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "recharts": "^3.8.1",
+    "tailwindcss": "^4.3.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.12.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "sharp": "^0.34.5",
+    "tsx": "^4.22.3",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.59.2",
+    "vite": "^8.0.12",
+    "vite-plugin-pwa": "^1.3.0"
+  }
+}
+</file>
+
+<file path="src/components/NumberField.tsx">
+import { useEffect, useState } from 'react'
+import { Field, TextInput } from './ui'
+
+export type NumberRange = {
+  min?: number
+  max?: number
+  allowZero?: boolean
+}
+
+function displayNumber(value: number | undefined): string {
+  return value === undefined ? '' : String(value)
+}
+
+export function NumberField({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  step = '1',
+  range,
+  kind = 'integer',
+  inputRef,
+}: {
+  label: string
+  value?: number
+  onChange: (value: number | undefined) => void
+  min?: number
+  max?: number
+  step?: string
+  range?: NumberRange
+  kind?: 'decimal' | 'integer'
+  inputRef?: (el: HTMLInputElement | null) => void
+}) {
+  const effectiveRange: NumberRange | undefined =
+    range ?? (min !== undefined || max !== undefined ? { min, max, allowZero: min === 0 } : undefined)
+  const inputMode = kind === 'decimal' ? 'decimal' : 'numeric'
+  const pattern = kind === 'decimal' ? '[0-9]*[.,]?[0-9]*' : '[0-9]*'
+  const [rawValue, setRawValue] = useState(displayNumber(value))
+  const [outOfRange, setOutOfRange] = useState(false)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const display = displayNumber(value)
+      setRawValue((current) => {
+        const parsed = Number(current)
+        if (current.trim() !== '' && Number.isFinite(parsed) && parsed === value) {
+          return current
+        }
+        return display
+      })
+      if (value !== undefined) setOutOfRange(false)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [value])
+
+  const handleChange = (next: string) => {
+    setRawValue(next)
+    if (next.trim() === '') {
+      setOutOfRange(false)
+      onChange(undefined)
+      return
+    }
+    // 逗号小数点规范化（例如 "1,5" → "1.5"）
+    const normalized = next.trim().replace(',', '.')
+    const parsed = Number(normalized)
+    if (!Number.isFinite(parsed)) {
+      setOutOfRange(true)
+      return
+    }
+    if (kind === 'integer' && !Number.isInteger(parsed)) {
+      setOutOfRange(true)
+      return
+    }
+    if (effectiveRange) {
+      if (effectiveRange.min !== undefined && parsed < effectiveRange.min) {
+        setOutOfRange(true)
+        return
+      }
+      if (effectiveRange.max !== undefined && parsed > effectiveRange.max) {
+        setOutOfRange(true)
+        return
+      }
+    }
+    setOutOfRange(false)
+    onChange(parsed)
+  }
+
+  const rangeHint =
+    effectiveRange && (effectiveRange.min !== undefined || effectiveRange.max !== undefined)
+      ? `应在 ${effectiveRange.min ?? '负无穷'}${effectiveRange.max !== undefined ? `-${effectiveRange.max}` : '+'} 之间`
+      : '请输入有效数字'
+
+  return (
+    <Field label={label}>
+      <TextInput
+        type="text"
+        inputMode={inputMode}
+        pattern={pattern}
+        value={rawValue}
+        data-min={min}
+        data-max={max}
+        data-step={step}
+        ref={inputRef}
+        aria-invalid={outOfRange}
+        className={outOfRange ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-100 dark:border-rose-500 dark:focus:border-rose-400 dark:focus:ring-rose-900/40' : ''}
+        onChange={(event) => handleChange(event.target.value)}
+      />
+      {outOfRange ? <p className="text-xs text-rose-600 dark:text-rose-400">{rangeHint}</p> : null}
+    </Field>
+  )
+}
+</file>
+
+<file path="src/components/PWAUpdatePrompt.tsx">
+import { useEffect, useState } from 'react'
+import { useRegisterSW } from 'virtual:pwa-register/react'
+
+/**
+ * PWA 更新提示
+ * - 检测到新版本时，浮窗提示用户刷新
+ * - autoUpdate 注册类型已经会自动激活新 SW，这里只是给用户一个明确的"重新加载"入口
+ */
+export function PWAUpdatePrompt() {
+  const {
+    needRefresh: [needRefresh, setNeedRefresh],
+    offlineReady: [offlineReady, setOfflineReady],
+    updateServiceWorker,
+  } = useRegisterSW({
+    onRegistered(registration) {
+      // 每小时检查一次更新（应用打开期间）
+      if (registration) {
+        setInterval(() => {
+          void registration.update()
+        }, 60 * 60 * 1000)
+      }
+    },
+    onRegisterError(error) {
+      console.error('SW 注册失败：', error)
+    },
+  })
+
+  const [showOffline, setShowOffline] = useState(false)
+
+  useEffect(() => {
+    if (offlineReady) {
+      const showTimer = window.setTimeout(() => setShowOffline(true), 0)
+      const hideTimer = window.setTimeout(() => {
+        setShowOffline(false)
+        setOfflineReady(false)
+      }, 4000)
+      return () => {
+        window.clearTimeout(showTimer)
+        window.clearTimeout(hideTimer)
+      }
+    }
+  }, [offlineReady, setOfflineReady])
+
+  if (!needRefresh && !showOffline) return null
+
+  return (
+    <div className="fixed inset-x-0 bottom-4 z-50 mx-auto flex max-w-md justify-center px-4">
+      {needRefresh ? (
+        <div className="flex w-full items-center gap-3 rounded-lg border border-emerald-200 bg-white p-3 shadow-lg">
+          <div className="flex-1 text-sm">
+            <p className="font-semibold text-slate-950">新版本已就绪</p>
+            <p className="text-slate-600">点击重新加载使用最新功能。</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => updateServiceWorker(true)}
+            className="inline-flex h-9 items-center justify-center rounded-md bg-emerald-600 px-3 text-sm font-medium text-white hover:bg-emerald-700"
+          >
+            重新加载
+          </button>
+          <button
+            type="button"
+            onClick={() => setNeedRefresh(false)}
+            className="inline-flex h-9 items-center justify-center rounded-md px-2 text-sm text-slate-500 hover:bg-slate-100"
+            aria-label="忽略"
+          >
+            ✕
+          </button>
+        </div>
+      ) : showOffline ? (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-900 shadow-lg">
+          已缓存到本地，可离线使用 🥊
+        </div>
+      ) : null}
+    </div>
+  )
+}
+</file>
+
+<file path="src/components/workout/ExerciseQuickJumpStrip.tsx">
+import type { ExerciseLog } from '../../types'
+
+function getStickyOffset(): number {
+  const stickyNav = document.querySelector<HTMLElement>('nav.sticky')
+  const jumpStrip = document.querySelector<HTMLElement>('[data-exercise-jump-strip]')
+  const navHeight = stickyNav?.getBoundingClientRect().height ?? 0
+  const stripHeight = jumpStrip?.getBoundingClientRect().height ?? 0
+  return Math.ceil(navHeight + stripHeight + 12)
+}
+
+function scrollToExercise(index: number): void {
+  const target = document.getElementById(`exercise-${index}`)
+  if (!target) return
+  const top = window.scrollY + target.getBoundingClientRect().top - getStickyOffset()
+  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+}
+
+export function ExerciseQuickJumpStrip({
+  exercises,
+  visibleIndexes,
+}: {
+  exercises: ExerciseLog[]
+  visibleIndexes: number[]
+}) {
+  if (exercises.length <= 1) return null
+  const visible = new Set(visibleIndexes)
+  return (
+    <div
+      data-exercise-jump-strip
+      className="sticky top-14 z-[5] -mx-3 overflow-x-auto rounded-md border border-slate-200 bg-white/95 px-3 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
+    >
+      <div className="flex min-w-max gap-1.5">
+        {exercises.map((exercise, index) => {
+          const filled = exercise.sets.some(
+            (set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined,
+          )
+          const fullyFilled =
+            exercise.sets.length > 0 &&
+            exercise.sets.every(
+              (set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined,
+            )
+          const tone = fullyFilled
+            ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-700/40'
+            : filled
+              ? 'bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-900/30 dark:text-amber-100 dark:border-amber-600/40'
+              : 'bg-white text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
+          const dim = !visible.has(index) ? 'opacity-50' : ''
+          return (
+            <button
+              key={`jump-${exercise.exerciseId}-${index}`}
+              type="button"
+              onClick={() => scrollToExercise(index)}
+              title={exercise.name}
+              aria-label={`跳转到 ${exercise.name}`}
+              className={`min-h-8 shrink-0 rounded-full border px-2.5 text-xs font-medium transition ${tone} ${dim}`}
+            >
+              {index + 1}. {exercise.name.length > 10 ? exercise.name.slice(0, 10) + '…' : exercise.name}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+</file>
+
+<file path="src/hooks/useColorScheme.ts">
+import { useEffect, useState, useCallback } from 'react'
+
+export type ColorSchemePreference = 'system' | 'light' | 'dark'
+export type ResolvedColorScheme = 'light' | 'dark'
+
+const STORAGE_KEY = 'bodybuild:v1:colorScheme'
+
+function readSavedPreference(): ColorSchemePreference {
+  try {
+    const value = window.localStorage.getItem(STORAGE_KEY)
+    if (value === 'light' || value === 'dark' || value === 'system') return value
+  } catch (error) {
+    console.warn('读取主题偏好失败（localStorage 不可用），将使用跟随系统：', error)
+  }
+  return 'system'
+}
+
+function getSystemScheme(): ResolvedColorScheme {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'light'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+function applyHtmlClass(resolved: ResolvedColorScheme) {
+  const root = document.documentElement
+  if (resolved === 'dark') root.classList.add('dark')
+  else root.classList.remove('dark')
+
+  // 同步浏览器 UI（地址栏 / iOS 状态栏）
+  const meta = document.querySelector('meta[name="theme-color"]')
+  if (meta) {
+    // 深色：slate-950；浅色：与 :root 背景的 slate-50 对齐
+    meta.setAttribute('content', resolved === 'dark' ? '#020617' : '#f8fafc')
+  }
+}
+
+/**
+ * 暗色模式管理：默认跟随系统偏好，可手动覆盖为 light / dark；选择持久化到 localStorage。
+ */
+export function useColorScheme() {
+  const [preference, setPreferenceState] = useState<ColorSchemePreference>(() => readSavedPreference())
+  const [systemScheme, setSystemScheme] = useState<ResolvedColorScheme>(() => getSystemScheme())
+
+  // 监听系统偏好变化
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+    const mql = window.matchMedia('(prefers-color-scheme: dark)')
+    const handler = (event: MediaQueryListEvent) => setSystemScheme(event.matches ? 'dark' : 'light')
+    if (typeof mql.addEventListener === 'function') {
+      mql.addEventListener('change', handler)
+      return () => mql.removeEventListener('change', handler)
+    }
+    // Safari 旧版兼容
+    mql.addListener(handler)
+    return () => mql.removeListener(handler)
+  }, [])
+
+  const resolved: ResolvedColorScheme = preference === 'system' ? systemScheme : preference
+
+  // 同步 html.dark 与 meta theme-color
+  useEffect(() => {
+    applyHtmlClass(resolved)
+  }, [resolved])
+
+  const setPreference = useCallback((next: ColorSchemePreference) => {
+    setPreferenceState(next)
+    try {
+      window.localStorage.setItem(STORAGE_KEY, next)
+    } catch (error) {
+      console.warn('保存主题偏好失败（localStorage 不可用，可能是隐私模式或配额已满）：', error)
+    }
+  }, [])
+
+  const cycle = useCallback(() => {
+    setPreferenceState((current) => {
+      const next: ColorSchemePreference =
+        current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system'
+      try {
+        window.localStorage.setItem(STORAGE_KEY, next)
+      } catch (error) {
+        console.warn('保存主题偏好失败（localStorage 不可用，可能是隐私模式或配额已满）：', error)
+      }
+      return next
+    })
+  }, [])
+
+  return { preference, resolved, setPreference, cycle }
+}
+</file>
+
+<file path="src/lib/dates.ts">
+import type { DayKey } from '../types'
+
+export function formatDateInput(date = new Date()): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+export function isValidDateInput(value: string): boolean {
+  if (typeof value !== 'string') return false
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const [year, month, day] = value.split('-').map(Number)
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return false
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false
+  const date = new Date(year, month - 1, day)
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  )
+}
+
+export function parseDateInput(value: string): Date {
+  if (!isValidDateInput(value)) return new Date(NaN)
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+export function getDayKey(dateValue: string): DayKey {
+  const date = parseDateInput(dateValue)
+  if (Number.isNaN(date.getTime())) {
+    return new Date().getDay() as DayKey
+  }
+  return date.getDay() as DayKey
+}
+
+export function addDays(dateValue: string, days: number): string {
+  const date = parseDateInput(dateValue)
+  if (Number.isNaN(date.getTime())) {
+    const fallback = new Date()
+    fallback.setDate(fallback.getDate() + days)
+    return formatDateInput(fallback)
+  }
+  date.setDate(date.getDate() + days)
+  return formatDateInput(date)
+}
+
+export function startOfWeekSunday(dateValue: string): string {
+  const date = parseDateInput(dateValue)
+  if (Number.isNaN(date.getTime())) {
+    const fallback = new Date()
+    fallback.setDate(fallback.getDate() - fallback.getDay())
+    return formatDateInput(fallback)
+  }
+  date.setDate(date.getDate() - date.getDay())
+  return formatDateInput(date)
+}
+
+export function endOfWeekSaturday(dateValue: string): string {
+  return addDays(startOfWeekSunday(dateValue), 6)
+}
+
+export function isDateInRange(dateValue: string, start: string, end: string): boolean {
+  return dateValue >= start && dateValue <= end
+}
+
+export function sortByDateAsc<T extends { date: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => a.date.localeCompare(b.date))
+}
+
+export function sortByDateDesc<T extends { date: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => b.date.localeCompare(a.date))
+}
+
+export function getRecentWindow<T extends { date: string }>(items: T[], endDate: string, days: number): T[] {
+  const start = addDays(endDate, -(days - 1))
+  return sortByDateAsc(items).filter((item) => isDateInRange(item.date, start, endDate))
+}
+</file>
+
 <file path="src/lib/workout.ts">
 import type { DailyLog, ExerciseLog, ExercisePlan, WorkoutLog, WorkoutTemplate } from '../types'
 import { workoutPlans, getBuiltinTemplates } from '../data/plans'
@@ -2029,167 +2462,126 @@ export function buildDailyCopyText({
 }
 </file>
 
-<file path="src/tabs/DashboardTab.tsx">
-import { Card, StatCard } from '../components/ui'
-import { ChartCard, WeightTrendTooltip } from '../components/ChartCard'
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
-import { roundMetric, buildWeightDelta, buildNeutralDelta, buildHigherIsBetterDelta } from '../lib/metrics'
-import { hasChartData } from '../lib/workout'
-import { weeklyCalorieTarget } from '../data/plans'
-import type { TrendPoint, DashboardStats, TrainingPerformancePoint } from '../lib/metrics'
+<file path="src/tabs/DailyRecordTab.tsx">
+import { Card, Field, TextArea } from '../components/ui'
+import { MiniCalendar } from '../components/MiniCalendar'
+import { DateNavigator } from '../components/DateNavigator'
+import { NumberField } from '../components/NumberField'
+import { Badge, Button } from '../components/ui'
+import type { DailyLog, DailyTarget, WorkoutLog } from '../types'
+import type { SyncState } from '../lib/storage'
 
-type DashboardTabProps = {
-  dashboardStats: DashboardStats
-  trendData: TrendPoint[]
-  trainingPerformanceData: TrainingPerformancePoint[]
-  trendDays: number
-  showAllPerformanceLines: boolean
-  twoWeekAdjustment: { title: string; message: string; tone: string }
-  weekendRisk: { title: string; message: string; tone: string }
-  pushShoulderRisk: { title: string; message: string; tone: string }
-  onTrendDaysChange: (days: 7 | 14 | 30 | 90) => void
-  onTogglePerformanceLines: () => void
+type DailyRecordTabProps = {
+  selectedDate: string
+  today: string
+  selectedLog: Partial<DailyLog> & { date: string }
+  selectedTarget: DailyTarget
+  dailyLogs: DailyLog[]
+  workoutLogs: WorkoutLog[]
+  syncState: SyncState
+  onDateChange: (date: string) => void
+  onUpdateDailyLog: (patch: Partial<DailyLog>) => void
+  onQuickAction: (patch: Partial<DailyLog>) => void
 }
 
-export function DashboardTab(props: DashboardTabProps) {
+export function DailyRecordTab(props: DailyRecordTabProps) {
+  const trainedValue = props.selectedLog.trained
 
   return (
-    <div className="grid gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-3 shadow-sm">
-        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">趋势图时间范围</p>
-        <div className="flex flex-wrap gap-1">
-          {([7, 14, 30, 90] as const).map((days) => (
-            <button
-              key={days}
-              type="button"
-              onClick={() => props.onTrendDaysChange(days)}
-              className={`min-h-9 rounded-md border px-3 text-sm font-medium transition ${
-                props.trendDays === days
-                  ? 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:border-emerald-400 dark:bg-emerald-900/30 dark:text-emerald-200'
-                  : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800'
-              }`}
-            >
-              {days} 天
-            </button>
-          ))}
+    <Card>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-950 dark:text-slate-50">每日记录</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">手机端先填快捷项，完整围度和备注有时间再补。</p>
+        </div>
+        <DateNavigator selectedDate={props.selectedDate} today={props.today} onChange={props.onDateChange} />
+      </div>
+
+      {/* 快捷记录 — 放在日历上方，手机端优先看到 */}
+      <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-700/40 dark:bg-emerald-900/30">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="font-semibold text-emerald-950 dark:text-emerald-100">1 分钟快捷记录</h3>
+            <p className="mt-1 text-xs text-emerald-800 dark:text-emerald-200">优先填这些字段，足够支撑今日预算、周报和趋势判断。</p>
+          </div>
+          <Badge tone="positive">快捷</Badge>
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <NumberField label="体重 kg" value={props.selectedLog.morningWeightKg} step="0.1" kind="decimal" range={{ min: 20, max: 300 }} onChange={(value) => props.onUpdateDailyLog({ morningWeightKg: value })} />
+          <NumberField label="热量 kcal" value={props.selectedLog.calories} range={{ min: 0, max: 10000, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ calories: value })} />
+          <NumberField label="蛋白质 g" value={props.selectedLog.protein} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ protein: value })} />
+          <NumberField label="步数" value={props.selectedLog.steps} range={{ min: 0, max: 100000, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ steps: value })} />
+          <NumberField label="睡眠 h" value={props.selectedLog.sleepHours} step="0.1" kind="decimal" range={{ min: 0, max: 24, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ sleepHours: value })} />
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-emerald-800 dark:text-emerald-200">是否训练</span>
+          <div className="inline-flex rounded-md border border-emerald-200 bg-white dark:border-emerald-700/40 dark:bg-slate-900 p-0.5">
+            {([['', '未填'], ['yes', '是'], ['no', '否']] as const).map(([val, label]) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => props.onQuickAction({ trained: val === '' ? undefined : val === 'yes' })}
+                className={`rounded px-2.5 py-1 text-xs font-medium transition ${
+                  (val === '' ? trainedValue === undefined : val === 'yes' ? trainedValue === true : trainedValue === false)
+                    ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500'
+                    : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <span className="min-w-16 text-xs text-emerald-800 dark:text-emerald-200">
+            {props.syncState === 'synced' ? '已保存' : props.syncState === 'saving' ? '保存中…' : '离线缓存中'}
+          </span>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button variant="secondary" className="px-3" onClick={() => props.onQuickAction({ sleepHours: 7 })}>睡眠 7h</Button>
+          <Button variant="secondary" className="px-3" onClick={() => props.onQuickAction({ trained: true, workoutCompletion: 100 })}>训练 100%</Button>
+          <Button variant="secondary" className="px-3" onClick={() => props.onQuickAction({ steps: props.selectedTarget.stepTarget })}>步数达标</Button>
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard size="large" label="当前体重" value={`${roundMetric(props.dashboardStats.currentWeight)} kg`} />
-        <StatCard
-          size="large"
-          label="7 日平均体重"
-          value={`${roundMetric(props.dashboardStats.averageWeight7)} kg`}
-          delta={buildWeightDelta(props.dashboardStats.averageWeight7, props.dashboardStats.previous.averageWeight7)}
-        />
-        <StatCard
-          size="large"
-          label="本周平均热量"
-          value={`${roundMetric(props.dashboardStats.weekAverageCalories, 0)} kcal`}
-          delta={buildNeutralDelta(props.dashboardStats.weekAverageCalories, props.dashboardStats.previous.weekAverageCalories, 'kcal', 0)}
-        />
-        <StatCard
-          size="large"
-          label="训练完成率"
-          value={`${props.dashboardStats.trainingCompletionRate}%`}
-          delta={buildHigherIsBetterDelta(props.dashboardStats.trainingCompletionRate, props.dashboardStats.previous.trainingCompletionRate, '%')}
-        />
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="蛋白质达标天数"
-          value={`${props.dashboardStats.proteinMetDays} 天`}
-          helper="按每天目标判断"
-          delta={buildHigherIsBetterDelta(props.dashboardStats.proteinMetDays, props.dashboardStats.previous.proteinMetDays, '天')}
-        />
-        <StatCard
-          label="本周平均步数"
-          value={`${roundMetric(props.dashboardStats.averageSteps, 0)} 步`}
-          delta={buildHigherIsBetterDelta(props.dashboardStats.averageSteps, props.dashboardStats.previous.averageSteps, '步', 0)}
-        />
-        <StatCard label="肩痛平均分" value={`${roundMetric(props.dashboardStats.averageShoulderPain)} / 10`} helper="只统计已填写日期" />
-        <StatCard label="周总热量进度" value={`${props.dashboardStats.weekTotalCalories} kcal`} helper={`目标约 ${weeklyCalorieTarget} kcal`} />
-      </div>
-      <Card>
-        <p className="text-sm text-slate-500 dark:text-slate-400">两周建议</p>
-        <p className="mt-2 font-semibold text-slate-950 dark:text-slate-50">{props.twoWeekAdjustment.title}</p>
-        <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">{props.twoWeekAdjustment.message}</p>
-      </Card>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ChartCard title="体重趋势" isEmpty={!hasChartData(props.trendData, ['weight', 'weightAverage7'])}>
-          <LineChart data={props.trendData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
-            <Tooltip content={<WeightTrendTooltip />} />
-            <Line type="monotone" name="每日体重" dataKey="weight" stroke="#059669" strokeWidth={2} dot={false} />
-            <Line type="monotone" name="7 日均重" dataKey="weightAverage7" stroke="#0f172a" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-          </LineChart>
-        </ChartCard>
-        <ChartCard title="腰围趋势" isEmpty={!hasChartData(props.trendData, ['waist'])}>
-          <LineChart data={props.trendData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
-            <Tooltip />
-            <Line type="monotone" dataKey="waist" stroke="#2563eb" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ChartCard>
-        <ChartCard title="热量摄入趋势" isEmpty={!hasChartData(props.trendData, ['calories'])}>
-          <AreaChart data={props.trendData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Area type="monotone" dataKey="calories" stroke="#ea580c" fill="#fed7aa" />
-          </AreaChart>
-        </ChartCard>
-        <ChartCard title="蛋白质达标趋势" isEmpty={!hasChartData(props.trendData, ['proteinMet'])}>
-          <BarChart data={props.trendData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis ticks={[0, 1]} />
-            <Tooltip />
-            <Bar dataKey="proteinMet" fill="#10b981" />
-          </BarChart>
-        </ChartCard>
-        <ChartCard title="肩痛趋势" isEmpty={!hasChartData(props.trendData, ['shoulderPain'])}>
-          <LineChart data={props.trendData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis domain={[0, 10]} />
-            <Tooltip />
-            <Line type="monotone" name="肩痛评分" dataKey="shoulderPain" stroke="#e11d48" strokeWidth={2} dot />
-          </LineChart>
-        </ChartCard>
-        <ChartCard
-          title="训练表现趋势（估算最佳工作组）"
-          isEmpty={!hasChartData(props.trainingPerformanceData, ['benchPress', 'chestPress', 'pulldown', 'row', 'squatOrLegPress', 'romanianDeadlift'])}
-          action={
-            <button
-              type="button"
-              onClick={props.onTogglePerformanceLines}
-              className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-            >
-              {props.showAllPerformanceLines ? '只看主要动作' : '显示全部动作'}
-            </button>
-          }
-        >
-          <LineChart data={props.trainingPerformanceData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Line type="monotone" name="卧推" dataKey="benchPress" stroke="#059669" strokeWidth={2} dot={false} />
-            <Line type="monotone" name="胸推" dataKey="chestPress" stroke="#2563eb" strokeWidth={2} dot={false} />
-            {props.showAllPerformanceLines ? <Line type="monotone" name="下拉" dataKey="pulldown" stroke="#7c3aed" strokeWidth={2} dot={false} /> : null}
-            {props.showAllPerformanceLines ? <Line type="monotone" name="划船" dataKey="row" stroke="#ea580c" strokeWidth={2} dot={false} /> : null}
-            {props.showAllPerformanceLines ? <Line type="monotone" name="深蹲/腿举" dataKey="squatOrLegPress" stroke="#0f766e" strokeWidth={2} dot={false} /> : null}
-            {props.showAllPerformanceLines ? <Line type="monotone" name="罗马尼亚硬拉" dataKey="romanianDeadlift" stroke="#be123c" strokeWidth={2} dot={false} /> : null}
-          </LineChart>
-        </ChartCard>
-      </div>
-    </div>
+
+      {/* 迷你日历 — 折叠以节省手机端空间 */}
+      <details open className="mt-5 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+        <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-slate-800 dark:text-slate-200">最近 6 周日历</summary>
+        <div className="px-3 pb-3">
+          <MiniCalendar
+            selectedDate={props.selectedDate}
+            today={props.today}
+            dailyLogs={props.dailyLogs}
+            workoutLogs={props.workoutLogs}
+            onSelectDate={props.onDateChange}
+          />
+        </div>
+      </details>
+
+      <details className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-600/40 dark:bg-amber-900/30">
+        <summary className="cursor-pointer text-sm font-semibold text-amber-950">身体状态</summary>
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <NumberField label="训练完成度 %" value={props.selectedLog.workoutCompletion} range={{ min: 0, max: 100, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ workoutCompletion: value })} />
+          <NumberField label="肩痛评分 0-10（可选）" value={props.selectedLog.shoulderPainScore} range={{ min: 0, max: 10, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ shoulderPainScore: value })} />
+          <NumberField label="疲劳评分 0-10（可选）" value={props.selectedLog.fatigueScore} range={{ min: 0, max: 10, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ fatigueScore: value })} />
+        </div>
+      </details>
+
+      <details className="mt-5 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-3">
+        <summary className="cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">更多记录</summary>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <NumberField label="腰围 cm" value={props.selectedLog.waistCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => props.onUpdateDailyLog({ waistCm: value })} />
+          <NumberField label="胸围 cm（可选）" value={props.selectedLog.chestCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => props.onUpdateDailyLog({ chestCm: value })} />
+          <NumberField label="上臂围 cm（可选）" value={props.selectedLog.upperArmCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => props.onUpdateDailyLog({ upperArmCm: value })} />
+          <NumberField label="大腿围 cm（可选）" value={props.selectedLog.thighCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => props.onUpdateDailyLog({ thighCm: value })} />
+          <NumberField label="实际碳水 g" value={props.selectedLog.carbs} range={{ min: 0, max: 1000, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ carbs: value })} />
+          <NumberField label="实际脂肪 g" value={props.selectedLog.fat} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ fat: value })} />
+        </div>
+        <div className="mt-4">
+          <Field label="备注">
+            <TextArea value={props.selectedLog.notes ?? ''} onChange={(event) => props.onUpdateDailyLog({ notes: event.target.value })} />
+          </Field>
+        </div>
+      </details>
+    </Card>
   )
 }
 </file>
@@ -2221,8 +2613,14 @@ type TodayTabProps = {
 }
 
 export function TodayTab(props: TodayTabProps) {
+  const hasRecommendations =
+    props.dailyRecommendations.length > 0 ||
+    props.weekendRisk.tone !== 'positive' ||
+    props.pushShoulderRisk.tone !== 'positive'
+
   return (
-    <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+    <div className="grid gap-4">
+      {/* 今日计划 — 全宽 */}
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -2251,79 +2649,78 @@ export function TodayTab(props: TodayTabProps) {
         </div>
       </Card>
 
-      <Card>
-        <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">本周热量预算</h2>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <BudgetTile label="已摄入" value={`${props.dashboardStats.calorieBudget.consumed} kcal`} />
-          <BudgetTile
-            label="剩余额度"
-            value={`${props.dashboardStats.calorieBudget.remaining} kcal`}
-            danger={props.dashboardStats.calorieBudget.remaining < 0}
-          />
-          <BudgetTile label="剩余天数" value={`${props.dashboardStats.calorieBudget.remainingDays} 天`} />
-          <BudgetTile
-            label="平均还能吃"
-            value={props.hasWeeklyCalorieLogs ? `${props.dashboardStats.calorieBudget.averagePerRemainingDay} kcal/天` : '本周暂无摄入记录'}
-            danger={props.hasWeeklyCalorieLogs && props.dashboardStats.calorieBudget.averagePerRemainingDay < 1500}
-          />
-        </div>
-        <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
-          {props.hasWeeklyCalorieLogs
-            ? `预算按周日到周六、约 ${props.weeklyCalorieTarget} kcal 计算；如果周末偏高，优先控制周末自由饮食，不建议极端压低工作日热量。`
-            : '先记录今天热量后，这里会开始计算本周剩余额度和剩余天数平均值。'}
-        </p>
-      </Card>
+      {/* 预算 + 宏量营养 — 桌面端并排 */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">本周热量预算</h2>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <BudgetTile label="已摄入" value={`${props.dashboardStats.calorieBudget.consumed} kcal`} />
+            <BudgetTile
+              label="剩余额度"
+              value={`${props.dashboardStats.calorieBudget.remaining} kcal`}
+              danger={props.dashboardStats.calorieBudget.remaining < 0}
+            />
+            <BudgetTile label="剩余天数" value={`${props.dashboardStats.calorieBudget.remainingDays} 天`} />
+            <BudgetTile
+              label="平均还能吃"
+              value={props.hasWeeklyCalorieLogs ? `${props.dashboardStats.calorieBudget.averagePerRemainingDay} kcal/天` : '本周暂无摄入记录'}
+              danger={props.hasWeeklyCalorieLogs && props.dashboardStats.calorieBudget.averagePerRemainingDay < 1500}
+            />
+          </div>
+        </Card>
 
-      <Card>
-        <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">今日宏量营养剩余额度</h2>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <MacroTile label="热量" value={props.signedRemaining(props.todayCalorieTarget, props.todayLog?.calories)} unit="kcal" tone={props.remainingTone(props.todayCalorieTarget, props.todayLog?.calories)} />
-          <MacroTile label="蛋白质" value={props.signedRemaining(props.target.protein, props.todayLog?.protein)} unit="g" tone={props.remainingTone(props.target.protein, props.todayLog?.protein)} />
-          <MacroTile label="碳水" value={props.signedRemaining(props.target.carbs, props.todayLog?.carbs)} unit="g" tone={props.remainingTone(props.target.carbs, props.todayLog?.carbs)} />
-          <MacroTile label="脂肪" value={props.signedRemaining(props.target.fat, props.todayLog?.fat)} unit="g" tone={props.remainingTone(props.target.fat, props.todayLog?.fat)} />
-        </div>
-        <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">在"每日记录"输入已吃数据后，这里会自动更新。</p>
-      </Card>
+        <Card>
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">今日宏量营养剩余额度</h2>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <MacroTile label="热量" value={props.signedRemaining(props.todayCalorieTarget, props.todayLog?.calories)} unit="kcal" tone={props.remainingTone(props.todayCalorieTarget, props.todayLog?.calories)} />
+            <MacroTile label="蛋白质" value={props.signedRemaining(props.target.protein, props.todayLog?.protein)} unit="g" tone={props.remainingTone(props.target.protein, props.todayLog?.protein)} />
+            <MacroTile label="碳水" value={props.signedRemaining(props.target.carbs, props.todayLog?.carbs)} unit="g" tone={props.remainingTone(props.target.carbs, props.todayLog?.carbs)} />
+            <MacroTile label="脂肪" value={props.signedRemaining(props.target.fat, props.todayLog?.fat)} unit="g" tone={props.remainingTone(props.target.fat, props.todayLog?.fat)} />
+          </div>
+        </Card>
+      </div>
 
-      <Card className="lg:col-span-2">
+      {/* 今日训练动作 — 全宽 */}
+      <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">今日训练动作</h2>
           <Badge tone="neutral">{props.plan.name}</Badge>
         </div>
         {props.plan.exercises.length === 0 ? (
-          <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
-            休息日，无训练动作。专注吃好、睡好、走走。
-          </p>
+          <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">休息日，无训练动作。专注吃好、睡好、走走。</p>
         ) : (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {props.plan.exercises.map((exercise, index) => (
-              <div key={exercise.id} className="rounded-lg border border-slate-200 p-3">
+              <div key={exercise.id} className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
                 <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">{index + 1}. {exercise.name}</p>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{exercise.prescription}</p>
-                {exercise.note ? <p className="mt-1 text-xs text-amber-700">{exercise.note}</p> : null}
+                {exercise.note ? <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">{exercise.note}</p> : null}
               </div>
             ))}
           </div>
         )}
       </Card>
 
-      <TipsDetails defaultOpen={false} summary="肩部保护提醒">
-        <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-          {shoulderProtectionTips.map((tip) => (
-            <li key={tip} className="rounded-md bg-slate-50 px-3 py-2 dark:bg-slate-800">{tip}</li>
-          ))}
-        </ul>
-      </TipsDetails>
+      {/* 提示 + 建议 — 桌面端并排 */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <TipsDetails defaultOpen={false} summary="肩部保护提醒">
+          <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+            {shoulderProtectionTips.map((tip) => (
+              <li key={tip} className="rounded-md bg-slate-50 px-3 py-2 dark:bg-slate-800">{tip}</li>
+            ))}
+          </ul>
+        </TipsDetails>
 
-      <TipsDetails defaultOpen={props.weekendRisk.tone !== 'positive'} summary="今日提示">
-        <div className="mt-3 grid gap-2">
-          <RecommendationBox title={props.weekendRisk.title} message={props.weekendRisk.message} tone={props.weekendRisk.tone} />
-          <RecommendationBox title={props.pushShoulderRisk.title} message={props.pushShoulderRisk.message} tone={props.pushShoulderRisk.tone} />
-          {props.dailyRecommendations.map((item) => (
-            <RecommendationBox key={item.title} title={item.title} message={item.message} tone={item.tone} />
-          ))}
-        </div>
-      </TipsDetails>
+        <TipsDetails defaultOpen={hasRecommendations} summary="今日提示">
+          <div className="mt-3 grid gap-2">
+            <RecommendationBox title={props.weekendRisk.title} message={props.weekendRisk.message} tone={props.weekendRisk.tone} />
+            <RecommendationBox title={props.pushShoulderRisk.title} message={props.pushShoulderRisk.message} tone={props.pushShoulderRisk.tone} />
+            {props.dailyRecommendations.map((item) => (
+              <RecommendationBox key={item.title} title={item.title} message={item.message} tone={item.tone} />
+            ))}
+          </div>
+        </TipsDetails>
+      </div>
     </div>
   )
 }
@@ -2335,6 +2732,7 @@ import { SummaryRow } from '../components/SummaryRow'
 import { addDays, getDayKey, startOfWeekSunday } from '../lib/dates'
 import { roundMetric } from '../lib/metrics'
 import { dayNames, weekendRules } from '../data/plans'
+import { useMemo } from 'react'
 import type { AdjustmentRecommendation, DailyLog, WeeklySummary } from '../types'
 
 type WeeklyTabProps = {
@@ -2350,6 +2748,16 @@ type WeeklyTabProps = {
 }
 
 export function WeeklyTab(props: WeeklyTabProps) {
+  const weekendLogs = useMemo(
+    () =>
+      props.dailyLogs.filter(
+        (log) =>
+          log.date >= props.weeklySummary.weekStart &&
+          log.date <= props.weeklySummary.weekEnd &&
+          [5, 6].includes(getDayKey(log.date)),
+      ),
+    [props.dailyLogs, props.weeklySummary.weekStart, props.weeklySummary.weekEnd],
+  )
 
   return (
     <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
@@ -2422,9 +2830,7 @@ export function WeeklyTab(props: WeeklyTabProps) {
         <Card>
           <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">周末规则检查</h2>
           <div className="mt-3 grid gap-2">
-            {props.dailyLogs
-              .filter((log) => log.date >= props.weeklySummary.weekStart && log.date <= props.weeklySummary.weekEnd && [5, 6].includes(getDayKey(log.date)))
-              .map((log) => (
+            {weekendLogs.map((log) => (
                 <div key={log.date} className="rounded-lg border border-slate-200 p-3 text-sm">
                   <p className="font-medium text-slate-950 dark:text-slate-50">{log.date} · {dayNames[getDayKey(log.date)]}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -2434,7 +2840,7 @@ export function WeeklyTab(props: WeeklyTabProps) {
                   </div>
                 </div>
               ))}
-            {props.dailyLogs.filter((log) => log.date >= props.weeklySummary.weekStart && log.date <= props.weeklySummary.weekEnd && [5, 6].includes(getDayKey(log.date))).length === 0 ? (
+            {weekendLogs.length === 0 ? (
               <p className="text-sm text-slate-500 dark:text-slate-400">本周还没有周五/周六记录。</p>
             ) : null}
           </div>
@@ -2445,24 +2851,14 @@ export function WeeklyTab(props: WeeklyTabProps) {
 }
 </file>
 
-<file path="tsconfig.json">
-{
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
-}
-</file>
-
-<file path="tsconfig.node.json">
+<file path="tsconfig.app.json">
 {
   "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "es2023",
-    "lib": ["ES2023"],
+    "lib": ["ES2023", "DOM"],
     "module": "esnext",
-    "types": ["node"],
+    "types": ["vite/client", "vite-plugin-pwa/client"],
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -2471,6 +2867,7 @@ export function WeeklyTab(props: WeeklyTabProps) {
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
+    "jsx": "react-jsx",
 
     /* Linting */
     "noUnusedLocals": true,
@@ -2478,108 +2875,7 @@ export function WeeklyTab(props: WeeklyTabProps) {
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "server"]
-}
-</file>
-
-<file path=".gitignore">
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-.env
-.env.*
-!.env.example
-
-# Local/server runtime data
-/data
-*.tmp
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-</file>
-
-<file path="index.html">
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#0f172a" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="健身追踪" />
-    <title>减脂增肌追踪</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
-</file>
-
-<file path="package.json">
-{
-  "name": "bodybuild",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "server:dev": "tsx server/index.ts",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "typecheck": "tsc -b",
-    "test": "npm run lint && npm run typecheck",
-    "preview": "vite preview",
-    "start": "tsx server/index.ts",
-    "icons:generate": "node scripts/generate-icons.mjs"
-  },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.3.0",
-    "express": "^5.2.1",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "recharts": "^3.8.1",
-    "tailwindcss": "^4.3.0"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/express": "^5.0.6",
-    "@types/node": "^24.12.3",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^10.3.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.6.0",
-    "sharp": "^0.34.5",
-    "tsx": "^4.22.3",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12",
-    "vite-plugin-pwa": "^1.3.0"
-  }
+  "include": ["src"]
 }
 </file>
 
@@ -2697,9 +2993,9 @@ server {
 }
 ```
 
-## 导入导出
+## 数据备份
 
-页面顶部提供 JSON 导入/导出。导出会备份全部数据（记录 + 任务 + 模板），导入前自动下载当前数据快照、确认后覆盖。
+页面顶部提供 JSON 导出，用于手动备份全部数据（每日记录、训练记录和模板）。应用的主数据源是服务器端 JSON 文件，不提供页面内覆盖式导入，避免误操作覆盖当前记录。
 
 ## 注意
 
@@ -3006,144 +3302,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 }
 </file>
 
-<file path="src/components/PWAUpdatePrompt.tsx">
-import { useEffect, useState } from 'react'
-import { useRegisterSW } from 'virtual:pwa-register/react'
-
-/**
- * PWA 更新提示
- * - 检测到新版本时，浮窗提示用户刷新
- * - autoUpdate 注册类型已经会自动激活新 SW，这里只是给用户一个明确的"重新加载"入口
- */
-export function PWAUpdatePrompt() {
-  const {
-    needRefresh: [needRefresh, setNeedRefresh],
-    offlineReady: [offlineReady, setOfflineReady],
-    updateServiceWorker,
-  } = useRegisterSW({
-    onRegistered(registration) {
-      // 每小时检查一次更新（应用打开期间）
-      if (registration) {
-        setInterval(() => {
-          void registration.update()
-        }, 60 * 60 * 1000)
-      }
-    },
-    onRegisterError(error) {
-      console.error('SW 注册失败：', error)
-    },
-  })
-
-  const [showOffline, setShowOffline] = useState(false)
-
-  useEffect(() => {
-    if (offlineReady) {
-      const showTimer = window.setTimeout(() => setShowOffline(true), 0)
-      const hideTimer = window.setTimeout(() => {
-        setShowOffline(false)
-        setOfflineReady(false)
-      }, 4000)
-      return () => {
-        window.clearTimeout(showTimer)
-        window.clearTimeout(hideTimer)
-      }
-    }
-  }, [offlineReady, setOfflineReady])
-
-  if (!needRefresh && !showOffline) return null
-
-  return (
-    <div className="fixed inset-x-0 bottom-4 z-50 mx-auto flex max-w-md justify-center px-4">
-      {needRefresh ? (
-        <div className="flex w-full items-center gap-3 rounded-lg border border-emerald-200 bg-white p-3 shadow-lg">
-          <div className="flex-1 text-sm">
-            <p className="font-semibold text-slate-950">新版本已就绪</p>
-            <p className="text-slate-600">点击重新加载使用最新功能。</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => updateServiceWorker(true)}
-            className="inline-flex h-9 items-center justify-center rounded-md bg-emerald-600 px-3 text-sm font-medium text-white hover:bg-emerald-700"
-          >
-            重新加载
-          </button>
-          <button
-            type="button"
-            onClick={() => setNeedRefresh(false)}
-            className="inline-flex h-9 items-center justify-center rounded-md px-2 text-sm text-slate-500 hover:bg-slate-100"
-            aria-label="忽略"
-          >
-            ✕
-          </button>
-        </div>
-      ) : showOffline ? (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-900 shadow-lg">
-          已缓存到本地，可离线使用 🥊
-        </div>
-      ) : null}
-    </div>
-  )
-}
-</file>
-
-<file path="src/components/workout/ExerciseQuickJumpStrip.tsx">
-import type { ExerciseLog } from '../../types'
-
-export function ExerciseQuickJumpStrip({
-  exercises,
-  visibleIndexes,
-}: {
-  exercises: ExerciseLog[]
-  visibleIndexes: number[]
-}) {
-  if (exercises.length <= 1) return null
-  const visible = new Set(visibleIndexes)
-  return (
-    <div className="sticky top-14 z-[5] -mx-3 overflow-x-auto rounded-md border border-slate-200 bg-white/95 px-3 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
-      <div className="flex min-w-max gap-1.5">
-        {exercises.map((exercise, index) => {
-          const filled = exercise.sets.some(
-            (set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined,
-          )
-          const fullyFilled =
-            exercise.sets.length > 0 &&
-            exercise.sets.every(
-              (set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined,
-            )
-          const tone = fullyFilled
-            ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-700/40'
-            : filled
-              ? 'bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-900/30 dark:text-amber-100 dark:border-amber-600/40'
-              : 'bg-white text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
-          const dim = !visible.has(index) ? 'opacity-50' : ''
-          return (
-            <button
-              key={`jump-${exercise.exerciseId}-${index}`}
-              type="button"
-              onClick={() => {
-                const target = document.getElementById(`exercise-${index}`)
-                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              }}
-              title={exercise.name}
-              aria-label={`跳转到 ${exercise.name}`}
-              className={`min-h-8 shrink-0 rounded-full border px-2.5 text-xs font-medium transition ${tone} ${dim}`}
-            >
-              {index + 1}. {exercise.name.length > 10 ? exercise.name.slice(0, 10) + '…' : exercise.name}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-</file>
-
 <file path="src/components/workout/ExerciseRecordCard.tsx">
 import { useEffect, useRef, useState } from 'react'
 import type { ExerciseLog, ExerciseSetLog } from '../../types'
 import type { PreviousExerciseRecord } from '../../lib/metrics'
 import { Badge, Button, Field, TextInput } from '../ui'
 import { NumberField } from '../NumberField'
+
+const RIR_OPTIONS = [0, 1, 2, 3] as const
 
 export function ExerciseRecordCard({
   exercise,
@@ -3156,6 +3322,7 @@ export function ExerciseRecordCard({
   onRebuildSets,
   onDeleteExercise,
   onFillEmptySets,
+  onApplyPreviousByIndex,
   forceCollapsed,
 }: {
   exercise: ExerciseLog
@@ -3168,6 +3335,7 @@ export function ExerciseRecordCard({
   onRebuildSets: (exerciseIndex: number) => void
   onDeleteExercise: (exerciseIndex: number) => void
   onFillEmptySets: (exerciseIndex: number) => void
+  onApplyPreviousByIndex: (exerciseIndex: number) => void
   forceCollapsed?: boolean
 }) {
   const filledSets = exercise.sets.filter((set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined).length
@@ -3177,14 +3345,13 @@ export function ExerciseRecordCard({
   const lastAddedSetRef = useRef<HTMLInputElement | null>(null)
   const [userPreference, setUserPreference] = useState<'collapsed' | 'expanded' | null>(null)
 
-  // 衍生折叠状态：forceCollapsed 明确设置时用它；否则尊重用户手动选择；兜底自动折叠
+  // 衍生折叠状态
   const collapsed =
     forceCollapsed !== undefined ? forceCollapsed
     : userPreference === 'collapsed' ? true
     : userPreference === 'expanded' ? false
     : isFullyFilled
 
-  // 新加了一组：重置偏好并聚焦（聚焦是外部 DOM 操作，适合 effect）
   useEffect(() => {
     if (totalSets > previousSetCountRef.current) {
       setUserPreference(null)
@@ -3211,7 +3378,6 @@ export function ExerciseRecordCard({
     })
   }
 
-  // 一键套用上次成绩到所有空组
   const handleApplyPreviousToEmpty = () => {
     if (!previousRecord) return
     exercise.sets.forEach((set, setIndex) => {
@@ -3226,21 +3392,15 @@ export function ExerciseRecordCard({
     })
   }
 
-  // 当前已记录的最重组
   const currentBestWeight = exercise.sets.reduce<number>((best, set) => {
     if (set.weight !== undefined && set.weight > best) return set.weight
     return best
   }, 0)
   const isPersonalRecord =
-    previousRecord !== undefined &&
-    currentBestWeight > 0 &&
-    currentBestWeight > previousRecord.bestWeight
+    previousRecord !== undefined && currentBestWeight > 0 && currentBestWeight > previousRecord.bestWeight
 
-  // 已记录组的训练量（kg × 次）
   const totalVolume = exercise.sets.reduce<number>((sum, set) => {
-    if (set.weight !== undefined && set.reps !== undefined) {
-      return sum + set.weight * set.reps
-    }
+    if (set.weight !== undefined && set.reps !== undefined) return sum + set.weight * set.reps
     return sum
   }, 0)
 
@@ -3294,32 +3454,6 @@ export function ExerciseRecordCard({
 
       {collapsed ? null : (
         <>
-          {(previousRecord && hasEmptySet) || (hasFilledSet && hasEmptySet) ? (
-            <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
-              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">⚡ 快速填充空组</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {previousRecord && hasEmptySet ? (
-                  <button
-                    type="button"
-                    onClick={handleApplyPreviousToEmpty}
-                    className="rounded-md border border-emerald-300 bg-emerald-100 px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-200 dark:border-emerald-700/40 dark:bg-emerald-900/40 dark:text-emerald-200 dark:hover:bg-emerald-900/60"
-                  >
-                    套用上次（{previousRecord.bestWeight} kg{previousRecord.reps !== undefined ? ` × ${previousRecord.reps}` : ''}）
-                  </button>
-                ) : null}
-                {hasFilledSet && hasEmptySet ? (
-                  <button
-                    type="button"
-                    onClick={() => onFillEmptySets(exerciseIndex)}
-                    className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700"
-                  >
-                    复制已填到空组
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-
           <div className="mt-3 grid gap-2">
             {exercise.sets.map((set, setIndex) => {
               const isLast = setIndex === exercise.sets.length - 1
@@ -3329,28 +3463,41 @@ export function ExerciseRecordCard({
                 (previous.weight !== undefined || previous.reps !== undefined || previous.rir !== undefined)
               return (
                 <div key={setIndex} className="grid min-w-0 gap-2 rounded-md bg-slate-50 p-2 dark:bg-slate-800">
-                  <div className="grid min-w-0 grid-cols-3 gap-2">
-                    <NumberField
-                      label={`${setIndex + 1}组 kg`}
-                      value={set.weight}
-                      step="0.5"
-                      kind="decimal"
-                      range={{ min: 0, max: 500, allowZero: true }}
-                      onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { weight: value })}
-                      inputRef={isLast ? (el) => { lastAddedSetRef.current = el } : undefined}
-                    />
-                    <NumberField
-                      label="次数"
-                      value={set.reps}
-                      range={{ min: 1, max: 100 }}
-                      onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { reps: value })}
-                    />
-                    <NumberField
-                      label="RIR"
-                      value={set.rir}
-                      range={{ min: 0, max: 10, allowZero: true }}
-                      onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { rir: value })}
-                    />
+                  {/* 桌面端三列并排，手机端 kg + 次数一行、RIR 按钮一行 */}
+                  <div className="grid min-w-0 gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                    <div className="grid grid-cols-2 gap-2 sm:contents">
+                      <NumberField
+                        label={`${setIndex + 1}组 kg`}
+                        value={set.weight}
+                        step="0.5"
+                        kind="decimal"
+                        range={{ min: 0, max: 500, allowZero: true }}
+                        onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { weight: value })}
+                        inputRef={isLast ? (el) => { lastAddedSetRef.current = el } : undefined}
+                      />
+                      <NumberField
+                        label="次数"
+                        value={set.reps}
+                        range={{ min: 1, max: 100 }}
+                        onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { reps: value })}
+                      />
+                    </div>
+                    <div className="flex items-end gap-0.5">
+                      {RIR_OPTIONS.map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => onUpdateSet(exerciseIndex, setIndex, { rir: set.rir === value ? undefined : value })}
+                          className={`min-h-9 min-w-9 rounded-md border text-xs font-medium transition ${
+                            set.rir === value
+                              ? 'border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/40 dark:text-amber-100'
+                              : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-200'
+                          }`}
+                        >
+                          {value}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   {setIndex > 0 ? (
                     <button
@@ -3370,6 +3517,21 @@ export function ExerciseRecordCard({
           <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <Button variant="secondary" className="px-2" onClick={() => onAddSet(exerciseIndex)}>加一组</Button>
             <Button variant="secondary" className="px-2" onClick={() => onDeleteLastSet(exerciseIndex)} disabled={exercise.sets.length <= 1}>删最后组</Button>
+            {previousRecord && hasEmptySet ? (
+              <Button variant="secondary" className="px-2" onClick={handleApplyPreviousToEmpty}>
+                套用上次{previousRecord.reps !== undefined ? ` ${previousRecord.bestWeight}kg×${previousRecord.reps}` : ''}
+              </Button>
+            ) : null}
+            {previousRecord && hasEmptySet ? (
+              <Button variant="secondary" className="px-2" onClick={() => onApplyPreviousByIndex(exerciseIndex)}>
+                按序号套用上次
+              </Button>
+            ) : null}
+            {hasFilledSet && hasEmptySet ? (
+              <Button variant="secondary" className="px-2" onClick={() => onFillEmptySets(exerciseIndex)}>
+                复制已填到空组
+              </Button>
+            ) : null}
           </div>
 
           <details className="mt-3 rounded-md border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-3">
@@ -3417,6 +3579,7 @@ export function WorkoutControlPanel({
   selectedTemplateId,
   templateOptions,
   syncState,
+  restDay,
   onDateChange,
   onTemplateChange,
   onApplyTemplate,
@@ -3431,6 +3594,7 @@ export function WorkoutControlPanel({
   selectedTemplateId: string
   templateOptions: WorkoutTemplateOption[]
   syncState: SyncState
+  restDay: boolean
   onDateChange: (date: string) => void
   onTemplateChange: (id: string) => void
   onApplyTemplate: (template: WorkoutTemplateOption) => void
@@ -3464,16 +3628,18 @@ export function WorkoutControlPanel({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={hasWorkout ? 'positive' : 'neutral'}>{hasWorkout ? '已记录' : '未开始'}</Badge>
-            <Badge tone={selectedTemplate?.source === 'custom' ? 'warning' : 'neutral'}>
-              {selectedTemplate?.source === 'custom' ? '自定义模板' : '内置计划'}
-            </Badge>
+            {restDay ? <Badge tone="neutral">休息日</Badge> : <Badge tone={hasWorkout ? 'positive' : 'neutral'}>{hasWorkout ? '已记录' : '未开始'}</Badge>}
+            {!restDay ? (
+              <Badge tone={selectedTemplate?.source === 'custom' ? 'warning' : 'neutral'}>
+                {selectedTemplate?.source === 'custom' ? '自定义模板' : '内置计划'}
+              </Badge>
+            ) : null}
           </div>
           <h2 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-50">
-            {selectedWorkout?.workoutName ?? selectedTemplate?.name ?? '选择今天的训练'}
+            {restDay ? '休息日' : selectedWorkout?.workoutName ?? selectedTemplate?.name ?? '选择今天的训练'}
           </h2>
         </div>
-        <span className={`inline-flex shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${syncBadge.className}`}>
+        <span className={`inline-flex min-w-16 shrink-0 justify-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${syncBadge.className}`}>
           {syncBadge.text}
         </span>
       </div>
@@ -3491,9 +3657,29 @@ export function WorkoutControlPanel({
             />
           </label>
           <div className="grid grid-cols-3 gap-1 self-end">
-            <Button variant="secondary" className="px-2" onClick={() => onDateChange(addDays(selectedDate, -1))} aria-label="前一天">‹ 前一天</Button>
-            <Button variant="secondary" className="px-2" onClick={() => onDateChange(today)} disabled={selectedDate === today}>今天</Button>
-            <Button variant="secondary" className="px-2" onClick={() => onDateChange(addDays(selectedDate, 1))} disabled={selectedDate >= today} aria-label="后一天">后一天 ›</Button>
+            <button
+              type="button"
+              onClick={() => onDateChange(addDays(selectedDate, -1))}
+              className="min-h-9 rounded-md border border-slate-200 bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            >
+              ‹ 前一天
+            </button>
+            <button
+              type="button"
+              onClick={() => onDateChange(today)}
+              disabled={selectedDate === today}
+              className="min-h-9 rounded-md border border-slate-200 bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            >
+              今天
+            </button>
+            <button
+              type="button"
+              onClick={() => onDateChange(addDays(selectedDate, 1))}
+              disabled={selectedDate >= today}
+              className="min-h-9 rounded-md border border-slate-200 bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            >
+              后一天 ›
+            </button>
           </div>
         </div>
 
@@ -3598,300 +3784,84 @@ function WorkoutMetric({ label, value }: { label: string; value: string }) {
 }
 </file>
 
-<file path="src/hooks/useColorScheme.ts">
-import { useEffect, useState, useCallback } from 'react'
+<file path="src/index.css">
+@import "tailwindcss";
 
-export type ColorSchemePreference = 'system' | 'light' | 'dark'
-export type ResolvedColorScheme = 'light' | 'dark'
+/* 让 dark: 同时支持系统偏好和 .dark class（手动覆盖） */
+@custom-variant dark (&:where(.dark, .dark *));
 
-const STORAGE_KEY = 'bodybuild:v1:colorScheme'
+:root {
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
+}
 
-function readSavedPreference(): ColorSchemePreference {
-  try {
-    const value = window.localStorage.getItem(STORAGE_KEY)
-    if (value === 'light' || value === 'dark' || value === 'system') return value
-  } catch (error) {
-    console.warn('读取主题偏好失败（localStorage 不可用），将使用跟随系统：', error)
+.dark {
+  color-scheme: dark;
+  color: #e2e8f0;
+  background: #0f172a;
+}
+
+/* 主题切换柔和过渡：仅过渡颜色相关属性，避免影响 transform/opacity 等。
+   svg 内部（recharts 用大量内联色）排除，避免图表闪烁；
+   尊重 prefers-reduced-motion。 */
+@media (prefers-reduced-motion: no-preference) {
+  html,
+  body,
+  *:not(svg):not(svg *) {
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease,
+      fill 200ms ease,
+      stroke 200ms ease;
   }
-  return 'system'
 }
 
-function getSystemScheme(): ResolvedColorScheme {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'light'
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+* {
+  box-sizing: border-box;
 }
 
-function applyHtmlClass(resolved: ResolvedColorScheme) {
-  const root = document.documentElement
-  if (resolved === 'dark') root.classList.add('dark')
-  else root.classList.remove('dark')
-
-  // 同步浏览器 UI（地址栏 / iOS 状态栏）
-  const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) {
-    // 深色：slate-950；浅色：与 :root 背景的 slate-50 对齐
-    meta.setAttribute('content', resolved === 'dark' ? '#020617' : '#f8fafc')
-  }
+html {
+  min-width: 320px;
 }
 
-/**
- * 暗色模式管理：默认跟随系统偏好，可手动覆盖为 light / dark；选择持久化到 localStorage。
- */
-export function useColorScheme() {
-  const [preference, setPreferenceState] = useState<ColorSchemePreference>(() => readSavedPreference())
-  const [systemScheme, setSystemScheme] = useState<ResolvedColorScheme>(() => getSystemScheme())
+body {
+  margin: 0;
+  min-width: 320px;
+}
 
-  // 监听系统偏好变化
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
-    const mql = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = (event: MediaQueryListEvent) => setSystemScheme(event.matches ? 'dark' : 'light')
-    if (typeof mql.addEventListener === 'function') {
-      mql.addEventListener('change', handler)
-      return () => mql.removeEventListener('change', handler)
-    }
-    // Safari 旧版兼容
-    mql.addListener(handler)
-    return () => mql.removeListener(handler)
-  }, [])
-
-  const resolved: ResolvedColorScheme = preference === 'system' ? systemScheme : preference
-
-  // 同步 html.dark 与 meta theme-color
-  useEffect(() => {
-    applyHtmlClass(resolved)
-  }, [resolved])
-
-  const setPreference = useCallback((next: ColorSchemePreference) => {
-    setPreferenceState(next)
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next)
-    } catch (error) {
-      console.warn('保存主题偏好失败（localStorage 不可用，可能是隐私模式或配额已满）：', error)
-    }
-  }, [])
-
-  const cycle = useCallback(() => {
-    setPreferenceState((current) => {
-      const next: ColorSchemePreference =
-        current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system'
-      try {
-        window.localStorage.setItem(STORAGE_KEY, next)
-      } catch (error) {
-        console.warn('保存主题偏好失败（localStorage 不可用，可能是隐私模式或配额已满）：', error)
-      }
-      return next
-    })
-  }, [])
-
-  return { preference, resolved, setPreference, cycle }
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 </file>
 
-<file path="src/lib/dates.ts">
-import type { DayKey } from '../types'
+<file path="src/main.tsx">
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { PWAUpdatePrompt } from './components/PWAUpdatePrompt'
 
-export function formatDateInput(date = new Date()): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-export function isValidDateInput(value: string): boolean {
-  if (typeof value !== 'string') return false
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
-  const [year, month, day] = value.split('-').map(Number)
-  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return false
-  if (month < 1 || month > 12 || day < 1 || day > 31) return false
-  const date = new Date(year, month - 1, day)
-  return (
-    date.getFullYear() === year &&
-    date.getMonth() === month - 1 &&
-    date.getDate() === day
-  )
-}
-
-export function parseDateInput(value: string): Date {
-  if (!isValidDateInput(value)) return new Date(NaN)
-  const [year, month, day] = value.split('-').map(Number)
-  return new Date(year, month - 1, day)
-}
-
-export function getDayKey(dateValue: string): DayKey {
-  const date = parseDateInput(dateValue)
-  if (Number.isNaN(date.getTime())) {
-    return new Date().getDay() as DayKey
-  }
-  return date.getDay() as DayKey
-}
-
-export function addDays(dateValue: string, days: number): string {
-  const date = parseDateInput(dateValue)
-  if (Number.isNaN(date.getTime())) {
-    const fallback = new Date()
-    fallback.setDate(fallback.getDate() + days)
-    return formatDateInput(fallback)
-  }
-  date.setDate(date.getDate() + days)
-  return formatDateInput(date)
-}
-
-export function startOfWeekSunday(dateValue: string): string {
-  const date = parseDateInput(dateValue)
-  if (Number.isNaN(date.getTime())) {
-    const fallback = new Date()
-    fallback.setDate(fallback.getDate() - fallback.getDay())
-    return formatDateInput(fallback)
-  }
-  date.setDate(date.getDate() - date.getDay())
-  return formatDateInput(date)
-}
-
-export function endOfWeekSaturday(dateValue: string): string {
-  return addDays(startOfWeekSunday(dateValue), 6)
-}
-
-export function isDateInRange(dateValue: string, start: string, end: string): boolean {
-  return dateValue >= start && dateValue <= end
-}
-
-export function sortByDateAsc<T extends { date: string }>(items: T[]): T[] {
-  return [...items].sort((a, b) => a.date.localeCompare(b.date))
-}
-
-export function sortByDateDesc<T extends { date: string }>(items: T[]): T[] {
-  return [...items].sort((a, b) => b.date.localeCompare(a.date))
-}
-
-export function getRecentWindow<T extends { date: string }>(items: T[], endDate: string, days: number): T[] {
-  const start = addDays(endDate, -(days - 1))
-  return sortByDateAsc(items).filter((item) => isDateInRange(item.date, start, endDate))
-}
-</file>
-
-<file path="src/tabs/DailyRecordTab.tsx">
-import { Card, Field, TextArea } from '../components/ui'
-import { MiniCalendar } from '../components/MiniCalendar'
-import { DateNavigator } from '../components/DateNavigator'
-import { NumberField } from '../components/NumberField'
-import { Badge, Button } from '../components/ui'
-import type { DailyLog, DailyTarget, WorkoutLog } from '../types'
-import type { SyncState } from '../lib/storage'
-
-type DailyRecordTabProps = {
-  selectedDate: string
-  today: string
-  selectedLog: Partial<DailyLog> & { date: string }
-  selectedTarget: DailyTarget
-  dailyLogs: DailyLog[]
-  workoutLogs: WorkoutLog[]
-  syncState: SyncState
-  onDateChange: (date: string) => void
-  onUpdateDailyLog: (patch: Partial<DailyLog>) => void
-  onQuickAction: (patch: Partial<DailyLog>) => void
-}
-
-export function DailyRecordTab(props: DailyRecordTabProps) {
-  const trainedValue = props.selectedLog.trained
-
-  return (
-    <Card>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-950 dark:text-slate-50">每日记录</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">手机端先填快捷项，完整围度和备注有时间再补。</p>
-        </div>
-        <DateNavigator selectedDate={props.selectedDate} today={props.today} onChange={props.onDateChange} />
-      </div>
-
-      {/* 快捷记录 — 放在日历上方，手机端优先看到 */}
-      <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-700/40 dark:bg-emerald-900/30">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="font-semibold text-emerald-950 dark:text-emerald-100">1 分钟快捷记录</h3>
-            <p className="mt-1 text-xs text-emerald-800 dark:text-emerald-200">优先填这些字段，足够支撑今日预算、周报和趋势判断。</p>
-          </div>
-          <Badge tone="positive">快捷</Badge>
-        </div>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <NumberField label="体重 kg" value={props.selectedLog.morningWeightKg} step="0.1" kind="decimal" range={{ min: 20, max: 300 }} onChange={(value) => props.onUpdateDailyLog({ morningWeightKg: value })} />
-          <NumberField label="热量 kcal" value={props.selectedLog.calories} range={{ min: 0, max: 10000, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ calories: value })} />
-          <NumberField label="蛋白质 g" value={props.selectedLog.protein} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ protein: value })} />
-          <NumberField label="步数" value={props.selectedLog.steps} range={{ min: 0, max: 100000, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ steps: value })} />
-          <NumberField label="睡眠 h" value={props.selectedLog.sleepHours} step="0.1" kind="decimal" range={{ min: 0, max: 24, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ sleepHours: value })} />
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-emerald-800 dark:text-emerald-200">是否训练</span>
-          <div className="inline-flex rounded-md border border-emerald-200 bg-white dark:border-emerald-700/40 dark:bg-slate-900 p-0.5">
-            {([['', '未填'], ['yes', '是'], ['no', '否']] as const).map(([val, label]) => (
-              <button
-                key={val}
-                type="button"
-                onClick={() => props.onQuickAction({ trained: val === '' ? undefined : val === 'yes' })}
-                className={`rounded px-2.5 py-1 text-xs font-medium transition ${
-                  (val === '' ? trainedValue === undefined : val === 'yes' ? trainedValue === true : trainedValue === false)
-                    ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500'
-                    : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <span className="text-xs text-emerald-800 dark:text-emerald-200">
-            {props.syncState === 'synced' ? '已保存' : props.syncState === 'saving' ? '保存中…' : '离线缓存中'}
-          </span>
-        </div>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <Button variant="secondary" className="px-3" onClick={() => props.onQuickAction({ sleepHours: 7 })}>睡眠 7h</Button>
-          <Button variant="secondary" className="px-3" onClick={() => props.onQuickAction({ trained: true, workoutCompletion: 100 })}>训练 100%</Button>
-          <Button variant="secondary" className="px-3" onClick={() => props.onQuickAction({ steps: props.selectedTarget.stepTarget })}>步数达标</Button>
-        </div>
-      </div>
-
-      {/* 迷你日历 — 折叠以节省手机端空间 */}
-      <details open className="mt-5 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-        <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-slate-800 dark:text-slate-200">最近 6 周日历</summary>
-        <div className="px-3 pb-3">
-          <MiniCalendar
-            selectedDate={props.selectedDate}
-            today={props.today}
-            dailyLogs={props.dailyLogs}
-            workoutLogs={props.workoutLogs}
-            onSelectDate={props.onDateChange}
-          />
-        </div>
-      </details>
-
-      <details className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-600/40 dark:bg-amber-900/30">
-        <summary className="cursor-pointer text-sm font-semibold text-amber-950">身体状态</summary>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          <NumberField label="训练完成度 %" value={props.selectedLog.workoutCompletion} range={{ min: 0, max: 100, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ workoutCompletion: value })} />
-          <NumberField label="肩痛评分 0-10（可选）" value={props.selectedLog.shoulderPainScore} range={{ min: 0, max: 10, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ shoulderPainScore: value })} />
-          <NumberField label="疲劳评分 0-10（可选）" value={props.selectedLog.fatigueScore} range={{ min: 0, max: 10, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ fatigueScore: value })} />
-        </div>
-      </details>
-
-      <details className="mt-5 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-3">
-        <summary className="cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">更多记录</summary>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <NumberField label="腰围 cm" value={props.selectedLog.waistCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => props.onUpdateDailyLog({ waistCm: value })} />
-          <NumberField label="胸围 cm（可选）" value={props.selectedLog.chestCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => props.onUpdateDailyLog({ chestCm: value })} />
-          <NumberField label="上臂围 cm（可选）" value={props.selectedLog.upperArmCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => props.onUpdateDailyLog({ upperArmCm: value })} />
-          <NumberField label="大腿围 cm（可选）" value={props.selectedLog.thighCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => props.onUpdateDailyLog({ thighCm: value })} />
-          <NumberField label="实际碳水 g" value={props.selectedLog.carbs} range={{ min: 0, max: 1000, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ carbs: value })} />
-          <NumberField label="实际脂肪 g" value={props.selectedLog.fat} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ fat: value })} />
-        </div>
-        <div className="mt-4">
-          <Field label="备注">
-            <TextArea value={props.selectedLog.notes ?? ''} onChange={(event) => props.onUpdateDailyLog({ notes: event.target.value })} />
-          </Field>
-        </div>
-      </details>
-    </Card>
-  )
-}
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <ErrorBoundary>
+      <App />
+      <PWAUpdatePrompt />
+    </ErrorBoundary>
+  </StrictMode>,
+)
 </file>
 
 <file path="src/tabs/WorkoutTab.tsx">
@@ -3919,6 +3889,7 @@ type WorkoutTabProps = {
   showOnlyUnfinishedExercises: boolean
   workoutTemplates: WorkoutTemplate[]
   syncState: SyncState
+  restDay: boolean
   onDateChange: (date: string) => void
   onTemplateChange: (id: string) => void
   onApplyTemplate: (template: WorkoutTemplateOption) => void
@@ -3933,6 +3904,7 @@ type WorkoutTabProps = {
   onDeleteExercise: (exerciseIndex: number) => void
   onAddExercise: () => void
   onFillEmptySets: (exerciseIndex: number) => void
+  onApplyPreviousByIndex: (exerciseIndex: number) => void
   onSaveAsTemplate: () => void
   onCreateTemplate: () => void
   onUpdateTemplate: (id: string, patch: Partial<WorkoutTemplate>) => void
@@ -3964,6 +3936,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
         selectedTemplateId={props.selectedTemplateId}
         templateOptions={props.templateOptions}
         syncState={props.syncState}
+        restDay={props.restDay}
         onDateChange={props.onDateChange}
         onTemplateChange={props.onTemplateChange}
         onApplyTemplate={props.onApplyTemplate}
@@ -3971,6 +3944,16 @@ export function WorkoutTab(props: WorkoutTabProps) {
         onAddExercise={props.onAddExercise}
       />
 
+      {props.restDay ? (
+        <Card>
+          <div className="py-8 text-center">
+            <p className="text-lg font-semibold text-slate-700 dark:text-slate-300">今天是休息日</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+              已在「记录」页标记为不训练。专注吃好、睡好、走走。
+            </p>
+          </div>
+        </Card>
+      ) : (
       <Card>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -4041,6 +4024,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
                 onRebuildSets={props.onRebuildSets}
                 onDeleteExercise={props.onDeleteExercise}
                 onFillEmptySets={props.onFillEmptySets}
+                onApplyPreviousByIndex={props.onApplyPreviousByIndex}
                 forceCollapsed={collapseMode === 'auto' ? undefined : collapseMode === 'all'}
               />
             ))}
@@ -4058,6 +4042,29 @@ export function WorkoutTab(props: WorkoutTabProps) {
                 <Button variant="secondary" onClick={props.onSaveAsTemplate}>保存为模板</Button>
               </div>
             </div>
+            {props.selectedWorkout && props.workoutSummary.completionPercent === 100 ? (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-700/40 dark:bg-emerald-900/30">
+                <p className="text-lg font-semibold text-emerald-950 dark:text-emerald-100">🎉 训练完成</p>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <div className="rounded-md bg-white dark:bg-slate-900 p-2 text-center">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">动作</p>
+                    <p className="mt-0.5 text-lg font-semibold text-slate-950 dark:text-slate-50">{props.workoutSummary.exerciseCount}</p>
+                  </div>
+                  <div className="rounded-md bg-white dark:bg-slate-900 p-2 text-center">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">完成组</p>
+                    <p className="mt-0.5 text-lg font-semibold text-slate-950 dark:text-slate-50">{props.workoutSummary.filledSets}/{props.workoutSummary.totalSets}</p>
+                  </div>
+                  <div className="rounded-md bg-white dark:bg-slate-900 p-2 text-center">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">训练量</p>
+                    <p className="mt-0.5 text-lg font-semibold text-slate-950 dark:text-slate-50">{Math.round(props.workoutSummary.totalVolume)} kg</p>
+                  </div>
+                  <div className="rounded-md bg-white dark:bg-slate-900 p-2 text-center">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">完成率</p>
+                    <p className="mt-0.5 text-lg font-semibold text-slate-950 dark:text-slate-50">{props.workoutSummary.completionPercent}%</p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <Field label="训练备注">
               <TextArea value={props.selectedWorkout.notes ?? ''} onChange={(event) => props.onUpdateWorkout({ ...props.selectedWorkout!, notes: event.target.value })} />
             </Field>
@@ -4073,6 +4080,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
           </div>
         )}
       </Card>
+      )}
 
       <WorkoutTemplateManager
         templates={props.workoutTemplates}
@@ -4088,428 +4096,6 @@ export function WorkoutTab(props: WorkoutTabProps) {
       />
     </div>
   )
-}
-</file>
-
-<file path="tsconfig.app.json">
-{
-  "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-    "target": "es2023",
-    "lib": ["ES2023", "DOM"],
-    "module": "esnext",
-    "types": ["vite/client", "vite-plugin-pwa/client"],
-    "skipLibCheck": true,
-
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
-    "noEmit": true,
-    "jsx": "react-jsx",
-
-    /* Linting */
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
-  },
-  "include": ["src"]
-}
-</file>
-
-<file path="src/index.css">
-@import "tailwindcss";
-
-/* 让 dark: 同时支持系统偏好和 .dark class（手动覆盖） */
-@custom-variant dark (&:where(.dark, .dark *));
-
-:root {
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  color: #0f172a;
-  background: #f8fafc;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color-scheme: light;
-}
-
-.dark {
-  color-scheme: dark;
-  color: #e2e8f0;
-  background: #0f172a;
-}
-
-/* 主题切换柔和过渡：仅过渡颜色相关属性，避免影响 transform/opacity 等。
-   svg 内部（recharts 用大量内联色）排除，避免图表闪烁；
-   尊重 prefers-reduced-motion。 */
-@media (prefers-reduced-motion: no-preference) {
-  html,
-  body,
-  *:not(svg):not(svg *) {
-    transition:
-      background-color 200ms ease,
-      border-color 200ms ease,
-      color 200ms ease,
-      fill 200ms ease,
-      stroke 200ms ease;
-  }
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html {
-  min-width: 320px;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-}
-
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-</file>
-
-<file path="src/lib/storage.ts">
-import type { BackupPayload, DailyLog, ServerData, WorkoutLog, WorkoutTemplate } from '../types'
-
-const DAILY_LOGS_KEY = 'bodybuild:v1:dailyLogs'
-const WORKOUT_LOGS_KEY = 'bodybuild:v1:workoutLogs'
-const WORKOUT_TEMPLATES_KEY = 'bodybuild:v1:workoutTemplates'
-
-export type SyncState = 'loading' | 'synced' | 'saving' | 'offline'
-
-export interface AppData {
-  dailyLogs: DailyLog[]
-  workoutLogs: WorkoutLog[]
-  workoutTemplates: WorkoutTemplate[]
-}
-
-export interface LoadResult {
-  data: AppData
-  source: 'server' | 'cache'
-  migrated: boolean
-  serverEmptyButLocalHasData: boolean
-}
-
-function readJson<T>(key: string, fallback: T): T {
-  try {
-    const raw = window.localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : fallback
-  } catch (error) {
-    console.warn(`读取本地缓存 ${key} 失败，将使用默认值：`, error)
-    return fallback
-  }
-}
-
-function writeJson<T>(key: string, value: T): void {
-  try {
-    window.localStorage.setItem(key, JSON.stringify(value))
-  } catch (error) {
-    console.warn(`写入本地缓存 ${key} 失败（可能是配额已满或隐私模式）：`, error)
-  }
-}
-
-function hasData(data: AppData): boolean {
-  return data.dailyLogs.length > 0 || data.workoutLogs.length > 0 || data.workoutTemplates.length > 0
-}
-
-function toServerData(data: AppData): ServerData {
-  return {
-    version: 1,
-    updatedAt: new Date().toISOString(),
-    dailyLogs: data.dailyLogs,
-    workoutLogs: data.workoutLogs,
-    workoutTemplates: data.workoutTemplates,
-  }
-}
-
-function fromServerData(data: ServerData): AppData {
-  return {
-    dailyLogs: Array.isArray(data.dailyLogs) ? data.dailyLogs : [],
-    workoutLogs: Array.isArray(data.workoutLogs) ? data.workoutLogs : [],
-    workoutTemplates: Array.isArray(data.workoutTemplates) ? data.workoutTemplates : [],
-  }
-}
-
-async function requestData(): Promise<ServerData> {
-  const response = await fetch('/api/data')
-  if (!response.ok) throw new Error('服务器数据读取失败')
-  return (await response.json()) as ServerData
-}
-
-async function writeServerData(data: AppData): Promise<ServerData> {
-  const response = await fetch('/api/data', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(toServerData(data)),
-  })
-  if (response.status === 413) {
-    throw new Error('数据已超过服务器单次接收上限（5MB），请清理旧记录或联系管理员调整上限。')
-  }
-  if (!response.ok) throw new Error('服务器数据保存失败')
-  return (await response.json()) as ServerData
-}
-
-export function loadCachedData(): AppData {
-  return {
-    dailyLogs: readJson<DailyLog[]>(DAILY_LOGS_KEY, []),
-    workoutLogs: readJson<WorkoutLog[]>(WORKOUT_LOGS_KEY, []),
-    workoutTemplates: readJson<WorkoutTemplate[]>(WORKOUT_TEMPLATES_KEY, []),
-  }
-}
-
-export function cacheData(data: AppData): void {
-  writeJson(DAILY_LOGS_KEY, data.dailyLogs)
-  writeJson(WORKOUT_LOGS_KEY, data.workoutLogs)
-  writeJson(WORKOUT_TEMPLATES_KEY, data.workoutTemplates)
-}
-
-export async function loadAppData(): Promise<LoadResult> {
-  const cached = loadCachedData()
-
-  try {
-    const serverData = fromServerData(await requestData())
-    if (!hasData(serverData) && hasData(cached)) {
-      return {
-        data: cached,
-        source: 'cache',
-        migrated: false,
-        serverEmptyButLocalHasData: true,
-      }
-    }
-    cacheData(serverData)
-    return {
-      data: serverData,
-      source: 'server',
-      migrated: false,
-      serverEmptyButLocalHasData: false,
-    }
-  } catch {
-    return {
-      data: cached,
-      source: 'cache',
-      migrated: false,
-      serverEmptyButLocalHasData: false,
-    }
-  }
-}
-
-export async function saveAppData(data: AppData): Promise<AppData> {
-  cacheData(data)
-  const saved = fromServerData(await writeServerData(data))
-  cacheData(saved)
-  return saved
-}
-
-export function createBackup(
-  dailyLogs: DailyLog[],
-  workoutLogs: WorkoutLog[],
-  workoutTemplates: WorkoutTemplate[],
-): BackupPayload {
-  return {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    dailyLogs,
-    workoutLogs,
-    workoutTemplates,
-  }
-}
-
-export function downloadBackup(payload: BackupPayload): void {
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  const stamp = payload.exportedAt.replace(/[:.]/g, '-')
-  link.download = `bodybuild-backup-${stamp}.json`
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  URL.revokeObjectURL(url)
-}
-
-export function parseBackup(raw: string): BackupPayload {
-  const parsed = JSON.parse(raw) as BackupPayload
-  if (
-    parsed.version !== 1 ||
-    !Array.isArray(parsed.dailyLogs) ||
-    !Array.isArray(parsed.workoutLogs) ||
-    (parsed.workoutTemplates !== undefined && !Array.isArray(parsed.workoutTemplates))
-  ) {
-    throw new Error('备份文件格式不正确')
-  }
-  return {
-    ...parsed,
-    workoutTemplates: parsed.workoutTemplates ?? [],
-  }
-}
-</file>
-
-<file path="src/main.tsx">
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { ErrorBoundary } from './components/ErrorBoundary'
-import { PWAUpdatePrompt } from './components/PWAUpdatePrompt'
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <App />
-      <PWAUpdatePrompt />
-    </ErrorBoundary>
-  </StrictMode>,
-)
-</file>
-
-<file path="src/types.ts">
-export type DayKey = 0 | 1 | 2 | 3 | 4 | 5 | 6
-
-export interface UserProfile {
-  sex: 'male'
-  birthDate: string
-  heightCm: number
-  initialWeightKg: number
-  estimatedBodyFatPercent: number
-  targetWeeks: string
-  goal: string
-  sleepHours: number
-  averageSteps: number
-  trainingDays: DayKey[]
-}
-
-export interface DailyTarget {
-  day: DayKey
-  dayName: string
-  workoutName: string
-  calories?: number
-  calorieRange?: [number, number]
-  protein: number
-  carbs?: number
-  fat?: number
-  stepTarget: number
-  notes: string[]
-  isTrainingDay: boolean
-}
-
-export interface ExercisePlan {
-  id: string
-  name: string
-  prescription: string
-  note?: string
-}
-
-export interface WorkoutPlan {
-  day: DayKey
-  name: string
-  focus: string
-  exercises: ExercisePlan[]
-}
-
-export interface WorkoutTemplate {
-  id: string
-  name: string
-  focus: string
-  category: string
-  exercises: ExercisePlan[]
-  createdAt: string
-  updatedAt: string
-  isBuiltin?: boolean
-}
-
-export interface DailyLog {
-  date: string
-  morningWeightKg?: number
-  waistCm?: number
-  chestCm?: number
-  upperArmCm?: number
-  thighCm?: number
-  calories?: number
-  protein?: number
-  carbs?: number
-  fat?: number
-  steps?: number
-  sleepHours?: number
-  trained?: boolean
-  workoutCompletion?: number
-  shoulderPainScore?: number
-  fatigueScore?: number
-  notes?: string
-}
-
-export interface ExerciseSetLog {
-  weight?: number
-  reps?: number
-  rir?: number
-}
-
-export interface ExerciseLog {
-  exerciseId: string
-  name: string
-  target: string
-  sets: ExerciseSetLog[]
-  notes?: string
-}
-
-export interface WorkoutLog {
-  date: string
-  workoutName: string
-  exercises: ExerciseLog[]
-  notes?: string
-}
-
-export interface WeeklySummary {
-  weekStart: string
-  weekEnd: string
-  averageWeight?: number
-  previousAverageWeight?: number
-  weightDelta?: number
-  waistDelta?: number
-  trainingCompletionRate: number
-  totalCalories: number
-  calorieStatus: 'low' | 'on-track' | 'high' | 'unknown'
-  weekendAverageCalories?: number
-  weekendOverLimit: boolean
-  suggestions: string[]
-}
-
-export type RecommendationTone = 'positive' | 'warning' | 'danger' | 'neutral'
-
-export interface AdjustmentRecommendation {
-  title: string
-  message: string
-  tone: RecommendationTone
-}
-
-export interface BackupPayload {
-  version: 1
-  exportedAt: string
-  dailyLogs: DailyLog[]
-  workoutLogs: WorkoutLog[]
-  workoutTemplates?: WorkoutTemplate[]
-}
-
-export interface ServerData {
-  version: 1
-  updatedAt: string
-  dailyLogs: DailyLog[]
-  workoutLogs: WorkoutLog[]
-  workoutTemplates: WorkoutTemplate[]
 }
 </file>
 
@@ -5209,6 +4795,304 @@ export function buildNeutralDelta(
 }
 </file>
 
+<file path="src/lib/storage.ts">
+import type { BackupPayload, DailyLog, ServerData, WorkoutLog, WorkoutTemplate } from '../types'
+
+const DAILY_LOGS_KEY = 'bodybuild:v1:dailyLogs'
+const WORKOUT_LOGS_KEY = 'bodybuild:v1:workoutLogs'
+const WORKOUT_TEMPLATES_KEY = 'bodybuild:v1:workoutTemplates'
+
+export type SyncState = 'loading' | 'synced' | 'saving' | 'offline'
+
+export interface AppData {
+  dailyLogs: DailyLog[]
+  workoutLogs: WorkoutLog[]
+  workoutTemplates: WorkoutTemplate[]
+}
+
+export interface LoadResult {
+  data: AppData
+  source: 'server' | 'cache'
+  migrated: boolean
+  serverEmptyButLocalHasData: boolean
+}
+
+function readJson<T>(key: string, fallback: T): T {
+  try {
+    const raw = window.localStorage.getItem(key)
+    return raw ? (JSON.parse(raw) as T) : fallback
+  } catch (error) {
+    console.warn(`读取本地缓存 ${key} 失败，将使用默认值：`, error)
+    return fallback
+  }
+}
+
+function writeJson<T>(key: string, value: T): void {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value))
+  } catch (error) {
+    console.warn(`写入本地缓存 ${key} 失败（可能是配额已满或隐私模式）：`, error)
+  }
+}
+
+function hasData(data: AppData): boolean {
+  return data.dailyLogs.length > 0 || data.workoutLogs.length > 0 || data.workoutTemplates.length > 0
+}
+
+function toServerData(data: AppData): ServerData {
+  return {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    dailyLogs: data.dailyLogs,
+    workoutLogs: data.workoutLogs,
+    workoutTemplates: data.workoutTemplates,
+  }
+}
+
+function fromServerData(data: ServerData): AppData {
+  return {
+    dailyLogs: Array.isArray(data.dailyLogs) ? data.dailyLogs : [],
+    workoutLogs: Array.isArray(data.workoutLogs) ? data.workoutLogs : [],
+    workoutTemplates: Array.isArray(data.workoutTemplates) ? data.workoutTemplates : [],
+  }
+}
+
+async function requestData(): Promise<ServerData> {
+  const response = await fetch('/api/data')
+  if (!response.ok) throw new Error('服务器数据读取失败')
+  return (await response.json()) as ServerData
+}
+
+async function writeServerData(data: AppData): Promise<ServerData> {
+  const response = await fetch('/api/data', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(toServerData(data)),
+  })
+  if (response.status === 413) {
+    throw new Error('数据已超过服务器单次接收上限（5MB），请清理旧记录或联系管理员调整上限。')
+  }
+  if (!response.ok) throw new Error('服务器数据保存失败')
+  return (await response.json()) as ServerData
+}
+
+export function loadCachedData(): AppData {
+  return {
+    dailyLogs: readJson<DailyLog[]>(DAILY_LOGS_KEY, []),
+    workoutLogs: readJson<WorkoutLog[]>(WORKOUT_LOGS_KEY, []),
+    workoutTemplates: readJson<WorkoutTemplate[]>(WORKOUT_TEMPLATES_KEY, []),
+  }
+}
+
+export function cacheData(data: AppData): void {
+  writeJson(DAILY_LOGS_KEY, data.dailyLogs)
+  writeJson(WORKOUT_LOGS_KEY, data.workoutLogs)
+  writeJson(WORKOUT_TEMPLATES_KEY, data.workoutTemplates)
+}
+
+export async function loadAppData(): Promise<LoadResult> {
+  const cached = loadCachedData()
+
+  try {
+    const serverData = fromServerData(await requestData())
+    if (!hasData(serverData) && hasData(cached)) {
+      return {
+        data: cached,
+        source: 'cache',
+        migrated: false,
+        serverEmptyButLocalHasData: true,
+      }
+    }
+    cacheData(serverData)
+    return {
+      data: serverData,
+      source: 'server',
+      migrated: false,
+      serverEmptyButLocalHasData: false,
+    }
+  } catch {
+    return {
+      data: cached,
+      source: 'cache',
+      migrated: false,
+      serverEmptyButLocalHasData: false,
+    }
+  }
+}
+
+export async function saveAppData(data: AppData): Promise<AppData> {
+  cacheData(data)
+  const saved = fromServerData(await writeServerData(data))
+  cacheData(saved)
+  return saved
+}
+
+export function createBackup(
+  dailyLogs: DailyLog[],
+  workoutLogs: WorkoutLog[],
+  workoutTemplates: WorkoutTemplate[],
+): BackupPayload {
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    dailyLogs,
+    workoutLogs,
+    workoutTemplates,
+  }
+}
+
+export function downloadBackup(payload: BackupPayload): void {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  const stamp = payload.exportedAt.replace(/[:.]/g, '-')
+  link.download = `bodybuild-backup-${stamp}.json`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+</file>
+
+<file path="src/types.ts">
+export type DayKey = 0 | 1 | 2 | 3 | 4 | 5 | 6
+
+export interface UserProfile {
+  sex: 'male'
+  birthDate: string
+  heightCm: number
+  initialWeightKg: number
+  estimatedBodyFatPercent: number
+  targetWeeks: string
+  goal: string
+  sleepHours: number
+  averageSteps: number
+  trainingDays: DayKey[]
+}
+
+export interface DailyTarget {
+  day: DayKey
+  dayName: string
+  workoutName: string
+  calories?: number
+  calorieRange?: [number, number]
+  protein: number
+  carbs?: number
+  fat?: number
+  stepTarget: number
+  notes: string[]
+  isTrainingDay: boolean
+}
+
+export interface ExercisePlan {
+  id: string
+  name: string
+  prescription: string
+  note?: string
+}
+
+export interface WorkoutPlan {
+  day: DayKey
+  name: string
+  focus: string
+  exercises: ExercisePlan[]
+}
+
+export interface WorkoutTemplate {
+  id: string
+  name: string
+  focus: string
+  category: string
+  exercises: ExercisePlan[]
+  createdAt: string
+  updatedAt: string
+  isBuiltin?: boolean
+}
+
+export interface DailyLog {
+  date: string
+  morningWeightKg?: number
+  waistCm?: number
+  chestCm?: number
+  upperArmCm?: number
+  thighCm?: number
+  calories?: number
+  protein?: number
+  carbs?: number
+  fat?: number
+  steps?: number
+  sleepHours?: number
+  trained?: boolean
+  workoutCompletion?: number
+  shoulderPainScore?: number
+  fatigueScore?: number
+  notes?: string
+}
+
+export interface ExerciseSetLog {
+  weight?: number
+  reps?: number
+  rir?: number
+}
+
+export interface ExerciseLog {
+  exerciseId: string
+  name: string
+  target: string
+  sets: ExerciseSetLog[]
+  notes?: string
+}
+
+export interface WorkoutLog {
+  date: string
+  workoutName: string
+  exercises: ExerciseLog[]
+  notes?: string
+}
+
+export interface WeeklySummary {
+  weekStart: string
+  weekEnd: string
+  averageWeight?: number
+  previousAverageWeight?: number
+  weightDelta?: number
+  waistDelta?: number
+  trainingCompletionRate: number
+  totalCalories: number
+  calorieStatus: 'low' | 'on-track' | 'high' | 'unknown'
+  weekendAverageCalories?: number
+  weekendOverLimit: boolean
+  suggestions: string[]
+}
+
+export type RecommendationTone = 'positive' | 'warning' | 'danger' | 'neutral'
+
+export interface AdjustmentRecommendation {
+  title: string
+  message: string
+  tone: RecommendationTone
+}
+
+export interface BackupPayload {
+  version: 1
+  exportedAt: string
+  dailyLogs: DailyLog[]
+  workoutLogs: WorkoutLog[]
+  workoutTemplates?: WorkoutTemplate[]
+}
+
+export interface ServerData {
+  version: 1
+  updatedAt: string
+  dailyLogs: DailyLog[]
+  workoutLogs: WorkoutLog[]
+  workoutTemplates: WorkoutTemplate[]
+}
+</file>
+
 <file path="src/components/ui.tsx">
 import { forwardRef } from 'react'
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes, WheelEvent as ReactWheelEvent } from 'react'
@@ -5362,11 +5246,11 @@ export function RecommendationBox({ title, message, tone }: { title: string; mes
 </file>
 
 <file path="src/App.tsx">
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { dailyTargets, dayNames, weeklyCalorieTarget, workoutPlans } from './data/plans'
 import { formatDateInput, getDayKey, isValidDateInput } from './lib/dates'
 import { calculateDashboardStats, buildTrainingPerformanceData, buildTrendData, createWeeklySummary, findPreviousExerciseRecord, logsForWeek } from './lib/metrics'
-import type { PreviousExerciseRecord } from './lib/metrics'
+import type { PreviousExerciseRecord, TrendPoint, TrainingPerformancePoint } from './lib/metrics'
 import {
   buildDailyCopyText,
   builtinTemplateOptions,
@@ -5396,12 +5280,11 @@ import {
   downloadBackup,
   loadAppData,
   loadCachedData,
-  parseBackup,
   saveAppData,
 } from './lib/storage'
 import { createId } from './lib/ids'
 import { getBuiltinTemplates } from './data/plans'
-import type { DailyLog, ExerciseLog, ExercisePlan, ExerciseSetLog, WorkoutLog, WorkoutTemplate } from './types'
+import type { AdjustmentRecommendation, DailyLog, ExerciseLog, ExercisePlan, ExerciseSetLog, WeeklySummary, WorkoutLog, WorkoutTemplate } from './types'
 import { Button } from './components/ui'
 import { useColorScheme } from './hooks/useColorScheme'
 import { useConfirm } from './components/ConfirmDialog'
@@ -5410,7 +5293,7 @@ import { CopyPreviewDialog } from './components/CopyPreviewDialog'
 import { TodayTab } from './tabs/TodayTab'
 import { DailyRecordTab } from './tabs/DailyRecordTab'
 import { WorkoutTab } from './tabs/WorkoutTab'
-import { DashboardTab } from './tabs/DashboardTab'
+const DashboardTab = lazy(() => import('./tabs/DashboardTab').then((mod) => ({ default: mod.DashboardTab })))
 import { WeeklyTab } from './tabs/WeeklyTab'
 
 type TabKey = 'today' | 'daily' | 'workout' | 'dashboard' | 'weekly'
@@ -5501,7 +5384,7 @@ function App() {
   const [syncState, setSyncState] = useState<SyncState>('loading')
   const [syncMessage, setSyncMessage] = useState('正在连接服务器数据文件...')
   const [slowSave, setSlowSave] = useState(false)
-  const [importMessage, setImportMessage] = useState('')
+  const [noticeMessage, setNoticeMessage] = useState('')
   const [copyMessage, setCopyMessage] = useState('')
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [showOnlyUnfinishedExercises, setShowOnlyUnfinishedExercises] = useState(false)
@@ -5545,6 +5428,7 @@ function App() {
     () => workoutLogs.find((log) => log.date === selectedDate),
     [workoutLogs, selectedDate],
   )
+  const restDay = selectedLog.trained === false
   const workoutSummary = useMemo(() => summarizeWorkout(selectedWorkout), [selectedWorkout])
   const templateOptions = useMemo(
     () => [...builtinTemplateOptions(), ...workoutTemplates.filter((t) => !t.isBuiltin).map(customTemplateToOption)],
@@ -5555,15 +5439,21 @@ function App() {
     [templateOptions, selectedTemplateId],
   )
   const dashboardStats = useMemo(() => calculateDashboardStats(dailyLogs, today), [dailyLogs, today])
-  const trendData = useMemo(() => buildTrendData(dailyLogs, today, trendDays), [dailyLogs, today, trendDays])
-  const trainingPerformanceData = useMemo(
-    () => buildTrainingPerformanceData(workoutLogs, today, Math.max(60, trendDays)),
-    [workoutLogs, today, trendDays],
+  const trendData = useMemo(
+    () => (activeTab === 'dashboard' ? buildTrendData(dailyLogs, today, trendDays) : ([] as TrendPoint[])),
+    [dailyLogs, today, trendDays, activeTab],
   )
-  const weeklySummary = useMemo(() => createWeeklySummary(dailyLogs, weeklyAnchorDate), [dailyLogs, weeklyAnchorDate])
+  const trainingPerformanceData = useMemo(
+    () => (activeTab === 'dashboard' ? buildTrainingPerformanceData(workoutLogs, today, Math.max(60, trendDays)) : ([] as TrainingPerformancePoint[])),
+    [workoutLogs, today, trendDays, activeTab],
+  )
+  const weeklySummary = useMemo(
+    () => (activeTab === 'weekly' ? createWeeklySummary(dailyLogs, weeklyAnchorDate) : ({} as WeeklySummary)),
+    [dailyLogs, weeklyAnchorDate, activeTab],
+  )
   const dailyRecommendations = useMemo(
-    () => getDailyRecommendations(todayLog, dailyLogs, today),
-    [todayLog, dailyLogs, today],
+    () => (activeTab === 'today' ? getDailyRecommendations(todayLog, dailyLogs, today) : ([] as AdjustmentRecommendation[])),
+    [todayLog, dailyLogs, today, activeTab],
   )
   const twoWeekAdjustment = useMemo(() => getTwoWeekAdjustment(dailyLogs, today), [dailyLogs, today])
   const weekendRisk = useMemo(() => getWeekendRiskRecommendation(dailyLogs, today), [dailyLogs, today])
@@ -5704,10 +5594,10 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (!importMessage) return
-    const timer = window.setTimeout(() => setImportMessage(''), 4000)
+    if (!noticeMessage) return
+    const timer = window.setTimeout(() => setNoticeMessage(''), 4000)
     return () => window.clearTimeout(timer)
-  }, [importMessage])
+  }, [noticeMessage])
 
   useEffect(() => {
     if (!copyMessage) return
@@ -5847,7 +5737,7 @@ function App() {
   async function replaceWorkoutFromTemplate(template: WorkoutTemplateOption | undefined) {
     if (!template) return
     if (template.exercises.length === 0) {
-      setImportMessage('这是休息日模板，没有训练动作可填入。如需自由训练，请点"空白训练"。')
+      setNoticeMessage('这是休息日模板，没有训练动作可填入。如需自由训练，请点"空白训练"。')
       return
     }
     if (hasWorkoutContent(selectedWorkout)) {
@@ -5962,6 +5852,42 @@ function App() {
         sets: ex.sets.map((set) => {
           const isEmpty = set.weight === undefined && set.reps === undefined && set.rir === undefined
           return isEmpty ? { ...lastFilled } : set
+        }),
+      }
+    })
+    updateWorkoutLog({ ...base, exercises }, true)
+  }
+
+  function applyPreviousSetsByIndex(exerciseIndex: number) {
+    const base = currentWorkoutOrBlank()
+    const exercise = base.exercises[exerciseIndex]
+    if (!exercise) return
+    // 找上一次同动作的完整组数据
+    const sortedLogs = [...workoutLogs]
+      .filter((log) => log.date < selectedDate)
+      .sort((a, b) => b.date.localeCompare(a.date))
+    let previousSets: ExerciseSetLog[] | undefined
+    for (const log of sortedLogs) {
+      const match = log.exercises.find(
+        (e) => e.exerciseId === exercise.exerciseId || e.name.trim() === exercise.name.trim(),
+      )
+      if (match && match.sets.some((s) => s.weight !== undefined || s.reps !== undefined || s.rir !== undefined)) {
+        previousSets = match.sets
+        break
+      }
+    }
+    if (!previousSets) return
+    const exercises = base.exercises.map((ex, i) => {
+      if (i !== exerciseIndex) return ex
+      return {
+        ...ex,
+        sets: ex.sets.map((set, setIndex) => {
+          const isEmpty = set.weight === undefined && set.reps === undefined && set.rir === undefined
+          const prev = previousSets?.[setIndex]
+          if (isEmpty && prev && (prev.weight !== undefined || prev.reps !== undefined || prev.rir !== undefined)) {
+            return { ...prev }
+          }
+          return set
         }),
       }
     })
@@ -6094,56 +6020,6 @@ function App() {
     downloadBackup(createBackup(dailyLogs, workoutLogs, workoutTemplates))
   }
 
-  async function importData(file: File | undefined) {
-    if (!file) return
-    try {
-      const payload = parseBackup(await file.text())
-      const templateCount = payload.workoutTemplates?.length ?? 0
-      const dailyDates = payload.dailyLogs.map((log) => log.date).sort()
-      const workoutDates = payload.workoutLogs.map((log) => log.date).sort()
-      const dailyRange = dailyDates.length
-        ? dailyDates.length === 1
-          ? dailyDates[0]
-          : `${dailyDates[0]} 至 ${dailyDates[dailyDates.length - 1]}`
-        : ''
-      const workoutRange = workoutDates.length
-        ? workoutDates.length === 1
-          ? workoutDates[0]
-          : `${workoutDates[0]} 至 ${workoutDates[workoutDates.length - 1]}`
-        : ''
-      const confirmMessage =
-        `准备导入：\n` +
-        `· ${payload.dailyLogs.length} 条每日记录${dailyRange ? `（${dailyRange}）` : ''}\n` +
-        `· ${payload.workoutLogs.length} 条训练记录${workoutRange ? `（${workoutRange}）` : ''}\n` +
-        `· ${templateCount} 个训练模板\n\n` +
-        '这会覆盖当前所有数据。'
-      const ok = await confirm({
-        title: '导入并覆盖？',
-        message: confirmMessage,
-        confirmLabel: '导入',
-        tone: 'danger',
-      })
-      if (!ok) {
-        setImportMessage('已取消导入。')
-        return
-      }
-      try {
-        downloadBackup(createBackup(dailyLogs, workoutLogs, workoutTemplates))
-      } catch (backupError) {
-        console.warn('导入前自动备份失败：', backupError)
-      }
-      flushPending()
-      await persistData({
-        dailyLogs: payload.dailyLogs,
-        workoutLogs: payload.workoutLogs,
-        workoutTemplates: payload.workoutTemplates ?? [],
-      })
-      setImportMessage('导入成功，已自动把原数据备份到下载目录。')
-    } catch (error) {
-      setImportMessage(error instanceof Error ? error.message : '导入失败。')
-    }
-  }
-
   const [copyPreviewText, setCopyPreviewText] = useState<string | null>(null)
 
   function buildTodayCopyText() {
@@ -6214,7 +6090,7 @@ function App() {
             <div>
               <h1 className="text-2xl font-semibold text-slate-950 dark:text-slate-50 sm:text-3xl">减脂增肌追踪</h1>
               <div
-                className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-medium ${
+                className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                   syncState === 'synced'
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200'
                     : syncState === 'saving' || syncState === 'loading'
@@ -6246,18 +6122,6 @@ function App() {
               <Button className="w-full sm:w-auto" variant="secondary" onClick={exportData}>
                 导出 JSON
               </Button>
-              <label className="inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 text-sm font-medium text-slate-800 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 sm:w-auto">
-                导入 JSON
-                <input
-                  type="file"
-                  accept="application/json"
-                  className="sr-only"
-                  onChange={(event) => {
-                    void importData(event.target.files?.[0])
-                    event.currentTarget.value = ''
-                  }}
-                />
-              </label>
             </div>
           </div>
           <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{syncMessage}</p>
@@ -6271,7 +6135,7 @@ function App() {
               </Button>
             </div>
           ) : null}
-          {importMessage ? <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{importMessage}</p> : null}
+          {noticeMessage ? <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{noticeMessage}</p> : null}
           {copyMessage ? <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-400">{copyMessage}</p> : null}
         </header>
 
@@ -6349,6 +6213,7 @@ function App() {
             selectedDate={selectedDate}
             today={today}
             selectedWorkout={selectedWorkout}
+            restDay={restDay}
             selectedTemplate={selectedTemplate}
             selectedTemplateId={selectedTemplateId}
             templateOptions={templateOptions}
@@ -6372,6 +6237,7 @@ function App() {
             onDeleteExercise={deleteExerciseFromWorkout}
             onAddExercise={addExerciseToWorkout}
             onFillEmptySets={fillEmptySetsFromLast}
+            onApplyPreviousByIndex={applyPreviousSetsByIndex}
             onSaveAsTemplate={saveCurrentWorkoutAsTemplate}
             onCreateTemplate={createCustomTemplate}
             onUpdateTemplate={updateTemplate}
@@ -6383,6 +6249,7 @@ function App() {
         ) : null}
 
         {activeTab === 'dashboard' ? (
+          <Suspense fallback={<div className="animate-pulse rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"><div className="h-6 w-48 rounded bg-slate-200 dark:bg-slate-700" /></div>}>
           <DashboardTab
             dashboardStats={dashboardStats}
             trendData={trendData}
@@ -6395,6 +6262,7 @@ function App() {
             onTrendDaysChange={setTrendDays}
             onTogglePerformanceLines={() => setShowAllPerformanceLines((value) => !value)}
           />
+          </Suspense>
         ) : null}
 
         {activeTab === 'weekly' ? (

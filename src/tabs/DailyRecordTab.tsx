@@ -66,7 +66,7 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
               </button>
             ))}
           </div>
-          <span className="text-xs text-emerald-800 dark:text-emerald-200">
+          <span className="min-w-16 text-xs text-emerald-800 dark:text-emerald-200">
             {props.syncState === 'synced' ? '已保存' : props.syncState === 'saving' ? '保存中…' : '离线缓存中'}
           </span>
         </div>

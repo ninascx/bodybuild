@@ -32,7 +32,6 @@ import {
   downloadBackup,
   loadAppData,
   loadCachedData,
-  parseBackup,
   saveAppData,
 } from './lib/storage'
 import { createId } from './lib/ids'
@@ -137,7 +136,7 @@ function App() {
   const [syncState, setSyncState] = useState<SyncState>('loading')
   const [syncMessage, setSyncMessage] = useState('正在连接服务器数据文件...')
   const [slowSave, setSlowSave] = useState(false)
-  const [importMessage, setImportMessage] = useState('')
+  const [noticeMessage, setNoticeMessage] = useState('')
   const [copyMessage, setCopyMessage] = useState('')
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [showOnlyUnfinishedExercises, setShowOnlyUnfinishedExercises] = useState(false)
@@ -347,10 +346,10 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (!importMessage) return
-    const timer = window.setTimeout(() => setImportMessage(''), 4000)
+    if (!noticeMessage) return
+    const timer = window.setTimeout(() => setNoticeMessage(''), 4000)
     return () => window.clearTimeout(timer)
-  }, [importMessage])
+  }, [noticeMessage])
 
   useEffect(() => {
     if (!copyMessage) return
@@ -490,7 +489,7 @@ function App() {
   async function replaceWorkoutFromTemplate(template: WorkoutTemplateOption | undefined) {
     if (!template) return
     if (template.exercises.length === 0) {
-      setImportMessage('这是休息日模板，没有训练动作可填入。如需自由训练，请点"空白训练"。')
+      setNoticeMessage('这是休息日模板，没有训练动作可填入。如需自由训练，请点"空白训练"。')
       return
     }
     if (hasWorkoutContent(selectedWorkout)) {
@@ -605,6 +604,42 @@ function App() {
         sets: ex.sets.map((set) => {
           const isEmpty = set.weight === undefined && set.reps === undefined && set.rir === undefined
           return isEmpty ? { ...lastFilled } : set
+        }),
+      }
+    })
+    updateWorkoutLog({ ...base, exercises }, true)
+  }
+
+  function applyPreviousSetsByIndex(exerciseIndex: number) {
+    const base = currentWorkoutOrBlank()
+    const exercise = base.exercises[exerciseIndex]
+    if (!exercise) return
+    // 找上一次同动作的完整组数据
+    const sortedLogs = [...workoutLogs]
+      .filter((log) => log.date < selectedDate)
+      .sort((a, b) => b.date.localeCompare(a.date))
+    let previousSets: ExerciseSetLog[] | undefined
+    for (const log of sortedLogs) {
+      const match = log.exercises.find(
+        (e) => e.exerciseId === exercise.exerciseId || e.name.trim() === exercise.name.trim(),
+      )
+      if (match && match.sets.some((s) => s.weight !== undefined || s.reps !== undefined || s.rir !== undefined)) {
+        previousSets = match.sets
+        break
+      }
+    }
+    if (!previousSets) return
+    const exercises = base.exercises.map((ex, i) => {
+      if (i !== exerciseIndex) return ex
+      return {
+        ...ex,
+        sets: ex.sets.map((set, setIndex) => {
+          const isEmpty = set.weight === undefined && set.reps === undefined && set.rir === undefined
+          const prev = previousSets?.[setIndex]
+          if (isEmpty && prev && (prev.weight !== undefined || prev.reps !== undefined || prev.rir !== undefined)) {
+            return { ...prev }
+          }
+          return set
         }),
       }
     })
@@ -737,56 +772,6 @@ function App() {
     downloadBackup(createBackup(dailyLogs, workoutLogs, workoutTemplates))
   }
 
-  async function importData(file: File | undefined) {
-    if (!file) return
-    try {
-      const payload = parseBackup(await file.text())
-      const templateCount = payload.workoutTemplates?.length ?? 0
-      const dailyDates = payload.dailyLogs.map((log) => log.date).sort()
-      const workoutDates = payload.workoutLogs.map((log) => log.date).sort()
-      const dailyRange = dailyDates.length
-        ? dailyDates.length === 1
-          ? dailyDates[0]
-          : `${dailyDates[0]} 至 ${dailyDates[dailyDates.length - 1]}`
-        : ''
-      const workoutRange = workoutDates.length
-        ? workoutDates.length === 1
-          ? workoutDates[0]
-          : `${workoutDates[0]} 至 ${workoutDates[workoutDates.length - 1]}`
-        : ''
-      const confirmMessage =
-        `准备导入：\n` +
-        `· ${payload.dailyLogs.length} 条每日记录${dailyRange ? `（${dailyRange}）` : ''}\n` +
-        `· ${payload.workoutLogs.length} 条训练记录${workoutRange ? `（${workoutRange}）` : ''}\n` +
-        `· ${templateCount} 个训练模板\n\n` +
-        '这会覆盖当前所有数据。'
-      const ok = await confirm({
-        title: '导入并覆盖？',
-        message: confirmMessage,
-        confirmLabel: '导入',
-        tone: 'danger',
-      })
-      if (!ok) {
-        setImportMessage('已取消导入。')
-        return
-      }
-      try {
-        downloadBackup(createBackup(dailyLogs, workoutLogs, workoutTemplates))
-      } catch (backupError) {
-        console.warn('导入前自动备份失败：', backupError)
-      }
-      flushPending()
-      await persistData({
-        dailyLogs: payload.dailyLogs,
-        workoutLogs: payload.workoutLogs,
-        workoutTemplates: payload.workoutTemplates ?? [],
-      })
-      setImportMessage('导入成功，已自动把原数据备份到下载目录。')
-    } catch (error) {
-      setImportMessage(error instanceof Error ? error.message : '导入失败。')
-    }
-  }
-
   const [copyPreviewText, setCopyPreviewText] = useState<string | null>(null)
 
   function buildTodayCopyText() {
@@ -857,7 +842,7 @@ function App() {
             <div>
               <h1 className="text-2xl font-semibold text-slate-950 dark:text-slate-50 sm:text-3xl">减脂增肌追踪</h1>
               <div
-                className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-medium ${
+                className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                   syncState === 'synced'
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200'
                     : syncState === 'saving' || syncState === 'loading'
@@ -889,18 +874,6 @@ function App() {
               <Button className="w-full sm:w-auto" variant="secondary" onClick={exportData}>
                 导出 JSON
               </Button>
-              <label className="inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 text-sm font-medium text-slate-800 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 sm:w-auto">
-                导入 JSON
-                <input
-                  type="file"
-                  accept="application/json"
-                  className="sr-only"
-                  onChange={(event) => {
-                    void importData(event.target.files?.[0])
-                    event.currentTarget.value = ''
-                  }}
-                />
-              </label>
             </div>
           </div>
           <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{syncMessage}</p>
@@ -914,7 +887,7 @@ function App() {
               </Button>
             </div>
           ) : null}
-          {importMessage ? <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{importMessage}</p> : null}
+          {noticeMessage ? <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{noticeMessage}</p> : null}
           {copyMessage ? <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-400">{copyMessage}</p> : null}
         </header>
 
@@ -1016,6 +989,7 @@ function App() {
             onDeleteExercise={deleteExerciseFromWorkout}
             onAddExercise={addExerciseToWorkout}
             onFillEmptySets={fillEmptySetsFromLast}
+            onApplyPreviousByIndex={applyPreviousSetsByIndex}
             onSaveAsTemplate={saveCurrentWorkoutAsTemplate}
             onCreateTemplate={createCustomTemplate}
             onUpdateTemplate={updateTemplate}

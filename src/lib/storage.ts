@@ -157,19 +157,3 @@ export function downloadBackup(payload: BackupPayload): void {
   link.remove()
   URL.revokeObjectURL(url)
 }
-
-export function parseBackup(raw: string): BackupPayload {
-  const parsed = JSON.parse(raw) as BackupPayload
-  if (
-    parsed.version !== 1 ||
-    !Array.isArray(parsed.dailyLogs) ||
-    !Array.isArray(parsed.workoutLogs) ||
-    (parsed.workoutTemplates !== undefined && !Array.isArray(parsed.workoutTemplates))
-  ) {
-    throw new Error('备份文件格式不正确')
-  }
-  return {
-    ...parsed,
-    workoutTemplates: parsed.workoutTemplates ?? [],
-  }
-}

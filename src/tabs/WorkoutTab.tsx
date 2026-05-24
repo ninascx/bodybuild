@@ -37,6 +37,7 @@ type WorkoutTabProps = {
   onDeleteExercise: (exerciseIndex: number) => void
   onAddExercise: () => void
   onFillEmptySets: (exerciseIndex: number) => void
+  onApplyPreviousByIndex: (exerciseIndex: number) => void
   onSaveAsTemplate: () => void
   onCreateTemplate: () => void
   onUpdateTemplate: (id: string, patch: Partial<WorkoutTemplate>) => void
@@ -156,6 +157,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
                 onRebuildSets={props.onRebuildSets}
                 onDeleteExercise={props.onDeleteExercise}
                 onFillEmptySets={props.onFillEmptySets}
+                onApplyPreviousByIndex={props.onApplyPreviousByIndex}
                 forceCollapsed={collapseMode === 'auto' ? undefined : collapseMode === 'all'}
               />
             ))}
@@ -173,6 +175,29 @@ export function WorkoutTab(props: WorkoutTabProps) {
                 <Button variant="secondary" onClick={props.onSaveAsTemplate}>保存为模板</Button>
               </div>
             </div>
+            {props.selectedWorkout && props.workoutSummary.completionPercent === 100 ? (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-700/40 dark:bg-emerald-900/30">
+                <p className="text-lg font-semibold text-emerald-950 dark:text-emerald-100">🎉 训练完成</p>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <div className="rounded-md bg-white dark:bg-slate-900 p-2 text-center">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">动作</p>
+                    <p className="mt-0.5 text-lg font-semibold text-slate-950 dark:text-slate-50">{props.workoutSummary.exerciseCount}</p>
+                  </div>
+                  <div className="rounded-md bg-white dark:bg-slate-900 p-2 text-center">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">完成组</p>
+                    <p className="mt-0.5 text-lg font-semibold text-slate-950 dark:text-slate-50">{props.workoutSummary.filledSets}/{props.workoutSummary.totalSets}</p>
+                  </div>
+                  <div className="rounded-md bg-white dark:bg-slate-900 p-2 text-center">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">训练量</p>
+                    <p className="mt-0.5 text-lg font-semibold text-slate-950 dark:text-slate-50">{Math.round(props.workoutSummary.totalVolume)} kg</p>
+                  </div>
+                  <div className="rounded-md bg-white dark:bg-slate-900 p-2 text-center">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">完成率</p>
+                    <p className="mt-0.5 text-lg font-semibold text-slate-950 dark:text-slate-50">{props.workoutSummary.completionPercent}%</p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <Field label="训练备注">
               <TextArea value={props.selectedWorkout.notes ?? ''} onChange={(event) => props.onUpdateWorkout({ ...props.selectedWorkout!, notes: event.target.value })} />
             </Field>

@@ -75,7 +75,7 @@ export function WorkoutControlPanel({
             {restDay ? '休息日' : selectedWorkout?.workoutName ?? selectedTemplate?.name ?? '选择今天的训练'}
           </h2>
         </div>
-        <span className={`inline-flex shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${syncBadge.className}`}>
+        <span className={`inline-flex min-w-16 shrink-0 justify-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${syncBadge.className}`}>
           {syncBadge.text}
         </span>
       </div>
