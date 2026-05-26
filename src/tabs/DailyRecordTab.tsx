@@ -6,6 +6,8 @@ import { Badge, Button } from '../components/ui'
 import type { DailyLog, DailyTarget, WorkoutLog } from '../types'
 import type { SyncState } from '../lib/storage'
 
+type DimensionKey = 'waistCm' | 'chestCm' | 'upperArmCm' | 'thighCm'
+
 type DailyRecordTabProps = {
   selectedDate: string
   today: string
@@ -23,14 +25,36 @@ type DailyRecordTabProps = {
 
 export function DailyRecordTab(props: DailyRecordTabProps) {
   const trainedValue = props.selectedLog.trained
-  const dimensionSummary = [
-    ['腰围', props.selectedLog.waistCm, 'cm'],
-    ['胸围', props.selectedLog.chestCm, 'cm'],
-    ['上臂', props.selectedLog.upperArmCm, 'cm'],
-    ['大腿', props.selectedLog.thighCm, 'cm'],
+  const dimensionFields: Array<[string, DimensionKey]> = [
+    ['腰围', 'waistCm'],
+    ['胸围', 'chestCm'],
+    ['上臂', 'upperArmCm'],
+    ['大腿', 'thighCm'],
   ]
-    .filter(([, value]) => value !== undefined)
-    .map(([label, value, unit]) => `${label} ${value}${unit}`)
+  const previousDimensionByKey = new Map<DimensionKey, DailyLog>()
+  const previousLogs = props.dailyLogs
+    .filter((log) => log.date < props.selectedDate)
+    .sort((a, b) => b.date.localeCompare(a.date))
+
+  for (const [, key] of dimensionFields) {
+    const previous = previousLogs.find((log) => log[key] !== undefined)
+    if (previous) previousDimensionByKey.set(key, previous)
+  }
+
+  const formatDimensionSummary = (label: string, key: DimensionKey) => {
+    const value = props.selectedLog[key]
+    if (value === undefined) return null
+    const previous = previousDimensionByKey.get(key)
+    const previousValue = previous?.[key]
+    if (previousValue === undefined) return `${label} ${value}cm`
+    const diff = Math.round((value - previousValue) * 10) / 10
+    if (diff === 0) return `${label} ${value}cm（持平）`
+    return `${label} ${value}cm（比上次 ${diff > 0 ? '+' : ''}${diff}）`
+  }
+
+  const dimensionSummary = dimensionFields
+    .map(([label, key]) => formatDimensionSummary(label, key))
+    .filter((value): value is string => value !== null)
     .join(' · ')
 
   return (

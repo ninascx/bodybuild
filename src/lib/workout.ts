@@ -1,4 +1,4 @@
-import type { DailyLog, ExerciseLog, ExercisePlan, WorkoutLog, WorkoutTemplate } from '../types'
+import type { DailyLog, ExerciseLog, ExercisePlan, ExerciseSetLog, WorkoutLog, WorkoutTemplate } from '../types'
 import { workoutPlans, getBuiltinTemplates } from '../data/plans'
 import { getDayKey } from './dates'
 import { createId } from './ids'
@@ -138,7 +138,7 @@ export function summarizeWorkout(workout: WorkoutLog | undefined): WorkoutSummar
   const totalSets = workout.exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0)
   const filledSets = workout.exercises.reduce(
     (sum, exercise) =>
-      sum + exercise.sets.filter((set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined).length,
+      sum + exercise.sets.filter(isSetComplete).length,
     0,
   )
   const totalVolume = workout.exercises.reduce((sum, exercise) => {
@@ -159,8 +159,12 @@ export function summarizeWorkout(workout: WorkoutLog | undefined): WorkoutSummar
   }
 }
 
+export function isSetComplete(set: ExerciseSetLog): boolean {
+  return set.weight !== undefined && set.reps !== undefined
+}
+
 export function isExerciseFilled(exercise: ExerciseLog): boolean {
-  return exercise.sets.some((set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined)
+  return exercise.sets.length > 0 && exercise.sets.every(isSetComplete)
 }
 
 export function hasChartData<T extends object>(data: T[], keys: Array<keyof T>, minPoints = 2): boolean {

@@ -1,0 +1,7 @@
+﻿{
+  "ok": true,
+  "fix": "Restored original 3D style and replaced the flat redraw. Row 5 was rebuilt from the generated 3D failed strip.",
+  "package": "C:/Users/www20/.codex/pets/yellow-blob",
+  "spritesheet": "C:/Users/www20/.codex/pets/yellow-blob/spritesheet.webp",
+  "contact_sheet": "C:/Users/www20/OneDrive/文档/bodybuild/pet-runs/yellow-blob-original-style-v2/qa/contact-sheet.png"
+}

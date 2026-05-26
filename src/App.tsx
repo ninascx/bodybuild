@@ -778,7 +778,7 @@ function App() {
 
   function saveCurrentWorkoutAsTemplate() {
     if (!selectedWorkout || selectedWorkout.exercises.length === 0) {
-      window.alert('当前没有可保存的训练动作。')
+      setNoticeMessage('当前没有可保存的训练动作。')
       return
     }
     const nextTemplates = [...workoutTemplates, newTemplateFromWorkout(selectedWorkout)]

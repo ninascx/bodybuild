@@ -49,6 +49,8 @@ type WorkoutTabProps = {
 
 export function WorkoutTab(props: WorkoutTabProps) {
   const [collapseMode, setCollapseMode] = useState<'auto' | 'all' | 'none'>('auto')
+  const [trainingMode, setTrainingMode] = useState(false)
+  const effectiveTrainingMode = trainingMode && Boolean(props.selectedWorkout) && !props.restDay
 
   const templateToOption = (template: WorkoutTemplate): WorkoutTemplateOption => ({
     id: template.id,
@@ -60,22 +62,52 @@ export function WorkoutTab(props: WorkoutTabProps) {
 
   return (
     <div className="grid gap-4">
-      <WorkoutControlPanel
-        selectedDate={props.selectedDate}
-        today={props.today}
-        selectedWorkout={props.selectedWorkout}
-        workoutSummary={props.workoutSummary}
-        selectedTemplate={props.selectedTemplate}
-        selectedTemplateId={props.selectedTemplateId}
-        templateOptions={props.templateOptions}
-        syncState={props.syncState}
-        restDay={props.restDay}
-        onDateChange={props.onDateChange}
-        onTemplateChange={props.onTemplateChange}
-        onApplyTemplate={props.onApplyTemplate}
-        onApplyRecommended={props.onApplyRecommended}
-        onAddExercise={props.onAddExercise}
-      />
+      {effectiveTrainingMode ? (
+        <Card className="border-emerald-200 bg-emerald-50 dark:border-emerald-700/40 dark:bg-emerald-900/30">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">训练模式</p>
+              <h2 className="mt-1 text-xl font-semibold text-emerald-950 dark:text-emerald-100">
+                {props.selectedWorkout?.workoutName ?? props.selectedTemplate.name}
+              </h2>
+            </div>
+            <Button variant="secondary" className="px-3" onClick={() => setTrainingMode(false)}>
+              退出训练模式
+            </Button>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-md bg-white p-2 dark:bg-slate-900">
+              <p className="text-xs text-slate-500 dark:text-slate-400">已填组数</p>
+              <p className="mt-0.5 font-semibold text-slate-950 dark:text-slate-50">{props.workoutSummary.filledSets}/{props.workoutSummary.totalSets}</p>
+            </div>
+            <div className="rounded-md bg-white p-2 dark:bg-slate-900">
+              <p className="text-xs text-slate-500 dark:text-slate-400">完成率</p>
+              <p className="mt-0.5 font-semibold text-slate-950 dark:text-slate-50">{props.workoutSummary.completionPercent}%</p>
+            </div>
+            <div className="rounded-md bg-white p-2 dark:bg-slate-900">
+              <p className="text-xs text-slate-500 dark:text-slate-400">训练量</p>
+              <p className="mt-0.5 font-semibold text-slate-950 dark:text-slate-50">{Math.round(props.workoutSummary.totalVolume)} kg</p>
+            </div>
+          </div>
+        </Card>
+      ) : (
+        <WorkoutControlPanel
+          selectedDate={props.selectedDate}
+          today={props.today}
+          selectedWorkout={props.selectedWorkout}
+          workoutSummary={props.workoutSummary}
+          selectedTemplate={props.selectedTemplate}
+          selectedTemplateId={props.selectedTemplateId}
+          templateOptions={props.templateOptions}
+          syncState={props.syncState}
+          restDay={props.restDay}
+          onDateChange={props.onDateChange}
+          onTemplateChange={props.onTemplateChange}
+          onApplyTemplate={props.onApplyTemplate}
+          onApplyRecommended={props.onApplyRecommended}
+          onAddExercise={props.onAddExercise}
+        />
+      )}
 
       {props.restDay ? (
         <Card>
@@ -95,6 +127,11 @@ export function WorkoutTab(props: WorkoutTabProps) {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {props.selectedWorkout ? <Badge tone="positive">已记录</Badge> : <Badge tone="neutral">未开始</Badge>}
+            {props.selectedWorkout ? (
+              <Button variant={effectiveTrainingMode ? 'primary' : 'secondary'} className="px-3" onClick={() => setTrainingMode((value) => !value)}>
+                {effectiveTrainingMode ? '训练模式中' : '训练模式'}
+              </Button>
+            ) : null}
             {props.selectedWorkout ? (
               <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 dark:border-slate-700 dark:bg-slate-800">
                 <button
@@ -135,9 +172,11 @@ export function WorkoutTab(props: WorkoutTabProps) {
 
         {props.selectedWorkout ? (
           <div className="mt-5 grid gap-4">
-            <Field label="训练名称">
-              <TextInput value={props.selectedWorkout.workoutName} onChange={(event) => props.onUpdateWorkout({ ...props.selectedWorkout!, workoutName: event.target.value })} />
-            </Field>
+            {effectiveTrainingMode ? null : (
+              <Field label="训练名称">
+                <TextInput value={props.selectedWorkout.workoutName} onChange={(event) => props.onUpdateWorkout({ ...props.selectedWorkout!, workoutName: event.target.value })} />
+              </Field>
+            )}
 
             <ExerciseQuickJumpStrip
               exercises={props.selectedWorkout.exercises}
@@ -159,6 +198,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
                 onFillEmptySets={props.onFillEmptySets}
                 onApplyPreviousByIndex={props.onApplyPreviousByIndex}
                 forceCollapsed={collapseMode === 'auto' ? undefined : collapseMode === 'all'}
+                compact={effectiveTrainingMode}
               />
             ))}
 
@@ -168,13 +208,15 @@ export function WorkoutTab(props: WorkoutTabProps) {
               </div>
             ) : null}
 
-            <div className="rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-3">
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">训练操作</p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <Button onClick={props.onAddExercise}>新增当天动作</Button>
-                <Button variant="secondary" onClick={props.onSaveAsTemplate}>保存为模板</Button>
+            {effectiveTrainingMode ? null : (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-3">
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">训练操作</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <Button onClick={props.onAddExercise}>新增当天动作</Button>
+                  <Button variant="secondary" onClick={props.onSaveAsTemplate}>保存为模板</Button>
+                </div>
               </div>
-            </div>
+            )}
             {props.selectedWorkout && props.workoutSummary.completionPercent === 100 ? (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-700/40 dark:bg-emerald-900/30">
                 <p className="text-lg font-semibold text-emerald-950 dark:text-emerald-100">🎉 训练完成</p>
@@ -215,18 +257,20 @@ export function WorkoutTab(props: WorkoutTabProps) {
       </Card>
       )}
 
-      <WorkoutTemplateManager
-        templates={props.workoutTemplates}
-        selectedWorkout={props.selectedWorkout}
-        onCreateTemplate={props.onCreateTemplate}
-        onSaveCurrent={props.onSaveAsTemplate}
-        onUpdateTemplate={props.onUpdateTemplate}
-        onUpdateTemplateExercise={props.onUpdateTemplateExercise}
-        onAddTemplateExercise={props.onAddTemplateExercise}
-        onDeleteTemplateExercise={props.onDeleteTemplateExercise}
-        onApplyTemplate={(template) => props.onApplyTemplate(templateToOption(template))}
-        onDeleteTemplate={props.onDeleteTemplate}
-      />
+      {effectiveTrainingMode ? null : (
+        <WorkoutTemplateManager
+          templates={props.workoutTemplates}
+          selectedWorkout={props.selectedWorkout}
+          onCreateTemplate={props.onCreateTemplate}
+          onSaveCurrent={props.onSaveAsTemplate}
+          onUpdateTemplate={props.onUpdateTemplate}
+          onUpdateTemplateExercise={props.onUpdateTemplateExercise}
+          onAddTemplateExercise={props.onAddTemplateExercise}
+          onDeleteTemplateExercise={props.onDeleteTemplateExercise}
+          onApplyTemplate={(template) => props.onApplyTemplate(templateToOption(template))}
+          onDeleteTemplate={props.onDeleteTemplate}
+        />
+      )}
     </div>
   )
 }

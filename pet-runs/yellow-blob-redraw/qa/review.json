@@ -1,0 +1,962 @@
+{
+  "ok": true,
+  "frames_root": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames",
+  "errors": [],
+  "warnings": [],
+  "rows": [
+    {
+      "state": "idle",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\idle\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19797,
+          "bbox": [
+            22,
+            22,
+            169,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\idle\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20039,
+          "bbox": [
+            23,
+            22,
+            169,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\idle\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19931,
+          "bbox": [
+            23,
+            23,
+            168,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\idle\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20039,
+          "bbox": [
+            23,
+            23,
+            169,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\idle\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19797,
+          "bbox": [
+            22,
+            23,
+            169,
+            201
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\idle\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19797,
+          "bbox": [
+            22,
+            22,
+            169,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "running-right",
+      "expected_frames": 8,
+      "actual_frames": 8,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-right\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19475,
+          "bbox": [
+            23,
+            24,
+            168,
+            202
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-right\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20596,
+          "bbox": [
+            26,
+            14,
+            174,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-right\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20722,
+          "bbox": [
+            28,
+            10,
+            177,
+            193
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-right\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20596,
+          "bbox": [
+            26,
+            14,
+            174,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-right\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19475,
+          "bbox": [
+            23,
+            24,
+            168,
+            202
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-right\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19268,
+          "bbox": [
+            20,
+            20,
+            163,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 6,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-right\\06.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19165,
+          "bbox": [
+            18,
+            18,
+            160,
+            194
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 7,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-right\\07.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19268,
+          "bbox": [
+            20,
+            20,
+            163,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "running-left",
+      "expected_frames": 8,
+      "actual_frames": 8,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-left\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19532,
+          "bbox": [
+            23,
+            24,
+            168,
+            202
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-left\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20659,
+          "bbox": [
+            17,
+            14,
+            165,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-left\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20776,
+          "bbox": [
+            14,
+            10,
+            163,
+            193
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-left\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20659,
+          "bbox": [
+            17,
+            14,
+            165,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-left\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19532,
+          "bbox": [
+            23,
+            24,
+            168,
+            202
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-left\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19322,
+          "bbox": [
+            29,
+            20,
+            172,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 6,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-left\\06.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19215,
+          "bbox": [
+            32,
+            18,
+            174,
+            194
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 7,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running-left\\07.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19322,
+          "bbox": [
+            29,
+            20,
+            172,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "waving",
+      "expected_frames": 4,
+      "actual_frames": 4,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\waving\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19443,
+          "bbox": [
+            23,
+            22,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\waving\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19835,
+          "bbox": [
+            22,
+            20,
+            168,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\waving\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20000,
+          "bbox": [
+            24,
+            20,
+            170,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\waving\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19504,
+          "bbox": [
+            23,
+            22,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "jumping",
+      "expected_frames": 5,
+      "actual_frames": 5,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\jumping\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 22326,
+          "bbox": [
+            19,
+            18,
+            173,
+            204
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\jumping\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19797,
+          "bbox": [
+            22,
+            10,
+            169,
+            188
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\jumping\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18729,
+          "bbox": [
+            25,
+            7,
+            166,
+            177
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\jumping\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19797,
+          "bbox": [
+            22,
+            10,
+            169,
+            188
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\jumping\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 22326,
+          "bbox": [
+            19,
+            18,
+            173,
+            204
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "failed",
+      "expected_frames": 8,
+      "actual_frames": 8,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\failed\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19797,
+          "bbox": [
+            22,
+            23,
+            169,
+            201
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\failed\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20097,
+          "bbox": [
+            21,
+            22,
+            169,
+            201
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\failed\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19797,
+          "bbox": [
+            22,
+            25,
+            169,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\failed\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20107,
+          "bbox": [
+            22,
+            22,
+            170,
+            201
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\failed\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19797,
+          "bbox": [
+            22,
+            23,
+            169,
+            201
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\failed\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20097,
+          "bbox": [
+            21,
+            20,
+            169,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 6,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\failed\\06.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19797,
+          "bbox": [
+            22,
+            23,
+            169,
+            201
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 7,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\failed\\07.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20107,
+          "bbox": [
+            22,
+            22,
+            170,
+            201
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "waiting",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\waiting\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19501,
+          "bbox": [
+            23,
+            22,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\waiting\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19454,
+          "bbox": [
+            23,
+            22,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\waiting\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19443,
+          "bbox": [
+            23,
+            22,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\waiting\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19454,
+          "bbox": [
+            23,
+            22,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\waiting\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19443,
+          "bbox": [
+            23,
+            22,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\waiting\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19501,
+          "bbox": [
+            23,
+            22,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "running",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19788,
+          "bbox": [
+            22,
+            19,
+            168,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19785,
+          "bbox": [
+            22,
+            19,
+            168,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19454,
+          "bbox": [
+            23,
+            22,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19794,
+          "bbox": [
+            23,
+            21,
+            169,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19783,
+          "bbox": [
+            23,
+            19,
+            169,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\running\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19794,
+          "bbox": [
+            23,
+            19,
+            169,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "review",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\review\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19804,
+          "bbox": [
+            22,
+            19,
+            168,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\review\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19784,
+          "bbox": [
+            22,
+            20,
+            168,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\review\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19443,
+          "bbox": [
+            23,
+            22,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\review\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19785,
+          "bbox": [
+            23,
+            20,
+            169,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\review\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19773,
+          "bbox": [
+            23,
+            19,
+            169,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-redraw\\frames\\review\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19443,
+          "bbox": [
+            23,
+            22,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    }
+  ]
+}

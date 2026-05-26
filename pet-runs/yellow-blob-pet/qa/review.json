@@ -1,0 +1,966 @@
+{
+  "ok": true,
+  "frames_root": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired",
+  "errors": [],
+  "warnings": [
+    "jumping frame 02 has 81 non-transparent pixels near the cell edge"
+  ],
+  "rows": [
+    {
+      "state": "idle",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\idle\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19197,
+          "bbox": [
+            24,
+            17,
+            167,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\idle\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19026,
+          "bbox": [
+            25,
+            17,
+            167,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\idle\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19277,
+          "bbox": [
+            24,
+            17,
+            167,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\idle\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19254,
+          "bbox": [
+            24,
+            17,
+            167,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\idle\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18678,
+          "bbox": [
+            26,
+            17,
+            165,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\idle\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19414,
+          "bbox": [
+            23,
+            17,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "running-right",
+      "expected_frames": 8,
+      "actual_frames": 8,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-right\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19766,
+          "bbox": [
+            23,
+            17,
+            158,
+            205
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-right\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20296,
+          "bbox": [
+            21,
+            14,
+            160,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-right\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21629,
+          "bbox": [
+            23,
+            5,
+            166,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-right\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21067,
+          "bbox": [
+            25,
+            9,
+            170,
+            202
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-right\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19705,
+          "bbox": [
+            32,
+            17,
+            167,
+            205
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-right\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20513,
+          "bbox": [
+            31,
+            13,
+            165,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 6,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-right\\06.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21714,
+          "bbox": [
+            24,
+            6,
+            163,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 7,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-right\\07.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20747,
+          "bbox": [
+            22,
+            9,
+            159,
+            202
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "running-left",
+      "expected_frames": 8,
+      "actual_frames": 8,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-left\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19766,
+          "bbox": [
+            34,
+            17,
+            169,
+            205
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-left\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20295,
+          "bbox": [
+            31,
+            14,
+            169,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-left\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21629,
+          "bbox": [
+            26,
+            5,
+            169,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-left\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21059,
+          "bbox": [
+            21,
+            9,
+            165,
+            202
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-left\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19697,
+          "bbox": [
+            24,
+            17,
+            158,
+            205
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-left\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20520,
+          "bbox": [
+            26,
+            13,
+            160,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 6,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-left\\06.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21714,
+          "bbox": [
+            29,
+            6,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 7,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running-left\\07.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20747,
+          "bbox": [
+            33,
+            9,
+            170,
+            202
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "waving",
+      "expected_frames": 4,
+      "actual_frames": 4,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\waving\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19197,
+          "bbox": [
+            24,
+            17,
+            167,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\waving\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19197,
+          "bbox": [
+            24,
+            16,
+            167,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\waving\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19203,
+          "bbox": [
+            24,
+            15,
+            167,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\waving\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19197,
+          "bbox": [
+            24,
+            16,
+            167,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "jumping",
+      "expected_frames": 5,
+      "actual_frames": 5,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [
+        "jumping frame 02 has 81 non-transparent pixels near the cell edge"
+      ],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\jumping\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20820,
+          "bbox": [
+            22,
+            15,
+            170,
+            205
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\jumping\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19197,
+          "bbox": [
+            24,
+            9,
+            167,
+            192
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\jumping\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18553,
+          "bbox": [
+            26,
+            0,
+            166,
+            178
+          ],
+          "edge_pixels": 81,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\jumping\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18944,
+          "bbox": [
+            25,
+            8,
+            166,
+            189
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\jumping\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20820,
+          "bbox": [
+            22,
+            14,
+            170,
+            204
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "failed",
+      "expected_frames": 8,
+      "actual_frames": 8,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\failed\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19201,
+          "bbox": [
+            25,
+            17,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\failed\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19145,
+          "bbox": [
+            24,
+            16,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\failed\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19199,
+          "bbox": [
+            25,
+            19,
+            168,
+            202
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\failed\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19140,
+          "bbox": [
+            25,
+            17,
+            169,
+            201
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\failed\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19199,
+          "bbox": [
+            25,
+            18,
+            168,
+            201
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\failed\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19145,
+          "bbox": [
+            24,
+            15,
+            168,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 6,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\failed\\06.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19140,
+          "bbox": [
+            25,
+            16,
+            169,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 7,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\failed\\07.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19201,
+          "bbox": [
+            25,
+            17,
+            168,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "waiting",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\waiting\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20073,
+          "bbox": [
+            29,
+            17,
+            163,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\waiting\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20210,
+          "bbox": [
+            28,
+            17,
+            163,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\waiting\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21198,
+          "bbox": [
+            24,
+            17,
+            167,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\waiting\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19374,
+          "bbox": [
+            32,
+            17,
+            160,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\waiting\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19674,
+          "bbox": [
+            30,
+            17,
+            162,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\waiting\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19651,
+          "bbox": [
+            30,
+            17,
+            162,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "running",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 20029,
+          "bbox": [
+            29,
+            17,
+            162,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19791,
+          "bbox": [
+            30,
+            17,
+            161,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19862,
+          "bbox": [
+            30,
+            17,
+            161,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19981,
+          "bbox": [
+            29,
+            17,
+            163,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19926,
+          "bbox": [
+            30,
+            17,
+            162,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\running\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 19916,
+          "bbox": [
+            29,
+            17,
+            162,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "review",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\review\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18357,
+          "bbox": [
+            36,
+            17,
+            156,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\review\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18154,
+          "bbox": [
+            37,
+            17,
+            154,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\review\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18328,
+          "bbox": [
+            34,
+            17,
+            158,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\review\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18826,
+          "bbox": [
+            29,
+            17,
+            163,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\review\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18445,
+          "bbox": [
+            33,
+            17,
+            159,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\www20\\OneDrive\\\u6587\u6863\\bodybuild\\pet-runs\\yellow-blob-pet\\frames_repaired\\review\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18430,
+          "bbox": [
+            34,
+            17,
+            157,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    }
+  ]
+}

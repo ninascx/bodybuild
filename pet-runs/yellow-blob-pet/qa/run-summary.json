@@ -1,0 +1,9 @@
+{
+    "ok":  true,
+    "run_dir":  "C:\\Users\\www20\\OneDrive\\文档\\bodybuild\\pet-runs\\yellow-blob-pet",
+    "spritesheet":  "C:\\Users\\www20\\OneDrive\\文档\\bodybuild\\pet-runs\\yellow-blob-pet\\final\\spritesheet.webp",
+    "validation":  "C:\\Users\\www20\\OneDrive\\文档\\bodybuild\\pet-runs\\yellow-blob-pet\\final\\validation.json",
+    "contact_sheet":  "C:\\Users\\www20\\OneDrive\\文档\\bodybuild\\pet-runs\\yellow-blob-pet\\qa\\contact-sheet.png",
+    "review":  "C:\\Users\\www20\\OneDrive\\文档\\bodybuild\\pet-runs\\yellow-blob-pet\\qa\\review.json",
+    "package":  "C:\\Users\\www20\\.codex\\pets\\yellow-blob"
+}

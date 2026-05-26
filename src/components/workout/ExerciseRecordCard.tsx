@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ExerciseLog, ExerciseSetLog } from '../../types'
 import type { PreviousExerciseRecord } from '../../lib/metrics'
+import { isSetComplete } from '../../lib/workout'
 import { Badge, Button, Field, TextInput } from '../ui'
 import { NumberField } from '../NumberField'
 
@@ -19,6 +20,7 @@ export function ExerciseRecordCard({
   onFillEmptySets,
   onApplyPreviousByIndex,
   forceCollapsed,
+  compact = false,
 }: {
   exercise: ExerciseLog
   exerciseIndex: number
@@ -32,12 +34,14 @@ export function ExerciseRecordCard({
   onFillEmptySets: (exerciseIndex: number) => void
   onApplyPreviousByIndex: (exerciseIndex: number) => void
   forceCollapsed?: boolean
+  compact?: boolean
 }) {
-  const filledSets = exercise.sets.filter((set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined).length
+  const filledSets = exercise.sets.filter(isSetComplete).length
   const totalSets = exercise.sets.length
   const isFullyFilled = totalSets > 0 && filledSets === totalSets
   const previousSetCountRef = useRef(totalSets)
   const lastAddedSetRef = useRef<HTMLInputElement | null>(null)
+  const [initiallyCollapsed] = useState(isFullyFilled)
   const [userPreference, setUserPreference] = useState<'collapsed' | 'expanded' | null>(null)
 
   // 衍生折叠状态
@@ -45,11 +49,11 @@ export function ExerciseRecordCard({
     forceCollapsed !== undefined ? forceCollapsed
     : userPreference === 'collapsed' ? true
     : userPreference === 'expanded' ? false
-    : isFullyFilled
+    : initiallyCollapsed
 
   useEffect(() => {
     if (totalSets > previousSetCountRef.current) {
-      setUserPreference(null)
+      setUserPreference('expanded')
       window.requestAnimationFrame(() => {
         lastAddedSetRef.current?.focus()
         lastAddedSetRef.current?.select()
@@ -229,26 +233,28 @@ export function ExerciseRecordCard({
             ) : null}
           </div>
 
-          <details className="mt-3 rounded-md border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-3">
-            <summary className="cursor-pointer text-sm font-semibold text-slate-700 dark:text-slate-300">编辑动作</summary>
-            <div className="mt-3 grid min-w-0 gap-3 lg:grid-cols-2">
-              <Field label="动作名称">
-                <TextInput value={exercise.name} onChange={(event) => onUpdateExercise(exerciseIndex, { name: event.target.value })} />
-              </Field>
-              <Field label="目标组次">
-                <TextInput value={exercise.target} onChange={(event) => onUpdateExercise(exerciseIndex, { target: event.target.value })} />
-              </Field>
-            </div>
-            <div className="mt-3">
-              <Field label="动作备注">
-                <TextInput value={exercise.notes ?? ''} onChange={(event) => onUpdateExercise(exerciseIndex, { notes: event.target.value })} />
-              </Field>
-            </div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <Button variant="secondary" onClick={() => onRebuildSets(exerciseIndex)}>按目标重建组</Button>
-              <Button variant="ghost" onClick={() => onDeleteExercise(exerciseIndex)}>删除动作</Button>
-            </div>
-          </details>
+          {compact ? null : (
+            <details className="mt-3 rounded-md border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-3">
+              <summary className="cursor-pointer text-sm font-semibold text-slate-700 dark:text-slate-300">编辑动作</summary>
+              <div className="mt-3 grid min-w-0 gap-3 lg:grid-cols-2">
+                <Field label="动作名称">
+                  <TextInput value={exercise.name} onChange={(event) => onUpdateExercise(exerciseIndex, { name: event.target.value })} />
+                </Field>
+                <Field label="目标组次">
+                  <TextInput value={exercise.target} onChange={(event) => onUpdateExercise(exerciseIndex, { target: event.target.value })} />
+                </Field>
+              </div>
+              <div className="mt-3">
+                <Field label="动作备注">
+                  <TextInput value={exercise.notes ?? ''} onChange={(event) => onUpdateExercise(exerciseIndex, { notes: event.target.value })} />
+                </Field>
+              </div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <Button variant="secondary" onClick={() => onRebuildSets(exerciseIndex)}>按目标重建组</Button>
+                <Button variant="ghost" onClick={() => onDeleteExercise(exerciseIndex)}>删除动作</Button>
+              </div>
+            </details>
+          )}
         </>
       )}
     </div>
