@@ -278,7 +278,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
           </div>
         </div>
 
-        {hasWorkout ? (
+        {props.selectedWorkout ? (
           <div className="mt-5 grid gap-4">
             {effectiveTrainingMode ? null : (
               <Field label="训练名称">
