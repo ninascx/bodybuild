@@ -11,6 +11,16 @@ import type { SyncState } from '../lib/storage'
 import type { WorkoutSummary, WorkoutTemplateOption } from '../lib/workout'
 import { isSetComplete } from '../lib/workout'
 
+function templateToOption(template: WorkoutTemplate): WorkoutTemplateOption {
+  return {
+    id: template.id,
+    name: template.name,
+    focus: template.focus,
+    source: template.isBuiltin ? 'builtin' : 'custom',
+    exercises: template.exercises,
+  }
+}
+
 type WorkoutTabProps = {
   selectedDate: string
   today: string
@@ -53,6 +63,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
   const [collapseMode, setCollapseMode] = useState<'auto' | 'all' | 'none'>('auto')
   const [trainingMode, setTrainingMode] = useState(false)
   const effectiveTrainingMode = trainingMode && Boolean(props.selectedWorkout) && !props.restDay
+  const hasWorkout = Boolean(props.selectedWorkout)
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [restSeconds, setRestSeconds] = useState(90)
@@ -69,14 +80,6 @@ export function WorkoutTab(props: WorkoutTabProps) {
   const restIntervalRef = useRef<number | null>(null)
   const elapsedIntervalRef = useRef<number | null>(null)
   const lastTrainingWorkoutDateRef = useRef<string | null>(null)
-
-  const templateToOption = (template: WorkoutTemplate): WorkoutTemplateOption => ({
-    id: template.id,
-    name: template.name,
-    focus: template.focus,
-    source: template.isBuiltin ? 'builtin' : 'custom',
-    exercises: template.exercises,
-  })
 
   useEffect(() => {
     if (effectiveTrainingMode) {
@@ -231,13 +234,13 @@ export function WorkoutTab(props: WorkoutTabProps) {
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">先记组数和表现；动作名称、目标和备注放在每张卡的编辑区。</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {props.selectedWorkout ? <Badge tone="positive">已记录</Badge> : <Badge tone="neutral">未开始</Badge>}
-            {props.selectedWorkout ? (
+            {hasWorkout ? <Badge tone="positive">已记录</Badge> : <Badge tone="neutral">未开始</Badge>}
+            {hasWorkout ? (
               <Button variant={effectiveTrainingMode ? 'primary' : 'secondary'} className="px-3" onClick={() => setTrainingMode((value) => !value)}>
                 {effectiveTrainingMode ? '训练模式中' : '训练模式'}
               </Button>
             ) : null}
-            {props.selectedWorkout ? (
+            {hasWorkout ? (
               <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 dark:border-slate-700 dark:bg-slate-800">
                 <button
                   type="button"
@@ -263,7 +266,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
                 </button>
               </div>
             ) : null}
-            {props.selectedWorkout ? (
+            {hasWorkout ? (
               <button
                 type="button"
                 onClick={() => setCollapseMode((prev) => (prev === 'auto' ? 'all' : prev === 'all' ? 'none' : 'auto'))}
@@ -275,7 +278,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
           </div>
         </div>
 
-        {props.selectedWorkout ? (
+        {hasWorkout ? (
           <div className="mt-5 grid gap-4">
             {effectiveTrainingMode ? null : (
               <Field label="训练名称">

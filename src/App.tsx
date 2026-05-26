@@ -473,6 +473,23 @@ function App() {
     setSelectedDate(nextDate)
   }
 
+  const handleToggleShowUnfinished = useCallback(
+    () => setShowOnlyUnfinishedExercises((value) => !value),
+    [],
+  )
+
+  const handleApplyWorkoutTemplate = useCallback(
+    (template: WorkoutTemplateOption) => { void replaceWorkoutFromTemplate(template) },
+    [replaceWorkoutFromTemplate],
+  )
+
+  const handleApplyRecommendedWorkout = useCallback(() => {
+    const recommended = templateOptions.find(
+      (template) => template.id === `builtin-${getDayKey(selectedDate)}`,
+    )
+    void replaceWorkoutFromTemplate(recommended)
+  }, [replaceWorkoutFromTemplate, templateOptions, selectedDate])
+
   function updateDailyLog(patch: Partial<DailyLog>) {
     const nextLogs = upsertByDate(dailyLogs, selectedDate, patch)
     schedulePersist({ dailyLogs: nextLogs, workoutLogs, workoutTemplates })
@@ -1011,9 +1028,9 @@ function App() {
             syncState={syncState}
             onDateChange={handleDateChange}
             onTemplateChange={setSelectedTemplateId}
-            onApplyTemplate={(template) => void replaceWorkoutFromTemplate(template)}
-            onApplyRecommended={() => void replaceWorkoutFromTemplate(templateOptions.find((template) => template.id === `builtin-${getDayKey(selectedDate)}`))}
-            onToggleShowUnfinished={() => setShowOnlyUnfinishedExercises((value) => !value)}
+            onApplyTemplate={handleApplyWorkoutTemplate}
+            onApplyRecommended={handleApplyRecommendedWorkout}
+            onToggleShowUnfinished={handleToggleShowUnfinished}
             onUpdateWorkout={updateWorkoutLog}
             onUpdateExercise={updateExercise}
             onUpdateSet={updateExerciseSet}
