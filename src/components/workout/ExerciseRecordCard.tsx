@@ -173,12 +173,14 @@ export function ExerciseRecordCard({
                         range={{ min: 0, max: 500, allowZero: true }}
                         onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { weight: value })}
                         inputRef={isLast ? (el) => { lastAddedSetRef.current = el } : undefined}
+                        className={compact ? 'h-14 text-base' : undefined}
                       />
                       <NumberField
                         label="次数"
                         value={set.reps}
                         range={{ min: 1, max: 100 }}
                         onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { reps: value })}
+                        className={compact ? 'h-14 text-base' : undefined}
                       />
                     </div>
                     <div className="flex items-end gap-0.5">
@@ -187,7 +189,7 @@ export function ExerciseRecordCard({
                           key={value}
                           type="button"
                           onClick={() => onUpdateSet(exerciseIndex, setIndex, { rir: set.rir === value ? undefined : value })}
-                          className={`min-h-9 min-w-9 rounded-md border text-xs font-medium transition ${
+                          className={`min-h-9 min-w-9 rounded-md border text-xs font-medium transition ${compact ? 'min-h-11 min-w-11' : ''} ${
                             set.rir === value
                               ? 'border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/40 dark:text-amber-100'
                               : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-200'

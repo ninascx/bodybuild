@@ -57,3 +57,8 @@ textarea,
 select {
   font: inherit;
 }
+
+@keyframes rest-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

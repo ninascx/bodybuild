@@ -1,13 +1,15 @@
 import { Badge, Button, Card, Field, TextArea, TextInput } from '../components/ui'
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ExerciseRecordCard } from '../components/workout/ExerciseRecordCard'
 import { ExerciseQuickJumpStrip } from '../components/workout/ExerciseQuickJumpStrip'
 import { WorkoutControlPanel } from '../components/workout/WorkoutControlPanel'
 import { WorkoutTemplateManager } from '../components/workout/WorkoutTemplateManager'
-import type { ExerciseLog, ExercisePlan, WorkoutLog, WorkoutTemplate } from '../types'
+import { TrainingHeader } from '../components/workout/TrainingHeader'
+import type { ExerciseLog, ExercisePlan, ExerciseSetLog, WorkoutLog, WorkoutTemplate } from '../types'
 import type { PreviousExerciseRecord } from '../lib/metrics'
 import type { SyncState } from '../lib/storage'
 import type { WorkoutSummary, WorkoutTemplateOption } from '../lib/workout'
+import { isSetComplete } from '../lib/workout'
 
 type WorkoutTabProps = {
   selectedDate: string
@@ -52,6 +54,13 @@ export function WorkoutTab(props: WorkoutTabProps) {
   const [trainingMode, setTrainingMode] = useState(false)
   const effectiveTrainingMode = trainingMode && Boolean(props.selectedWorkout) && !props.restDay
 
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [restSeconds, setRestSeconds] = useState(90)
+  const [restActive, setRestActive] = useState(false)
+  const [restDefaultDuration, setRestDefaultDuration] = useState(90)
+  const restIntervalRef = useRef<number | null>(null)
+  const elapsedIntervalRef = useRef<number | null>(null)
+
   const templateToOption = (template: WorkoutTemplate): WorkoutTemplateOption => ({
     id: template.id,
     name: template.name,
@@ -60,36 +69,109 @@ export function WorkoutTab(props: WorkoutTabProps) {
     exercises: template.exercises,
   })
 
+  useEffect(() => {
+    if (effectiveTrainingMode) {
+      setElapsedSeconds(0)
+      elapsedIntervalRef.current = window.setInterval(() => {
+        setElapsedSeconds((prev) => prev + 1)
+      }, 1000)
+    } else {
+      if (elapsedIntervalRef.current !== null) {
+        window.clearInterval(elapsedIntervalRef.current)
+        elapsedIntervalRef.current = null
+      }
+      setElapsedSeconds(0)
+    }
+    return () => {
+      if (elapsedIntervalRef.current !== null) {
+        window.clearInterval(elapsedIntervalRef.current)
+        elapsedIntervalRef.current = null
+      }
+    }
+  }, [effectiveTrainingMode])
+
+  useEffect(() => {
+    if (restActive && restSeconds > 0) {
+      restIntervalRef.current = window.setInterval(() => {
+        setRestSeconds((prev) => {
+          if (prev <= 1) {
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+    return () => {
+      if (restIntervalRef.current !== null) {
+        window.clearInterval(restIntervalRef.current)
+        restIntervalRef.current = null
+      }
+    }
+  }, [restActive, restSeconds])
+
+  const startRestTimer = useCallback(() => {
+    setRestSeconds(restDefaultDuration)
+    setRestActive(true)
+  }, [restDefaultDuration])
+
+  const stopRestTimer = useCallback(() => {
+    setRestActive(false)
+    if (restIntervalRef.current !== null) {
+      window.clearInterval(restIntervalRef.current)
+      restIntervalRef.current = null
+    }
+  }, [])
+
+  const handleSkipRest = useCallback(() => {
+    stopRestTimer()
+  }, [stopRestTimer])
+
+  const handleAdjustRestDuration = useCallback((delta: number) => {
+    setRestDefaultDuration((prev) => {
+      const next = prev + delta
+      return Math.min(300, Math.max(15, next))
+    })
+    setRestSeconds((prev) => {
+      const next = prev + delta
+      return Math.min(300, Math.max(0, next))
+    })
+  }, [])
+
+  const handleUpdateSet = useCallback(
+    (exerciseIndex: number, setIndex: number, patch: Partial<ExerciseSetLog>) => {
+      const set = props.selectedWorkout?.exercises[exerciseIndex]?.sets[setIndex]
+      if (!set) {
+        props.onUpdateSet(exerciseIndex, setIndex, patch)
+        return
+      }
+      const wasComplete = isSetComplete(set)
+      const weight = patch.weight !== undefined ? patch.weight : set.weight
+      const reps = patch.reps !== undefined ? patch.reps : set.reps
+      const willBeComplete = weight !== undefined && reps !== undefined
+
+      props.onUpdateSet(exerciseIndex, setIndex, patch)
+
+      if (!wasComplete && willBeComplete) {
+        startRestTimer()
+      }
+    },
+    [props.selectedWorkout, props.onUpdateSet, startRestTimer],
+  )
+
   return (
     <div className="grid gap-4">
       {effectiveTrainingMode ? (
-        <Card className="border-emerald-200 bg-emerald-50 dark:border-emerald-700/40 dark:bg-emerald-900/30">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">训练模式</p>
-              <h2 className="mt-1 text-xl font-semibold text-emerald-950 dark:text-emerald-100">
-                {props.selectedWorkout?.workoutName ?? props.selectedTemplate.name}
-              </h2>
-            </div>
-            <Button variant="secondary" className="px-3" onClick={() => setTrainingMode(false)}>
-              退出训练模式
-            </Button>
-          </div>
-          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-md bg-white p-2 dark:bg-slate-900">
-              <p className="text-xs text-slate-500 dark:text-slate-400">已填组数</p>
-              <p className="mt-0.5 font-semibold text-slate-950 dark:text-slate-50">{props.workoutSummary.filledSets}/{props.workoutSummary.totalSets}</p>
-            </div>
-            <div className="rounded-md bg-white p-2 dark:bg-slate-900">
-              <p className="text-xs text-slate-500 dark:text-slate-400">完成率</p>
-              <p className="mt-0.5 font-semibold text-slate-950 dark:text-slate-50">{props.workoutSummary.completionPercent}%</p>
-            </div>
-            <div className="rounded-md bg-white p-2 dark:bg-slate-900">
-              <p className="text-xs text-slate-500 dark:text-slate-400">训练量</p>
-              <p className="mt-0.5 font-semibold text-slate-950 dark:text-slate-50">{Math.round(props.workoutSummary.totalVolume)} kg</p>
-            </div>
-          </div>
-        </Card>
+        <TrainingHeader
+          workoutName={props.selectedWorkout?.workoutName ?? props.selectedTemplate.name}
+          workoutSummary={props.workoutSummary}
+          elapsedSeconds={elapsedSeconds}
+          restSeconds={restSeconds}
+          restActive={restActive}
+          restDefaultDuration={restDefaultDuration}
+          onExitTrainingMode={() => setTrainingMode(false)}
+          onSkipRest={handleSkipRest}
+          onAdjustRestDuration={handleAdjustRestDuration}
+        />
       ) : (
         <WorkoutControlPanel
           selectedDate={props.selectedDate}
@@ -190,7 +272,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
                 exerciseIndex={exerciseIndex}
                 previousRecord={props.previousRecordsByExerciseKey.get(`${exercise.exerciseId}::${exercise.name.trim()}`)}
                 onUpdateExercise={props.onUpdateExercise}
-                onUpdateSet={props.onUpdateSet}
+                onUpdateSet={handleUpdateSet}
                 onAddSet={props.onAddSet}
                 onDeleteLastSet={props.onDeleteLastSet}
                 onRebuildSets={props.onRebuildSets}

@@ -21,6 +21,7 @@ export function NumberField({
   range,
   kind = 'integer',
   inputRef,
+  className,
 }: {
   label: string
   value?: number
@@ -31,6 +32,7 @@ export function NumberField({
   range?: NumberRange
   kind?: 'decimal' | 'integer'
   inputRef?: (el: HTMLInputElement | null) => void
+  className?: string
 }) {
   const effectiveRange: NumberRange | undefined =
     range ?? (min !== undefined || max !== undefined ? { min, max, allowZero: min === 0 } : undefined)
@@ -103,7 +105,7 @@ export function NumberField({
         data-step={step}
         ref={inputRef}
         aria-invalid={outOfRange}
-        className={outOfRange ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-100 dark:border-rose-500 dark:focus:border-rose-400 dark:focus:ring-rose-900/40' : ''}
+        className={`${outOfRange ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-100 dark:border-rose-500 dark:focus:border-rose-400 dark:focus:ring-rose-900/40' : ''} ${className ?? ''}`}
         onChange={(event) => handleChange(event.target.value)}
       />
       {outOfRange ? <p className="text-xs text-rose-600 dark:text-rose-400">{rangeHint}</p> : null}
