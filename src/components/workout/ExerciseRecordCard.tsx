@@ -235,28 +235,26 @@ export function ExerciseRecordCard({
             ) : null}
           </div>
 
-          {compact ? null : (
-            <details className="mt-3 rounded-md border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-3">
-              <summary className="cursor-pointer text-sm font-semibold text-slate-700 dark:text-slate-300">编辑动作</summary>
-              <div className="mt-3 grid min-w-0 gap-3 lg:grid-cols-2">
-                <Field label="动作名称">
-                  <TextInput value={exercise.name} onChange={(event) => onUpdateExercise(exerciseIndex, { name: event.target.value })} />
-                </Field>
-                <Field label="目标组次">
-                  <TextInput value={exercise.target} onChange={(event) => onUpdateExercise(exerciseIndex, { target: event.target.value })} />
-                </Field>
-              </div>
-              <div className="mt-3">
-                <Field label="动作备注">
-                  <TextInput value={exercise.notes ?? ''} onChange={(event) => onUpdateExercise(exerciseIndex, { notes: event.target.value })} />
-                </Field>
-              </div>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <Button variant="secondary" onClick={() => onRebuildSets(exerciseIndex)}>按目标重建组</Button>
-                <Button variant="ghost" onClick={() => onDeleteExercise(exerciseIndex)}>删除动作</Button>
-              </div>
-            </details>
-          )}
+          <details className="mt-3 rounded-md border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-3">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-700 dark:text-slate-300">编辑动作</summary>
+            <div className="mt-3 grid min-w-0 gap-3 lg:grid-cols-2">
+              <Field label="动作名称">
+                <TextInput value={exercise.name} onChange={(event) => onUpdateExercise(exerciseIndex, { name: event.target.value })} />
+              </Field>
+              <Field label="目标组次">
+                <TextInput value={exercise.target} onChange={(event) => onUpdateExercise(exerciseIndex, { target: event.target.value })} />
+              </Field>
+            </div>
+            <div className="mt-3">
+              <Field label="动作备注">
+                <TextInput value={exercise.notes ?? ''} onChange={(event) => onUpdateExercise(exerciseIndex, { notes: event.target.value })} />
+              </Field>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <Button variant="secondary" onClick={() => onRebuildSets(exerciseIndex)}>按目标重建组</Button>
+              <Button variant="ghost" onClick={() => onDeleteExercise(exerciseIndex)}>删除动作</Button>
+            </div>
+          </details>
         </>
       )}
     </div>

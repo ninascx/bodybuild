@@ -57,9 +57,18 @@ export function WorkoutTab(props: WorkoutTabProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [restSeconds, setRestSeconds] = useState(90)
   const [restActive, setRestActive] = useState(false)
-  const [restDefaultDuration, setRestDefaultDuration] = useState(90)
+  const [restDefaultDuration, setRestDefaultDuration] = useState(() => {
+    try {
+      const saved = localStorage.getItem('bodybuild:restDuration')
+      const parsed = Number(saved)
+      return Number.isFinite(parsed) && parsed >= 15 && parsed <= 300 ? parsed : 90
+    } catch {
+      return 90
+    }
+  })
   const restIntervalRef = useRef<number | null>(null)
   const elapsedIntervalRef = useRef<number | null>(null)
+  const lastTrainingWorkoutDateRef = useRef<string | null>(null)
 
   const templateToOption = (template: WorkoutTemplate): WorkoutTemplateOption => ({
     id: template.id,
@@ -71,7 +80,11 @@ export function WorkoutTab(props: WorkoutTabProps) {
 
   useEffect(() => {
     if (effectiveTrainingMode) {
-      setElapsedSeconds(0)
+      const isNewWorkout = lastTrainingWorkoutDateRef.current !== props.selectedDate
+      if (isNewWorkout) {
+        setElapsedSeconds(0)
+        lastTrainingWorkoutDateRef.current = props.selectedDate
+      }
       elapsedIntervalRef.current = window.setInterval(() => {
         setElapsedSeconds((prev) => prev + 1)
       }, 1000)
@@ -80,7 +93,6 @@ export function WorkoutTab(props: WorkoutTabProps) {
         window.clearInterval(elapsedIntervalRef.current)
         elapsedIntervalRef.current = null
       }
-      setElapsedSeconds(0)
     }
     return () => {
       if (elapsedIntervalRef.current !== null) {
@@ -88,7 +100,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
         elapsedIntervalRef.current = null
       }
     }
-  }, [effectiveTrainingMode])
+  }, [effectiveTrainingMode, props.selectedDate])
 
   useEffect(() => {
     if (restActive && restSeconds > 0) {
@@ -109,6 +121,12 @@ export function WorkoutTab(props: WorkoutTabProps) {
     }
   }, [restActive, restSeconds])
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('bodybuild:restDuration', String(restDefaultDuration))
+    } catch { /* ignore */ }
+  }, [restDefaultDuration])
+
   const startRestTimer = useCallback(() => {
     setRestSeconds(restDefaultDuration)
     setRestActive(true)
@@ -125,6 +143,10 @@ export function WorkoutTab(props: WorkoutTabProps) {
   const handleSkipRest = useCallback(() => {
     stopRestTimer()
   }, [stopRestTimer])
+
+  const handleStartRest = useCallback(() => {
+    startRestTimer()
+  }, [startRestTimer])
 
   const handleAdjustRestDuration = useCallback((delta: number) => {
     setRestDefaultDuration((prev) => {
@@ -171,6 +193,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
           onExitTrainingMode={() => setTrainingMode(false)}
           onSkipRest={handleSkipRest}
           onAdjustRestDuration={handleAdjustRestDuration}
+          onStartRest={handleStartRest}
         />
       ) : (
         <WorkoutControlPanel
@@ -290,15 +313,13 @@ export function WorkoutTab(props: WorkoutTabProps) {
               </div>
             ) : null}
 
-            {effectiveTrainingMode ? null : (
-              <div className="rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-3">
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">训练操作</p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <Button onClick={props.onAddExercise}>新增当天动作</Button>
-                  <Button variant="secondary" onClick={props.onSaveAsTemplate}>保存为模板</Button>
-                </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-3">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">训练操作</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <Button onClick={props.onAddExercise}>新增当天动作</Button>
+                <Button variant="secondary" onClick={props.onSaveAsTemplate}>保存为模板</Button>
               </div>
-            )}
+            </div>
             {props.selectedWorkout && props.workoutSummary.completionPercent === 100 ? (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-700/40 dark:bg-emerald-900/30">
                 <p className="text-lg font-semibold text-emerald-950 dark:text-emerald-100">🎉 训练完成</p>
