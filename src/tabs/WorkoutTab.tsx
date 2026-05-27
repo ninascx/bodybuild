@@ -1,15 +1,16 @@
 import { Badge, Button, Card, Field, TextArea, TextInput } from '../components/ui'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { ExerciseRecordCard } from '../components/workout/ExerciseRecordCard'
 import { ExerciseQuickJumpStrip } from '../components/workout/ExerciseQuickJumpStrip'
 import { WorkoutControlPanel } from '../components/workout/WorkoutControlPanel'
 import { WorkoutTemplateManager } from '../components/workout/WorkoutTemplateManager'
-import { TrainingHeader } from '../components/workout/TrainingHeader'
+import { TrainingHeader, TrainingTimerFloat } from '../components/workout/TrainingHeader'
 import type { ExerciseLog, ExercisePlan, ExerciseSetLog, WorkoutLog, WorkoutTemplate } from '../types'
 import type { PreviousExerciseRecord } from '../lib/metrics'
 import type { SyncState } from '../lib/storage'
 import type { WorkoutSummary, WorkoutTemplateOption } from '../lib/workout'
 import { isSetComplete } from '../lib/workout'
+import { useTrainingTimer } from '../hooks/useTrainingTimer'
 
 function templateToOption(template: WorkoutTemplate): WorkoutTemplateOption {
   return {
@@ -47,6 +48,8 @@ type WorkoutTabProps = {
   onDeleteLastSet: (exerciseIndex: number) => void
   onRebuildSets: (exerciseIndex: number) => void
   onDeleteExercise: (exerciseIndex: number) => void
+  onMoveExerciseUp: (exerciseIndex: number) => void
+  onMoveExerciseDown: (exerciseIndex: number) => void
   onAddExercise: () => void
   onFillEmptySets: (exerciseIndex: number) => void
   onApplyPreviousByIndex: (exerciseIndex: number) => void
@@ -64,84 +67,20 @@ export function WorkoutTab(props: WorkoutTabProps) {
   const [trainingMode, setTrainingMode] = useState(false)
   const effectiveTrainingMode = trainingMode && Boolean(props.selectedWorkout) && !props.restDay
   const hasWorkout = Boolean(props.selectedWorkout)
+  const selectedWorkout = props.selectedWorkout
+  const onUpdateSet = props.onUpdateSet
 
-  const [elapsedSeconds, setElapsedSeconds] = useState(0)
-  const [restSeconds, setRestSeconds] = useState(90)
-  const [restActive, setRestActive] = useState(false)
-  const [restDefaultDuration, setRestDefaultDuration] = useState(() => {
-    try {
-      const saved = localStorage.getItem('bodybuild:restDuration')
-      const parsed = Number(saved)
-      return Number.isFinite(parsed) && parsed >= 15 && parsed <= 300 ? parsed : 90
-    } catch {
-      return 90
-    }
-  })
-  const restIntervalRef = useRef<number | null>(null)
-  const elapsedIntervalRef = useRef<number | null>(null)
-  const lastTrainingWorkoutDateRef = useRef<string | null>(null)
-
-  useEffect(() => {
-    if (effectiveTrainingMode) {
-      const isNewWorkout = lastTrainingWorkoutDateRef.current !== props.selectedDate
-      if (isNewWorkout) {
-        setElapsedSeconds(0)
-        lastTrainingWorkoutDateRef.current = props.selectedDate
-      }
-      elapsedIntervalRef.current = window.setInterval(() => {
-        setElapsedSeconds((prev) => prev + 1)
-      }, 1000)
-    } else {
-      if (elapsedIntervalRef.current !== null) {
-        window.clearInterval(elapsedIntervalRef.current)
-        elapsedIntervalRef.current = null
-      }
-    }
-    return () => {
-      if (elapsedIntervalRef.current !== null) {
-        window.clearInterval(elapsedIntervalRef.current)
-        elapsedIntervalRef.current = null
-      }
-    }
-  }, [effectiveTrainingMode, props.selectedDate])
-
-  useEffect(() => {
-    if (restActive && restSeconds > 0) {
-      restIntervalRef.current = window.setInterval(() => {
-        setRestSeconds((prev) => {
-          if (prev <= 1) {
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-    }
-    return () => {
-      if (restIntervalRef.current !== null) {
-        window.clearInterval(restIntervalRef.current)
-        restIntervalRef.current = null
-      }
-    }
-  }, [restActive, restSeconds])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('bodybuild:restDuration', String(restDefaultDuration))
-    } catch { /* ignore */ }
-  }, [restDefaultDuration])
-
-  const startRestTimer = useCallback(() => {
-    setRestSeconds(restDefaultDuration)
-    setRestActive(true)
-  }, [restDefaultDuration])
-
-  const stopRestTimer = useCallback(() => {
-    setRestActive(false)
-    if (restIntervalRef.current !== null) {
-      window.clearInterval(restIntervalRef.current)
-      restIntervalRef.current = null
-    }
-  }, [])
+  const {
+    elapsedSeconds,
+    restSeconds,
+    restActive,
+    restDefaultDuration,
+    autoStartRest,
+    startRestTimer,
+    stopRestTimer,
+    adjustRestDuration,
+    toggleAutoStartRest,
+  } = useTrainingTimer(props.selectedDate)
 
   const handleSkipRest = useCallback(() => {
     stopRestTimer()
@@ -152,52 +91,54 @@ export function WorkoutTab(props: WorkoutTabProps) {
   }, [startRestTimer])
 
   const handleAdjustRestDuration = useCallback((delta: number) => {
-    setRestDefaultDuration((prev) => {
-      const next = prev + delta
-      return Math.min(300, Math.max(15, next))
-    })
-    setRestSeconds((prev) => {
-      const next = prev + delta
-      return Math.min(300, Math.max(0, next))
-    })
-  }, [])
+    adjustRestDuration(delta)
+  }, [adjustRestDuration])
 
   const handleUpdateSet = useCallback(
     (exerciseIndex: number, setIndex: number, patch: Partial<ExerciseSetLog>) => {
-      const set = props.selectedWorkout?.exercises[exerciseIndex]?.sets[setIndex]
+      const set = selectedWorkout?.exercises[exerciseIndex]?.sets[setIndex]
       if (!set) {
-        props.onUpdateSet(exerciseIndex, setIndex, patch)
+        onUpdateSet(exerciseIndex, setIndex, patch)
         return
       }
       const wasComplete = isSetComplete(set)
-      const weight = patch.weight !== undefined ? patch.weight : set.weight
-      const reps = patch.reps !== undefined ? patch.reps : set.reps
+      const hasWeightPatch = Object.prototype.hasOwnProperty.call(patch, 'weight')
+      const hasRepsPatch = Object.prototype.hasOwnProperty.call(patch, 'reps')
+      const weight = hasWeightPatch ? patch.weight : set.weight
+      const reps = hasRepsPatch ? patch.reps : set.reps
       const willBeComplete = weight !== undefined && reps !== undefined
 
-      props.onUpdateSet(exerciseIndex, setIndex, patch)
+      onUpdateSet(exerciseIndex, setIndex, patch)
 
-      if (!wasComplete && willBeComplete) {
+      if (!wasComplete && willBeComplete && autoStartRest) {
         startRestTimer()
       }
     },
-    [props.selectedWorkout, props.onUpdateSet, startRestTimer],
+    [selectedWorkout, onUpdateSet, startRestTimer, autoStartRest],
   )
 
   return (
-    <div className="grid gap-4">
+    <div className={`grid gap-4 ${effectiveTrainingMode ? 'pb-56' : ''}`}>
       {effectiveTrainingMode ? (
-        <TrainingHeader
-          workoutName={props.selectedWorkout?.workoutName ?? props.selectedTemplate.name}
-          workoutSummary={props.workoutSummary}
-          elapsedSeconds={elapsedSeconds}
-          restSeconds={restSeconds}
-          restActive={restActive}
-          restDefaultDuration={restDefaultDuration}
-          onExitTrainingMode={() => setTrainingMode(false)}
-          onSkipRest={handleSkipRest}
-          onAdjustRestDuration={handleAdjustRestDuration}
-          onStartRest={handleStartRest}
-        />
+        <>
+          <TrainingHeader
+            workoutName={props.selectedWorkout?.workoutName ?? props.selectedTemplate.name}
+            workoutSummary={props.workoutSummary}
+            onExitTrainingMode={() => setTrainingMode(false)}
+          />
+          <TrainingTimerFloat
+            elapsedSeconds={elapsedSeconds}
+            restSeconds={restSeconds}
+            restActive={restActive}
+            restDefaultDuration={restDefaultDuration}
+            autoStartRest={autoStartRest}
+            onExitTrainingMode={() => setTrainingMode(false)}
+            onSkipRest={handleSkipRest}
+            onAdjustRestDuration={handleAdjustRestDuration}
+            onStartRest={handleStartRest}
+            onToggleAutoStart={toggleAutoStartRest}
+          />
+        </>
       ) : (
         <WorkoutControlPanel
           selectedDate={props.selectedDate}
@@ -303,6 +244,8 @@ export function WorkoutTab(props: WorkoutTabProps) {
                 onDeleteLastSet={props.onDeleteLastSet}
                 onRebuildSets={props.onRebuildSets}
                 onDeleteExercise={props.onDeleteExercise}
+                onMoveExerciseUp={props.onMoveExerciseUp}
+                onMoveExerciseDown={props.onMoveExerciseDown}
                 onFillEmptySets={props.onFillEmptySets}
                 onApplyPreviousByIndex={props.onApplyPreviousByIndex}
                 forceCollapsed={collapseMode === 'auto' ? undefined : collapseMode === 'all'}

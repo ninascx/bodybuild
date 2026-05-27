@@ -296,6 +296,7 @@ export interface PreviousExerciseRecord {
   bestWeight: number
   reps?: number
   rir?: number
+  allSets?: Array<{ weight?: number; reps?: number; rir?: number }>
 }
 
 export function findPreviousExerciseRecord(
@@ -322,6 +323,7 @@ export function findPreviousExerciseRecord(
       bestWeight: bestSet.weight as number,
       reps: bestSet.reps,
       rir: bestSet.rir,
+      allSets: match.sets.filter((set) => set.weight !== undefined || set.reps !== undefined),
     }
   }
   return undefined

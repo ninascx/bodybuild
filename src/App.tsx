@@ -478,18 +478,6 @@ function App() {
     [],
   )
 
-  const handleApplyWorkoutTemplate = useCallback(
-    (template: WorkoutTemplateOption) => { void replaceWorkoutFromTemplate(template) },
-    [replaceWorkoutFromTemplate],
-  )
-
-  const handleApplyRecommendedWorkout = useCallback(() => {
-    const recommended = templateOptions.find(
-      (template) => template.id === `builtin-${getDayKey(selectedDate)}`,
-    )
-    void replaceWorkoutFromTemplate(recommended)
-  }, [replaceWorkoutFromTemplate, templateOptions, selectedDate])
-
   function updateDailyLog(patch: Partial<DailyLog>) {
     const nextLogs = upsertByDate(dailyLogs, selectedDate, patch)
     schedulePersist({ dailyLogs: nextLogs, workoutLogs, workoutTemplates })
@@ -574,6 +562,22 @@ function App() {
       },
       true,
     )
+  }
+
+  function moveExerciseUp(exerciseIndex: number) {
+    if (exerciseIndex <= 0) return
+    const base = currentWorkoutOrBlank()
+    const exercises = [...base.exercises]
+    ;[exercises[exerciseIndex - 1], exercises[exerciseIndex]] = [exercises[exerciseIndex], exercises[exerciseIndex - 1]]
+    updateWorkoutLog({ ...base, exercises }, true)
+  }
+
+  function moveExerciseDown(exerciseIndex: number) {
+    const base = currentWorkoutOrBlank()
+    if (exerciseIndex >= base.exercises.length - 1) return
+    const exercises = [...base.exercises]
+    ;[exercises[exerciseIndex], exercises[exerciseIndex + 1]] = [exercises[exerciseIndex + 1], exercises[exerciseIndex]]
+    updateWorkoutLog({ ...base, exercises }, true)
   }
 
   function addSetToExercise(exerciseIndex: number) {
@@ -1028,8 +1032,8 @@ function App() {
             syncState={syncState}
             onDateChange={handleDateChange}
             onTemplateChange={setSelectedTemplateId}
-            onApplyTemplate={handleApplyWorkoutTemplate}
-            onApplyRecommended={handleApplyRecommendedWorkout}
+            onApplyTemplate={(template) => void replaceWorkoutFromTemplate(template)}
+            onApplyRecommended={() => void replaceWorkoutFromTemplate(templateOptions.find((template) => template.id === `builtin-${getDayKey(selectedDate)}`))}
             onToggleShowUnfinished={handleToggleShowUnfinished}
             onUpdateWorkout={updateWorkoutLog}
             onUpdateExercise={updateExercise}
@@ -1038,6 +1042,8 @@ function App() {
             onDeleteLastSet={deleteLastSetFromExercise}
             onRebuildSets={rebuildSetsFromTarget}
             onDeleteExercise={deleteExerciseFromWorkout}
+            onMoveExerciseUp={moveExerciseUp}
+            onMoveExerciseDown={moveExerciseDown}
             onAddExercise={addExerciseToWorkout}
             onFillEmptySets={fillEmptySetsFromLast}
             onApplyPreviousByIndex={applyPreviousSetsByIndex}

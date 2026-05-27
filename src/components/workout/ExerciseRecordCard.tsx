@@ -7,6 +7,14 @@ import { NumberField } from '../NumberField'
 
 const RIR_OPTIONS = [0, 1, 2, 3] as const
 
+function parseTargetReps(target: string): { min: number; max: number } | null {
+  const match = target.match(/(\d+)-(\d+)\s*(?:次|reps?|$)/i)
+  if (match) {
+    return { min: Number(match[1]), max: Number(match[2]) }
+  }
+  return null
+}
+
 export function ExerciseRecordCard({
   exercise,
   exerciseIndex,
@@ -17,6 +25,8 @@ export function ExerciseRecordCard({
   onDeleteLastSet,
   onRebuildSets,
   onDeleteExercise,
+  onMoveExerciseUp,
+  onMoveExerciseDown,
   onFillEmptySets,
   onApplyPreviousByIndex,
   forceCollapsed,
@@ -31,6 +41,8 @@ export function ExerciseRecordCard({
   onDeleteLastSet: (exerciseIndex: number) => void
   onRebuildSets: (exerciseIndex: number) => void
   onDeleteExercise: (exerciseIndex: number) => void
+  onMoveExerciseUp: (exerciseIndex: number) => void
+  onMoveExerciseDown: (exerciseIndex: number) => void
   onFillEmptySets: (exerciseIndex: number) => void
   onApplyPreviousByIndex: (exerciseIndex: number) => void
   forceCollapsed?: boolean
@@ -132,16 +144,34 @@ export function ExerciseRecordCard({
           </p>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{exercise.target}</p>
           {previousRecord ? (
-            <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">
-              上次（{previousRecord.date.slice(5)}）：{previousRecord.bestWeight} kg
-              {previousRecord.reps !== undefined ? ` × ${previousRecord.reps} 次` : ''}
-              {previousRecord.rir !== undefined ? ` · RIR ${previousRecord.rir}` : ''}
-            </p>
+            <div className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">
+              <p>
+                上次（{previousRecord.date.slice(5)}）：{previousRecord.bestWeight} kg
+                {previousRecord.reps !== undefined ? ` × ${previousRecord.reps} 次` : ''}
+                {previousRecord.rir !== undefined ? ` · RIR ${previousRecord.rir}` : ''}
+              </p>
+              {previousRecord.allSets && previousRecord.allSets.length > 0 ? (
+                <p className="mt-0.5">
+                  {previousRecord.allSets.map((set) => {
+                    const parts: string[] = []
+                    if (set.weight !== undefined) parts.push(`${set.weight}kg`)
+                    if (set.reps !== undefined) parts.push(`${set.reps}次`)
+                    if (set.rir !== undefined) parts.push(`RIR${set.rir}`)
+                    return parts.length > 0 ? parts.join('×') : null
+                  }).filter(Boolean).join(', ')}
+                </p>
+              ) : null}
+            </div>
           ) : null}
           {totalVolume > 0 ? (
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               本次训练量 {Math.round(totalVolume)} kg
               {currentBestWeight > 0 ? ` · 最重 ${currentBestWeight} kg` : ''}
+            </p>
+          ) : null}
+          {exercise.notes?.trim() ? (
+            <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+              💡 {exercise.notes.trim()}
             </p>
           ) : null}
         </div>
@@ -160,28 +190,66 @@ export function ExerciseRecordCard({
               const canCopy =
                 previous !== undefined &&
                 (previous.weight !== undefined || previous.reps !== undefined || previous.rir !== undefined)
+              const targetRange = parseTargetReps(exercise.target)
               return (
                 <div key={setIndex} className="grid min-w-0 gap-2 rounded-md bg-slate-50 p-2 dark:bg-slate-800">
                   {/* 桌面端三列并排，手机端 kg + 次数一行、RIR 按钮一行 */}
                   <div className="grid min-w-0 gap-2 sm:grid-cols-[1fr_1fr_auto]">
                     <div className="grid grid-cols-2 gap-2 sm:contents">
-                      <NumberField
-                        label={`${setIndex + 1}组 kg`}
-                        value={set.weight}
-                        step="0.5"
-                        kind="decimal"
-                        range={{ min: 0, max: 500, allowZero: true }}
-                        onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { weight: value })}
-                        inputRef={isLast ? (el) => { lastAddedSetRef.current = el } : undefined}
-                        className={compact ? 'h-14 text-base' : undefined}
-                      />
-                      <NumberField
-                        label="次数"
-                        value={set.reps}
-                        range={{ min: 1, max: 100 }}
-                        onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { reps: value })}
-                        className={compact ? 'h-14 text-base' : undefined}
-                      />
+                      <div className="space-y-1">
+                        <NumberField
+                          label={`${setIndex + 1}组 kg`}
+                          value={set.weight}
+                          step="0.5"
+                          kind="decimal"
+                          range={{ min: 0, max: 500, allowZero: true }}
+                          onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { weight: value })}
+                          inputRef={isLast ? (el) => { lastAddedSetRef.current = el } : undefined}
+                          className={compact ? 'h-14 text-base' : undefined}
+                        />
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const current = set.weight ?? 0
+                              const next = Math.max(0, current - 2.5)
+                              onUpdateSet(exerciseIndex, setIndex, { weight: next })
+                            }}
+                            className="flex-1 rounded border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800"
+                          >
+                            -2.5
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const current = set.weight ?? 0
+                              const next = current + 2.5
+                              onUpdateSet(exerciseIndex, setIndex, { weight: next })
+                            }}
+                            className="flex-1 rounded border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800"
+                          >
+                            +2.5
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <NumberField
+                          label="次数"
+                          value={set.reps}
+                          range={{ min: 1, max: 100 }}
+                          onChange={(value) => onUpdateSet(exerciseIndex, setIndex, { reps: value })}
+                          className={compact ? 'h-14 text-base' : undefined}
+                        />
+                        {targetRange && set.reps !== undefined ? (
+                          <div className="text-xs">
+                            {set.reps >= targetRange.min && set.reps <= targetRange.max ? (
+                              <span className="text-emerald-600 dark:text-emerald-400">✓ 达标</span>
+                            ) : (
+                              <span className="text-amber-600 dark:text-amber-400">目标 {targetRange.min}-{targetRange.max}</span>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                     <div className="flex items-end gap-0.5">
                       {RIR_OPTIONS.map((value) => (
@@ -251,6 +319,8 @@ export function ExerciseRecordCard({
               </Field>
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <Button variant="secondary" onClick={() => onMoveExerciseUp(exerciseIndex)}>上移动作</Button>
+              <Button variant="secondary" onClick={() => onMoveExerciseDown(exerciseIndex)}>下移动作</Button>
               <Button variant="secondary" onClick={() => onRebuildSets(exerciseIndex)}>按目标重建组</Button>
               <Button variant="ghost" onClick={() => onDeleteExercise(exerciseIndex)}>删除动作</Button>
             </div>
