@@ -29,7 +29,7 @@ function vibrateDevice() {
   }
 }
 
-export function useTrainingTimer(selectedDate: string) {
+export function useTrainingTimer(selectedDate: string, active: boolean) {
   const [elapsedSeconds, setElapsedSeconds] = useState(() => {
     try {
       const key = `bodybuild:elapsed:${selectedDate}`
@@ -123,6 +123,14 @@ export function useTrainingTimer(selectedDate: string) {
   }, [restSeconds, restActive])
 
   useEffect(() => {
+    if (!active) {
+      if (elapsedIntervalRef.current !== null) {
+        window.clearInterval(elapsedIntervalRef.current)
+        elapsedIntervalRef.current = null
+      }
+      return
+    }
+
     elapsedIntervalRef.current = window.setInterval(() => {
       setElapsedSeconds((prev) => prev + 1)
     }, 1000)
@@ -132,7 +140,7 @@ export function useTrainingTimer(selectedDate: string) {
         window.clearInterval(elapsedIntervalRef.current)
       }
     }
-  }, [])
+  }, [active])
 
   useEffect(() => {
     if (restActive && restSeconds > 0) {

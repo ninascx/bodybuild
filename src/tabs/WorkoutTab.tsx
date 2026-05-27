@@ -69,6 +69,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
   const hasWorkout = Boolean(props.selectedWorkout)
   const selectedWorkout = props.selectedWorkout
   const onUpdateSet = props.onUpdateSet
+  const [completionToast, setCompletionToast] = useState<string | null>(null)
 
   const {
     elapsedSeconds,
@@ -80,7 +81,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
     stopRestTimer,
     adjustRestDuration,
     toggleAutoStartRest,
-  } = useTrainingTimer(props.selectedDate)
+  } = useTrainingTimer(props.selectedDate, effectiveTrainingMode)
 
   const handleSkipRest = useCallback(() => {
     stopRestTimer()
@@ -93,6 +94,12 @@ export function WorkoutTab(props: WorkoutTabProps) {
   const handleAdjustRestDuration = useCallback((delta: number) => {
     adjustRestDuration(delta)
   }, [adjustRestDuration])
+
+  useEffect(() => {
+    if (!completionToast) return
+    const timer = window.setTimeout(() => setCompletionToast(null), 2000)
+    return () => window.clearTimeout(timer)
+  }, [completionToast])
 
   const handleUpdateSet = useCallback(
     (exerciseIndex: number, setIndex: number, patch: Partial<ExerciseSetLog>) => {
@@ -110,11 +117,17 @@ export function WorkoutTab(props: WorkoutTabProps) {
 
       onUpdateSet(exerciseIndex, setIndex, patch)
 
-      if (!wasComplete && willBeComplete && autoStartRest) {
-        startRestTimer()
+      if (!wasComplete && willBeComplete) {
+        if (effectiveTrainingMode) {
+          const exerciseName = selectedWorkout?.exercises[exerciseIndex]?.name || '动作'
+          setCompletionToast(`✓ ${exerciseName} 第 ${setIndex + 1} 组`)
+        }
+        if (autoStartRest) {
+          startRestTimer()
+        }
       }
     },
-    [selectedWorkout, onUpdateSet, startRestTimer, autoStartRest],
+    [selectedWorkout, onUpdateSet, startRestTimer, autoStartRest, effectiveTrainingMode],
   )
 
   return (
@@ -319,6 +332,12 @@ export function WorkoutTab(props: WorkoutTabProps) {
           onApplyTemplate={(template) => props.onApplyTemplate(templateToOption(template))}
           onDeleteTemplate={props.onDeleteTemplate}
         />
+      )}
+
+      {completionToast && effectiveTrainingMode && (
+        <div className="fixed left-1/2 top-20 z-50 -translate-x-1/2 animate-[slideDown_0.3s_ease-out] rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2.5 shadow-lg dark:border-emerald-700/40 dark:bg-emerald-900/90">
+          <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">{completionToast}</p>
+        </div>
       )}
     </div>
   )
