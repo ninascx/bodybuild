@@ -1,5 +1,5 @@
 import { Badge, Button, Card, Field, TextArea, TextInput } from '../components/ui'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ExerciseRecordCard } from '../components/workout/ExerciseRecordCard'
 import { ExerciseQuickJumpStrip } from '../components/workout/ExerciseQuickJumpStrip'
 import { WorkoutControlPanel } from '../components/workout/WorkoutControlPanel'
