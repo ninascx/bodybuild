@@ -5,25 +5,32 @@ import type { TrendPoint } from '../lib/metrics'
 
 export function ChartCard({
   title,
+  description,
   children,
   isEmpty = false,
+  emptyMessage = '连续记录两天以上后，这里会显示趋势。',
   action,
 }: {
   title: string
+  description?: ReactNode
   children: ReactElement
   isEmpty?: boolean
+  emptyMessage?: ReactNode
   action?: ReactNode
 }) {
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">{title}</h2>
+        <div>
+          <h2 className="text-base font-semibold text-slate-950 dark:text-slate-50">{title}</h2>
+          {description ? <p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">{description}</p> : null}
+        </div>
         {action}
       </div>
       <div className="mt-4 h-56 sm:h-64">
         {isEmpty ? (
           <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 text-center text-sm leading-6 text-slate-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400">
-            连续记录两天以上后，这里会显示趋势。
+            {emptyMessage}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">

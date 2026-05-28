@@ -1,6 +1,7 @@
 import { dailyTargets } from '../data/plans'
-import type { AdjustmentRecommendation, DailyLog } from '../types'
+import type { AdjustmentRecommendation, DailyLog, DailyTarget, DayKey, UserPreference } from '../types'
 import { addDays, getDayKey, getRecentWindow, sortByDateAsc } from './dates'
+import { mergeUserPreference } from './userPreferences'
 
 function average(values: Array<number | undefined>): number | undefined {
   const valid = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
@@ -12,11 +13,21 @@ function averageWeightForRange(logs: DailyLog[], endDate: string, days: number):
   return average(getRecentWindow(logs, endDate, days).map((log) => log.morningWeightKg))
 }
 
-export function getDailyRecommendations(log: DailyLog | undefined, logs: DailyLog[], dateValue: string): AdjustmentRecommendation[] {
+type DailyTargetMap = Record<DayKey, DailyTarget>
+
+export function getDailyRecommendations(
+  log: DailyLog | undefined,
+  logs: DailyLog[],
+  dateValue: string,
+  targets: DailyTargetMap = dailyTargets,
+  preference?: UserPreference,
+): AdjustmentRecommendation[] {
   const day = getDayKey(dateValue)
+  const settings = mergeUserPreference(preference)
+  const target = targets[day]
   const recommendations: AdjustmentRecommendation[] = []
 
-  if (log?.sleepHours !== undefined && log.sleepHours < 6.5) {
+  if (log?.sleepHours !== undefined && log.sleepHours < settings.sleepFloorHours) {
     recommendations.push({
       title: '睡眠偏少',
       message: '今天不要冲力竭，训练保留更多余力。',
@@ -25,30 +36,30 @@ export function getDailyRecommendations(log: DailyLog | undefined, logs: DailyLo
   }
 
   const recentThree = getRecentWindow(logs, dateValue, 3)
-  if (recentThree.length >= 3 && recentThree.every((item) => (item.steps ?? 6500) < 6500)) {
+  if (recentThree.length >= 3 && recentThree.every((item) => (item.steps ?? target.stepTarget) < target.stepTarget)) {
     recommendations.push({
       title: '活动量偏低',
-      message: '连续 3 天步数低于 6500，建议增加 10-20 分钟散步。',
+      message: `连续 3 天步数低于 ${target.stepTarget}，建议增加 10-20 分钟散步。`,
       tone: 'warning',
     })
   }
 
   if ([5, 6].includes(day)) {
-    if ((log?.calories ?? 0) > 3000) {
+    if ((log?.calories ?? 0) > settings.weekendCalorieUpperKcal) {
       recommendations.push({
         title: '自由饮食偏高',
-        message: '周五或周六热量超过 3000 kcal，可能抵消周内赤字。优先控制周末，不要用极端压低工作日热量补偿。',
+        message: `周五或周六热量超过 ${settings.weekendCalorieUpperKcal} kcal，可能抵消周内赤字。优先控制周末，不要用极端压低工作日热量补偿。`,
         tone: 'danger',
       })
     }
-    if (log?.protein !== undefined && log.protein < 160) {
+    if (log?.protein !== undefined && log.protein < target.protein) {
       recommendations.push({
         title: '蛋白质未达底线',
-        message: '休息日也尽量保证至少 160 g 蛋白质。',
+        message: `休息日也尽量保证至少 ${target.protein} g 蛋白质。`,
         tone: 'warning',
       })
     }
-    if (log?.steps !== undefined && log.steps < 8000) {
+    if (log?.steps !== undefined && log.steps < target.stepTarget) {
       recommendations.push({
         title: '步数未达底线',
         message: '建议饭后步行 20-30 分钟补足活动量。',
@@ -60,7 +71,7 @@ export function getDailyRecommendations(log: DailyLog | undefined, logs: DailyLo
   if (recommendations.length === 0) {
     recommendations.push({
       title: '今日节奏',
-      message: dailyTargets[day].isTrainingDay ? '按计划完成主项，推举动作保持可控和无明显不适。' : '休息日重点是蛋白质达标、控制自由饮食和补足步数。',
+      message: target.isTrainingDay ? '按计划完成主项，推举动作保持可控和无明显不适。' : '休息日重点是蛋白质达标、控制自由饮食和补足步数。',
       tone: 'positive',
     })
   }
@@ -68,15 +79,16 @@ export function getDailyRecommendations(log: DailyLog | undefined, logs: DailyLo
   return recommendations
 }
 
-export function getWeekendRiskRecommendation(logs: DailyLog[], today: string): AdjustmentRecommendation {
+export function getWeekendRiskRecommendation(logs: DailyLog[], today: string, preference?: UserPreference): AdjustmentRecommendation {
+  const settings = mergeUserPreference(preference)
   const weekLogs = getRecentWindow(logs, today, 7).filter((log) => [5, 6].includes(getDayKey(log.date)))
-  const riskyDays = weekLogs.filter((log) => (log.calories ?? 0) > 3000)
+  const riskyDays = weekLogs.filter((log) => (log.calories ?? 0) > settings.weekendCalorieUpperKcal)
   const averageWeekendCalories =
     weekLogs.length > 0
       ? weekLogs.reduce((sum, log) => sum + (log.calories ?? 0), 0) / weekLogs.length
       : undefined
 
-  if (riskyDays.length > 0 || (averageWeekendCalories ?? 0) > 3000) {
+  if (riskyDays.length > 0 || (averageWeekendCalories ?? 0) > settings.weekendCalorieUpperKcal) {
     return {
       title: '周末风险预警',
       message: '周五周六热量偏高时，优先控制自由饮食结构和步数，不建议用极端压低工作日热量来补偿。',
@@ -86,12 +98,13 @@ export function getWeekendRiskRecommendation(logs: DailyLog[], today: string): A
 
   return {
     title: '周末节奏',
-    message: '目前没有明显周末超标记录。继续守住 2600-3000 kcal、蛋白质 160 g 和 8000 步底线。',
+    message: `目前没有明显周末超标记录。继续守住周末 ${settings.weekendCalorieUpperKcal} kcal 上限、蛋白质和步数底线。`,
     tone: 'positive',
   }
 }
 
-export function getTwoWeekAdjustment(logs: DailyLog[], today: string): AdjustmentRecommendation {
+export function getTwoWeekAdjustment(logs: DailyLog[], today: string, preference?: UserPreference): AdjustmentRecommendation {
+  const settings = mergeUserPreference(preference)
   const sorted = sortByDateAsc(logs)
   const recentFourteen = getRecentWindow(sorted, today, 14)
   const previousEnd = addDays(today, -14)
@@ -121,17 +134,20 @@ export function getTwoWeekAdjustment(logs: DailyLog[], today: string): Adjustmen
     }
   }
 
-  const weeklyChangeRate = ((latestWeight - previousWeight) / previousWeight) * 100
+  const weeklyWeightDeltaKg = latestWeight - previousWeight
+  const goalDeltaKg = settings.weeklyWeightChangeGoalKg
+  const goalToleranceKg = Math.max(0.15, Math.abs(goalDeltaKg) * 0.35)
   const waistChange = firstWaist !== undefined && lastWaist !== undefined ? lastWaist - firstWaist : undefined
   const performanceStable = previousCompletion === undefined || recentCompletion === undefined || recentCompletion >= previousCompletion - 8
   const performanceRising = previousCompletion !== undefined && recentCompletion !== undefined && recentCompletion > previousCompletion + 5
-  const weightFlat = Math.abs(weeklyChangeRate) < 0.15
+  const weightOnTarget = weeklyWeightDeltaKg >= goalDeltaKg - goalToleranceKg && weeklyWeightDeltaKg <= goalDeltaKg + goalToleranceKg
+  const weightFlat = Math.abs(weeklyWeightDeltaKg) < 0.15
   const waistFlat = waistChange === undefined || Math.abs(waistChange) < 0.3
 
-  if (weeklyChangeRate <= -0.25 && weeklyChangeRate >= -0.75 && performanceStable) {
+  if (weightOnTarget && performanceStable) {
     return {
       title: '继续当前方案',
-      message: '7 日平均体重下降速度在合理区间，训练表现稳定，先保持当前热量与训练安排。',
+      message: `7 日平均体重变化接近每周 ${goalDeltaKg} kg 目标，训练表现稳定，先保持当前热量与训练安排。`,
       tone: 'positive',
     }
   }
@@ -147,12 +163,12 @@ export function getTwoWeekAdjustment(logs: DailyLog[], today: string): Adjustmen
   if (weightFlat && waistFlat) {
     return {
       title: '优先检查周末',
-      message: '连续两周体重和腰围几乎不变。先检查周五周六是否超过 2800-3000 kcal；如果周末已控制，再把周日至周四每日减少 100-150 kcal。',
+      message: `连续两周体重和腰围几乎不变。先检查周五周六是否超过 ${settings.weekendCalorieUpperKcal} kcal；如果周末已控制，再小幅调整工作日热量。`,
       tone: 'warning',
     }
   }
 
-  if (weeklyChangeRate < -0.75 || (recentFatigue ?? 0) >= 7 || !performanceStable) {
+  if (weeklyWeightDeltaKg < goalDeltaKg - goalToleranceKg || (recentFatigue ?? 0) >= settings.fatigueThreshold || !performanceStable) {
     return {
       title: '赤字可能过大',
       message: '体重下降偏快、疲劳偏高或训练完成度下降。建议训练日增加 100-150 kcal 碳水，并减少每周 2-4 组附件训练。',

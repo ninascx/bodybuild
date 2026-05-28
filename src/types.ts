@@ -1,16 +1,21 @@
 export type DayKey = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
 export interface UserProfile {
-  sex: 'male'
-  birthDate: string
-  heightCm: number
-  initialWeightKg: number
-  estimatedBodyFatPercent: number
-  targetWeeks: string
-  goal: string
-  sleepHours: number
-  averageSteps: number
-  trainingDays: DayKey[]
+  sex?: 'male' | 'female' | 'other'
+  birthDate?: string
+  heightCm?: number
+  initialWeightKg?: number
+  currentWeightKg?: number
+  estimatedBodyFatPercent?: number
+  waistCm?: number
+  chestCm?: number
+  upperArmCm?: number
+  thighCm?: number
+  targetWeeks?: string
+  goal?: string
+  sleepHours?: number
+  averageSteps?: number
+  trainingDays?: DayKey[]
 }
 
 export interface DailyTarget {
@@ -39,6 +44,25 @@ export interface WorkoutPlan {
   name: string
   focus: string
   exercises: ExercisePlan[]
+}
+
+export interface UserPlanData {
+  dailyTargets: Record<DayKey, DailyTarget>
+  workoutPlans: Record<DayKey, WorkoutPlan>
+}
+
+export type GoalType = 'fat_loss' | 'muscle_gain' | 'maintenance'
+
+export interface UserPreference {
+  theme?: string
+  restDurationSec?: number
+  autoStartRest?: boolean
+  activeTab?: string
+  goalType?: GoalType
+  weeklyWeightChangeGoalKg?: number
+  sleepFloorHours?: number
+  fatigueThreshold?: number
+  weekendCalorieUpperKcal?: number
 }
 
 export interface WorkoutTemplate {

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { dailyTargets, dayNames, weeklyCalorieTarget, workoutPlans } from './data/plans'
+import type { FormEvent } from 'react'
+import { dailyTargets as defaultDailyTargets, dayNames, workoutPlans as defaultWorkoutPlans } from './data/plans'
 import { formatDateInput, getDayKey, isValidDateInput } from './lib/dates'
 import { calculateDashboardStats, buildTrainingPerformanceData, buildTrendData, createWeeklySummary, findPreviousExerciseRecord, logsForWeek } from './lib/metrics'
 import type { PreviousExerciseRecord, TrendPoint, TrainingPerformancePoint } from './lib/metrics'
@@ -13,6 +14,8 @@ import {
   estimateSetCount,
   hasWorkoutContent,
   isExerciseFilled,
+  isSetEmpty,
+  isSetComplete,
   newTemplateFromWorkout,
   summarizeWorkout,
   upsertByDate,
@@ -24,43 +27,72 @@ import {
   getWeekendRiskRecommendation,
 } from './lib/recommendations'
 import {
+  buildTodaySnapshot,
+  buildTrendAlerts,
+  buildWeeklyActionRecommendations,
+} from './lib/statusInsights'
+import type { TodaySnapshot } from './lib/statusInsights'
+import {
   type AppData,
+  type CurrentUser,
   type SyncState,
   cacheData,
-  createBackup,
-  downloadBackup,
+  downloadCsv,
+  downloadJson,
+  downloadText,
+  emptyAppData,
+  exportCurrentUserData,
+  exportWorkoutTemplateToken,
+  fetchCurrentUser,
+  fetchUserPreference,
+  fetchUserPlanData,
+  importWorkoutTemplateToken,
   loadAppData,
-  loadCachedData,
+  login,
+  logout,
   saveAppData,
+  saveUserPreference,
+  saveUserPlanData,
 } from './lib/storage'
+import { defaultUserPreference, mergeUserPreference } from './lib/userPreferences'
+import { buildExportCsvText, buildExportResultSummary, buildExportSummaryText, buildScopedExportPayload, type ExportFormat, type ExportOptions, type ExportRangePreset } from './lib/exportPayload'
 import { createId } from './lib/ids'
-import { getBuiltinTemplates } from './data/plans'
-import type { AdjustmentRecommendation, DailyLog, ExerciseLog, ExercisePlan, ExerciseSetLog, WeeklySummary, WorkoutLog, WorkoutTemplate } from './types'
-import { Button } from './components/ui'
+import type { AdjustmentRecommendation, DailyLog, ExerciseLog, ExercisePlan, ExerciseSetLog, UserPlanData, UserPreference, WeeklySummary, WorkoutLog, WorkoutTemplate } from './types'
+import { Button, LoadingBlock, StatusMessage } from './components/ui'
 import { useColorScheme } from './hooks/useColorScheme'
 import { useConfirm } from './components/ConfirmDialog'
 import { ThemeToggle } from './components/ThemeToggle'
 import { CopyPreviewDialog } from './components/CopyPreviewDialog'
+import { ExportDataDialog } from './components/ExportDataDialog'
 import { TodayTab } from './tabs/TodayTab'
+import { ProfileTab } from './tabs/ProfileTab'
+import { PlanTab } from './tabs/PlanTab'
 import { DailyRecordTab } from './tabs/DailyRecordTab'
 import { WorkoutTab } from './tabs/WorkoutTab'
 const DashboardTab = lazy(() => import('./tabs/DashboardTab').then((mod) => ({ default: mod.DashboardTab })))
 import { WeeklyTab } from './tabs/WeeklyTab'
+import { AdminUsersTab } from './tabs/AdminUsersTab'
 
-type TabKey = 'today' | 'daily' | 'workout' | 'dashboard' | 'weekly'
+type TabKey = 'today' | 'profile' | 'plan' | 'daily' | 'workout' | 'dashboard' | 'weekly' | 'admin'
 
-const tabs: Array<{ key: TabKey; label: string }> = [
+const baseTabs: Array<{ key: TabKey; label: string }> = [
   { key: 'today', label: '今日' },
+  { key: 'profile', label: '个人' },
+  { key: 'plan', label: '计划' },
   { key: 'daily', label: '记录' },
   { key: 'workout', label: '训练' },
   { key: 'dashboard', label: '仪表盘' },
   { key: 'weekly', label: '周报' },
 ]
+const adminTab: { key: TabKey; label: string } = { key: 'admin', label: '用户管理' }
+const allTabs = [...baseTabs, adminTab]
 
 const ACTIVE_TAB_KEY = 'bodybuild:v1:activeTab'
+const LEGACY_API_CACHE_NAMES = ['api-cache']
+const exerciseMetadataKeys = new Set<keyof ExerciseLog>(['name', 'notes'])
 
 function isTabKey(value: string | null): value is TabKey {
-  return tabs.some((tab) => tab.key === value)
+  return allTabs.some((tab) => tab.key === value)
 }
 
 function readInitialTab(): TabKey {
@@ -83,6 +115,16 @@ function signedRemaining(targetValue: number | undefined, actualValue: number | 
 function remainingTone(targetValue: number | undefined, actualValue: number | undefined): 'positive' | 'warning' | 'neutral' {
   if (targetValue === undefined || actualValue === undefined) return 'neutral'
   return actualValue <= targetValue ? 'positive' : 'warning'
+}
+
+function formatSyncClock(value: string | null): string {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
 }
 
 function weeklyConclusion(summary: ReturnType<typeof createWeeklySummary>, twoWeekTitle: string) {
@@ -121,34 +163,86 @@ function weeklyConclusion(summary: ReturnType<typeof createWeeklySummary>, twoWe
   }
 }
 
+async function clearLegacyApiCaches() {
+  if (!('caches' in window)) return
+  const names = await window.caches.keys()
+  await Promise.all(
+    names
+      .filter((name) => LEGACY_API_CACHE_NAMES.includes(name) || name.toLowerCase().includes('api-cache'))
+      .map((name) => window.caches.delete(name)),
+  )
+}
+
 function App() {
   const { preference: colorPreference, resolved: resolvedColorScheme, cycle: cycleColorScheme } = useColorScheme()
   const { confirm, dialog: confirmDialog } = useConfirm()
   const [today, setToday] = useState<string>(() => formatDateInput())
-  const cachedData = useMemo(() => loadCachedData(), [])
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
+  const [authState, setAuthState] = useState<'checking' | 'authenticated' | 'anonymous'>('checking')
+  const [loginUsername, setLoginUsername] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [loginError, setLoginError] = useState('')
+  const [loginPending, setLoginPending] = useState(false)
   const [activeTab, setActiveTab] = useState<TabKey>(() => readInitialTab())
   const [selectedDate, setSelectedDate] = useState<string>(() => formatDateInput())
-  const [dailyLogs, setDailyLogs] = useState<DailyLog[]>(cachedData.dailyLogs)
-  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>(cachedData.workoutLogs)
-  const [workoutTemplates, setWorkoutTemplates] = useState<WorkoutTemplate[]>(cachedData.workoutTemplates)
+  const [dailyLogs, setDailyLogs] = useState<DailyLog[]>([])
+  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([])
+  const [workoutTemplates, setWorkoutTemplates] = useState<WorkoutTemplate[]>([])
+  const [dailyTargetsByDay, setDailyTargetsByDay] = useState(defaultDailyTargets)
+  const [workoutPlansByDay, setWorkoutPlansByDay] = useState(defaultWorkoutPlans)
+  const [userPreference, setUserPreference] = useState<UserPreference>(() => defaultUserPreference)
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(`builtin-${getDayKey(formatDateInput())}`)
   const [syncState, setSyncState] = useState<SyncState>('loading')
   const [syncMessage, setSyncMessage] = useState('正在连接服务器数据文件...')
   const [savePending, setSavePending] = useState(false)
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null)
+  const [autoRetryEnabled, setAutoRetryEnabled] = useState(false)
   const [slowSave, setSlowSave] = useState(false)
   const [noticeMessage, setNoticeMessage] = useState('')
   const [copyMessage, setCopyMessage] = useState('')
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [showExportDialog, setShowExportDialog] = useState(false)
+  const [exportInitialRangePreset, setExportInitialRangePreset] = useState<ExportRangePreset>('last30')
+  const [exportInitialOptions, setExportInitialOptions] = useState<Partial<ExportOptions> | undefined>(undefined)
+  const [exportInitialOutputFormat, setExportInitialOutputFormat] = useState<ExportFormat>('summary')
+  const [exportAnchorDate, setExportAnchorDate] = useState<string>(() => formatDateInput())
+  const [exportPending, setExportPending] = useState(false)
   const [showOnlyUnfinishedExercises, setShowOnlyUnfinishedExercises] = useState(false)
   const [showAllPerformanceLines, setShowAllPerformanceLines] = useState(false)
   const [trendDays, setTrendDays] = useState<7 | 14 | 30 | 90>(30)
   const [weeklyAnchorDate, setWeeklyAnchorDate] = useState<string>(() => formatDateInput())
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
   const saveVersionRef = useRef(0)
+  const autoRetryAtRef = useRef(0)
   const localEditsRef = useRef(false)
   const pendingDataRef = useRef<AppData | null>(null)
   const debounceTimerRef = useRef<number | null>(null)
   const [initialLoaded, setInitialLoaded] = useState(false)
+  const visibleTabs = currentUser?.role === 'admin' ? allTabs : baseTabs
+  const contentTab: TabKey = currentUser?.role === 'admin' || activeTab !== 'admin' ? activeTab : 'today'
+  const lastSyncedLabel = formatSyncClock(lastSyncedAt)
+  const userWeeklyCalorieTarget = useMemo(
+    () =>
+      Object.values(dailyTargetsByDay).reduce((sum, target) => {
+        if (typeof target.calories === 'number') return sum + target.calories
+        if (target.calorieRange) return sum + Math.round((target.calorieRange[0] + target.calorieRange[1]) / 2)
+        return sum
+      }, 0),
+    [dailyTargetsByDay],
+  )
+  const currentPlanData = useMemo<UserPlanData>(
+    () => ({
+      dailyTargets: dailyTargetsByDay,
+      workoutPlans: workoutPlansByDay,
+    }),
+    [dailyTargetsByDay, workoutPlansByDay],
+  )
+
+  useEffect(() => {
+    void clearLegacyApiCaches().catch((error) => {
+      console.warn('清理旧 API 缓存失败：', error)
+    })
+  }, [])
 
   useEffect(() => {
     const tick = () => {
@@ -167,15 +261,15 @@ function App() {
   }, [])
 
   const todayKey = getDayKey(today)
-  const target = dailyTargets[todayKey]
-  const plan = workoutPlans[todayKey]
+  const target = dailyTargetsByDay[todayKey]
+  const plan = workoutPlansByDay[todayKey]
   const todayLog = useMemo(() => dailyLogs.find((log) => log.date === today), [dailyLogs, today])
   const todayWorkout = useMemo(() => workoutLogs.find((log) => log.date === today), [workoutLogs, today])
   const selectedLog = useMemo(
     () => dailyLogs.find((log) => log.date === selectedDate) ?? { date: selectedDate },
     [dailyLogs, selectedDate],
   )
-  const selectedTarget = dailyTargets[getDayKey(selectedDate)]
+  const selectedTarget = dailyTargetsByDay[getDayKey(selectedDate)]
   const selectedWorkout = useMemo(
     () => workoutLogs.find((log) => log.date === selectedDate),
     [workoutLogs, selectedDate],
@@ -183,32 +277,55 @@ function App() {
   const restDay = selectedLog.trained === false
   const workoutSummary = useMemo(() => summarizeWorkout(selectedWorkout), [selectedWorkout])
   const templateOptions = useMemo(
-    () => [...builtinTemplateOptions(), ...workoutTemplates.filter((t) => !t.isBuiltin).map(customTemplateToOption)],
-    [workoutTemplates],
+    () => [...builtinTemplateOptions(workoutPlansByDay), ...workoutTemplates.filter((t) => !t.isBuiltin).map(customTemplateToOption)],
+    [workoutPlansByDay, workoutTemplates],
   )
   const selectedTemplate = useMemo(
     () => templateOptions.find((template) => template.id === selectedTemplateId) ?? templateOptions[0],
     [templateOptions, selectedTemplateId],
   )
-  const dashboardStats = useMemo(() => calculateDashboardStats(dailyLogs, today), [dailyLogs, today])
+  const dashboardStats = useMemo(
+    () => calculateDashboardStats(dailyLogs, today, dailyTargetsByDay, userWeeklyCalorieTarget),
+    [dailyLogs, today, dailyTargetsByDay, userWeeklyCalorieTarget],
+  )
   const trendData = useMemo(
-    () => (activeTab === 'dashboard' ? buildTrendData(dailyLogs, today, trendDays) : ([] as TrendPoint[])),
-    [dailyLogs, today, trendDays, activeTab],
+    () => (contentTab === 'dashboard' ? buildTrendData(dailyLogs, today, trendDays, dailyTargetsByDay) : ([] as TrendPoint[])),
+    [dailyLogs, today, trendDays, dailyTargetsByDay, contentTab],
   )
   const trainingPerformanceData = useMemo(
-    () => (activeTab === 'dashboard' ? buildTrainingPerformanceData(workoutLogs, today, Math.max(60, trendDays)) : ([] as TrainingPerformancePoint[])),
-    [workoutLogs, today, trendDays, activeTab],
+    () => (contentTab === 'dashboard' ? buildTrainingPerformanceData(workoutLogs, today, Math.max(60, trendDays)) : ([] as TrainingPerformancePoint[])),
+    [workoutLogs, today, trendDays, contentTab],
   )
   const weeklySummary = useMemo(
-    () => (activeTab === 'weekly' ? createWeeklySummary(dailyLogs, weeklyAnchorDate) : ({} as WeeklySummary)),
-    [dailyLogs, weeklyAnchorDate, activeTab],
+    () => (contentTab === 'weekly' ? createWeeklySummary(dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userWeeklyCalorieTarget, userPreference) : ({} as WeeklySummary)),
+    [dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userWeeklyCalorieTarget, userPreference, contentTab],
   )
   const dailyRecommendations = useMemo(
-    () => (activeTab === 'today' ? getDailyRecommendations(todayLog, dailyLogs, today) : ([] as AdjustmentRecommendation[])),
-    [todayLog, dailyLogs, today, activeTab],
+    () => (contentTab === 'today' ? getDailyRecommendations(todayLog, dailyLogs, today, dailyTargetsByDay, userPreference) : ([] as AdjustmentRecommendation[])),
+    [todayLog, dailyLogs, today, dailyTargetsByDay, userPreference, contentTab],
   )
-  const twoWeekAdjustment = useMemo(() => getTwoWeekAdjustment(dailyLogs, today), [dailyLogs, today])
-  const weekendRisk = useMemo(() => getWeekendRiskRecommendation(dailyLogs, today), [dailyLogs, today])
+  const twoWeekAdjustment = useMemo(() => getTwoWeekAdjustment(dailyLogs, today, userPreference), [dailyLogs, today, userPreference])
+  const weekendRisk = useMemo(() => getWeekendRiskRecommendation(dailyLogs, today, userPreference), [dailyLogs, today, userPreference])
+  const todaySnapshot = useMemo(
+    () =>
+      contentTab === 'today'
+        ? buildTodaySnapshot({
+            today,
+            log: todayLog,
+            workout: todayWorkout,
+            target,
+            logs: dailyLogs,
+            dashboardStats,
+            targets: dailyTargetsByDay,
+            preference: userPreference,
+          })
+        : ({} as TodaySnapshot),
+    [contentTab, today, todayLog, todayWorkout, target, dailyLogs, dashboardStats, dailyTargetsByDay, userPreference],
+  )
+  const trendAlerts = useMemo(
+    () => (contentTab === 'today' || contentTab === 'weekly' ? buildTrendAlerts(dailyLogs, today, dailyTargetsByDay, userPreference) : ([] as AdjustmentRecommendation[])),
+    [contentTab, dailyLogs, today, dailyTargetsByDay, userPreference],
+  )
   const todayCalorieTarget = target.calories ?? target.calorieRange?.[1]
   const currentWeekLogs = useMemo(() => logsForWeek(dailyLogs, today), [dailyLogs, today])
   const hasWeeklyCalorieLogs = useMemo(
@@ -218,6 +335,13 @@ function App() {
   const weeklyConclusionCard = useMemo(
     () => weeklyConclusion(weeklySummary, twoWeekAdjustment.title),
     [weeklySummary, twoWeekAdjustment.title],
+  )
+  const weeklyActionRecommendations = useMemo(
+    () =>
+      contentTab === 'weekly'
+        ? buildWeeklyActionRecommendations(weeklySummary, dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userPreference)
+        : ([] as AdjustmentRecommendation[]),
+    [contentTab, weeklySummary, dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userPreference],
   )
   const visibleWorkoutExercises = useMemo(
     () =>
@@ -242,11 +366,14 @@ function App() {
     setDailyLogs(nextData.dailyLogs)
     setWorkoutLogs(nextData.workoutLogs)
     setWorkoutTemplates(nextData.workoutTemplates)
-    cacheData(nextData)
-  }, [])
+    if (currentUser) {
+      cacheData(currentUser.id, nextData)
+    }
+  }, [currentUser])
 
   const persistData = useCallback(
     async (nextData: AppData) => {
+      if (!currentUser) return
       localEditsRef.current = true
       const saveVersion = saveVersionRef.current + 1
       saveVersionRef.current = saveVersion
@@ -254,7 +381,7 @@ function App() {
       setSavePending(false)
       setSyncState('saving')
       setSyncMessage('正在保存到服务器数据文件...')
-      const saveTask = saveQueueRef.current.then(() => saveAppData(nextData))
+      const saveTask = saveQueueRef.current.then(() => saveAppData(currentUser.id, nextData))
       saveQueueRef.current = saveTask.then(
         () => undefined,
         () => undefined,
@@ -266,12 +393,15 @@ function App() {
           applyData(saved)
           setSavePending(false)
           setSyncState('synced')
+          setLastSyncedAt(new Date().toISOString())
+          setAutoRetryEnabled(false)
           setSyncMessage('已同步到服务器数据文件。')
         }
       } catch (error) {
         if (saveVersion === saveVersionRef.current) {
           setSyncState('offline')
           setSavePending(false)
+          setAutoRetryEnabled(true)
           const message =
             error instanceof Error && error.message
               ? `${error.message}（已先保存在浏览器缓存）`
@@ -280,7 +410,7 @@ function App() {
         }
       }
     },
-    [applyData],
+    [applyData, currentUser],
   )
 
   const flushPending = useCallback(() => {
@@ -322,21 +452,23 @@ function App() {
         debounceTimerRef.current = null
         const data = pendingDataRef.current
         pendingDataRef.current = null
-        if (data) {
-          void saveAppData(data).catch(() => {
+        if (data && currentUser) {
+          void saveAppData(currentUser.id, data).catch(() => {
             /* best-effort flush on unmount */
           })
         }
       }
     }
-  }, [])
+  }, [currentUser])
 
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (debounceTimerRef.current !== null && pendingDataRef.current) {
         const data = pendingDataRef.current
         try {
-          cacheData(data)
+          if (currentUser) {
+            cacheData(currentUser.id, data)
+          }
         } catch (error) {
           console.warn('页面关闭前刷新缓存失败：', error)
         }
@@ -344,7 +476,7 @@ function App() {
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [])
+  }, [currentUser])
 
   useEffect(() => {
     if (!noticeMessage) return
@@ -379,8 +511,73 @@ function App() {
   useEffect(() => {
     let canceled = false
 
-    void loadAppData().then((result) => {
+    void fetchCurrentUser()
+      .then((user) => {
+        if (canceled) return
+        setCurrentUser(user)
+        setAuthState(user ? 'authenticated' : 'anonymous')
+        if (!user) {
+          setDailyLogs([])
+          setWorkoutLogs([])
+          setWorkoutTemplates([])
+          setDailyTargetsByDay(defaultDailyTargets)
+          setWorkoutPlansByDay(defaultWorkoutPlans)
+          setUserPreference(defaultUserPreference)
+          setInitialLoaded(true)
+          setSyncState('offline')
+          setLastSyncedAt(null)
+          setAutoRetryEnabled(false)
+          setSyncMessage('请登录后同步个人数据。')
+        }
+      })
+      .catch((error) => {
+        if (canceled) return
+        console.warn('读取登录状态失败：', error)
+        setAuthState('anonymous')
+        setInitialLoaded(true)
+        setSyncState('offline')
+        setLastSyncedAt(null)
+        setAutoRetryEnabled(false)
+        setSyncMessage('无法读取登录状态，请稍后重试。')
+      })
+
+    return () => {
+      canceled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!currentUser) return
+    let canceled = false
+    localEditsRef.current = false
+    pendingDataRef.current = null
+
+    void Promise.resolve()
+      .then(() => {
+        if (canceled) return null
+        setInitialLoaded(false)
+        setSyncState('loading')
+        setSavePending(false)
+        setSyncMessage('正在加载当前用户数据...')
+        return Promise.all([
+          loadAppData(currentUser.id),
+          fetchUserPreference().catch((error) => {
+            console.warn('读取个人配置失败，使用默认配置：', error)
+            return defaultUserPreference
+          }),
+          fetchUserPlanData().catch((error) => {
+            console.warn('读取用户计划失败，使用默认计划：', error)
+            return { dailyTargets: defaultDailyTargets, workoutPlans: defaultWorkoutPlans }
+          }),
+        ])
+      })
+      .then((result) => {
+      if (!result) return
       if (canceled) return
+      const [appResult, preferenceResult, planResult] = result
+      setUserPreference(mergeUserPreference(preferenceResult))
+      setDailyTargetsByDay(planResult.dailyTargets)
+      setWorkoutPlansByDay(planResult.workoutPlans)
       setInitialLoaded(true)
       if (localEditsRef.current) {
         // 本地已开始编辑，保留本地数据，避免服务器响应覆盖用户输入
@@ -389,24 +586,31 @@ function App() {
         setSyncMessage('服务器已连接，但加载期间检测到本地编辑，已保留本地数据。')
         return
       }
-      if (result.serverEmptyButLocalHasData) {
+      if (appResult.serverEmptyButLocalHasData) {
         setSyncState('offline')
         setSavePending(false)
+        setAutoRetryEnabled(false)
         setSyncMessage(
-          '检测到服务器数据为空，当前显示本地浏览器缓存。请先点击"导出 JSON"备份，再决定是否手动覆盖服务器。',
+          '检测到服务器数据为空，当前显示本地浏览器缓存。请先点击"导出"备份，再决定是否手动覆盖服务器。',
         )
+        setDailyLogs(appResult.data.dailyLogs)
+        setWorkoutLogs(appResult.data.workoutLogs)
+        setWorkoutTemplates(appResult.data.workoutTemplates)
         return
       }
-      setDailyLogs(result.data.dailyLogs)
-      setWorkoutLogs(result.data.workoutLogs)
-      setWorkoutTemplates(result.data.workoutTemplates)
-      if (result.source === 'server') {
+      setDailyLogs(appResult.data.dailyLogs)
+      setWorkoutLogs(appResult.data.workoutLogs)
+      setWorkoutTemplates(appResult.data.workoutTemplates)
+      if (appResult.source === 'server') {
         setSyncState('synced')
+        setLastSyncedAt(new Date().toISOString())
         setSavePending(false)
-        setSyncMessage('已同步到服务器数据文件。')
+        setAutoRetryEnabled(false)
+        setSyncMessage('已同步到当前用户数据。')
       } else {
         setSyncState('offline')
         setSavePending(false)
+        setAutoRetryEnabled(true)
         setSyncMessage('服务器连接失败，当前使用浏览器缓存；恢复连接后请再次保存。')
       }
     })
@@ -414,7 +618,7 @@ function App() {
     return () => {
       canceled = true
     }
-  }, [])
+  }, [currentUser])
 
   function changeTab(tabKey: TabKey) {
     setActiveTab(tabKey)
@@ -439,27 +643,48 @@ function App() {
     changeTab('workout')
   }
 
-  async function retrySync() {
+  const retrySync = useCallback(async (mode: 'manual' | 'auto' = 'manual') => {
+    if (!currentUser) return
     setSyncState('saving')
     setSavePending(false)
-    setSyncMessage('正在重新同步...')
+    setSyncMessage(mode === 'auto' ? '检测到连接恢复，正在自动同步...' : '正在重新同步...')
     flushPending()
     try {
-      const saved = await saveAppData({ dailyLogs, workoutLogs, workoutTemplates })
+      const saved = await saveAppData(currentUser.id, { dailyLogs, workoutLogs, workoutTemplates })
       applyData(saved)
       setSyncState('synced')
+      setLastSyncedAt(new Date().toISOString())
       setSavePending(false)
-      setSyncMessage('已同步到服务器数据文件。')
+      setAutoRetryEnabled(false)
+      setSyncMessage(mode === 'auto' ? '连接已恢复，已自动同步到服务器。' : '已同步到服务器数据文件。')
     } catch (error) {
       setSyncState('offline')
       setSavePending(false)
+      setAutoRetryEnabled(true)
       const message =
         error instanceof Error && error.message
           ? `${error.message}（已先保存在浏览器缓存）`
           : '服务器仍然无法保存，请稍后再试。'
       setSyncMessage(message)
     }
-  }
+  }, [applyData, currentUser, dailyLogs, flushPending, workoutLogs, workoutTemplates])
+
+  useEffect(() => {
+    if (!currentUser || syncState !== 'offline' || !autoRetryEnabled) return
+    const maybeRetry = () => {
+      if (document.hidden || navigator.onLine === false) return
+      const now = Date.now()
+      if (now - autoRetryAtRef.current < 15_000) return
+      autoRetryAtRef.current = now
+      void retrySync('auto')
+    }
+    window.addEventListener('online', maybeRetry)
+    document.addEventListener('visibilitychange', maybeRetry)
+    return () => {
+      window.removeEventListener('online', maybeRetry)
+      document.removeEventListener('visibilitychange', maybeRetry)
+    }
+  }, [autoRetryEnabled, currentUser, retrySync, syncState])
 
   function handleDateChange(nextDate: string) {
     if (nextDate === '') {
@@ -488,19 +713,43 @@ function App() {
     schedulePersist({ dailyLogs: nextLogs, workoutLogs, workoutTemplates }, true)
   }
 
-  function updateWorkoutLog(nextLog: WorkoutLog, immediate = false) {
+  function finishSelectedWorkout() {
+    const nextLogs = upsertByDate(dailyLogs, selectedDate, { trained: true, workoutCompletion: 100 })
+    const nextWorkoutLogs =
+      selectedWorkout || !selectedTemplate || selectedTemplate.exercises.length === 0
+        ? workoutLogs
+        : upsertByDate(workoutLogs, selectedDate, createWorkoutFromTemplate(selectedDate, selectedTemplate))
+    schedulePersist({ dailyLogs: nextLogs, workoutLogs: nextWorkoutLogs, workoutTemplates }, true)
+  }
+
+  function updateWorkoutLog(nextLog: WorkoutLog, immediate = false, options: { syncCompletion?: boolean } = {}) {
     const nextLogs = upsertByDate(workoutLogs, nextLog.date, nextLog)
-    schedulePersist({ dailyLogs, workoutLogs: nextLogs, workoutTemplates }, immediate)
+    const shouldSyncCompletion = options.syncCompletion ?? true
+    const nextDailyLogs = shouldSyncCompletion
+      ? (() => {
+          const summary = summarizeWorkout(nextLog)
+          const currentDailyLog = dailyLogs.find((log) => log.date === nextLog.date)
+          const wasMarkedComplete = (currentDailyLog?.workoutCompletion ?? 0) >= 100
+          const autoSyncedCompletion =
+            summary.completionPercent >= 100 && !wasMarkedComplete ? 99 : summary.completionPercent
+          return upsertByDate(dailyLogs, nextLog.date, {
+            trained: summary.filledSets > 0 ? true : undefined,
+            workoutCompletion: autoSyncedCompletion,
+          })
+        })()
+      : dailyLogs
+    schedulePersist({ dailyLogs: nextDailyLogs, workoutLogs: nextLogs, workoutTemplates }, immediate)
   }
 
   function updateExercise(index: number, patch: Partial<ExerciseLog>) {
-    const base = selectedWorkout ?? createWorkoutFromPlan(selectedDate)
+    const base = selectedWorkout ?? createWorkoutFromPlan(selectedDate, workoutPlansByDay[getDayKey(selectedDate)])
     const exercises = base.exercises.map((exercise, exerciseIndex) => (exerciseIndex === index ? { ...exercise, ...patch } : exercise))
-    updateWorkoutLog({ ...base, exercises })
+    const onlyMetadata = (Object.keys(patch) as Array<keyof ExerciseLog>).every((key) => exerciseMetadataKeys.has(key))
+    updateWorkoutLog({ ...base, exercises }, false, { syncCompletion: !onlyMetadata })
   }
 
   function updateExerciseSet(exerciseIndex: number, setIndex: number, patch: Partial<ExerciseSetLog>) {
-    const base = selectedWorkout ?? createWorkoutFromPlan(selectedDate)
+    const base = selectedWorkout ?? createWorkoutFromPlan(selectedDate, workoutPlansByDay[getDayKey(selectedDate)])
     const exercises = base.exercises.map((exercise, currentExerciseIndex) => {
       if (currentExerciseIndex !== exerciseIndex) return exercise
       const sets = exercise.sets.map((set, currentSetIndex) => (currentSetIndex === setIndex ? { ...set, ...patch } : set))
@@ -512,7 +761,7 @@ function App() {
   async function replaceWorkoutFromTemplate(template: WorkoutTemplateOption | undefined) {
     if (!template) return
     if (template.exercises.length === 0) {
-      setNoticeMessage('这是休息日模板，没有训练动作可填入。如需自由训练，请点"空白训练"。')
+      setNoticeMessage('这是休息日模板，没有训练动作可填入。如需自由训练，请点「空白训练」。')
       return
     }
     if (hasWorkoutContent(selectedWorkout)) {
@@ -569,7 +818,7 @@ function App() {
     const base = currentWorkoutOrBlank()
     const exercises = [...base.exercises]
     ;[exercises[exerciseIndex - 1], exercises[exerciseIndex]] = [exercises[exerciseIndex], exercises[exerciseIndex - 1]]
-    updateWorkoutLog({ ...base, exercises }, true)
+    updateWorkoutLog({ ...base, exercises }, true, { syncCompletion: false })
   }
 
   function moveExerciseDown(exerciseIndex: number) {
@@ -577,7 +826,7 @@ function App() {
     if (exerciseIndex >= base.exercises.length - 1) return
     const exercises = [...base.exercises]
     ;[exercises[exerciseIndex], exercises[exerciseIndex + 1]] = [exercises[exerciseIndex + 1], exercises[exerciseIndex]]
-    updateWorkoutLog({ ...base, exercises }, true)
+    updateWorkoutLog({ ...base, exercises }, true, { syncCompletion: false })
   }
 
   function addSetToExercise(exerciseIndex: number) {
@@ -633,7 +882,7 @@ function App() {
     const exercise = base.exercises[exerciseIndex]
     if (!exercise) return
     const lastFilled = [...exercise.sets].reverse().find(
-      (set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined,
+      isSetComplete,
     )
     if (!lastFilled) return
     const exercises = base.exercises.map((ex, i) => {
@@ -641,44 +890,7 @@ function App() {
       return {
         ...ex,
         sets: ex.sets.map((set) => {
-          const isEmpty = set.weight === undefined && set.reps === undefined && set.rir === undefined
-          return isEmpty ? { ...lastFilled } : set
-        }),
-      }
-    })
-    updateWorkoutLog({ ...base, exercises }, true)
-  }
-
-  function applyPreviousSetsByIndex(exerciseIndex: number) {
-    const base = currentWorkoutOrBlank()
-    const exercise = base.exercises[exerciseIndex]
-    if (!exercise) return
-    // 找上一次同动作的完整组数据
-    const sortedLogs = [...workoutLogs]
-      .filter((log) => log.date < selectedDate)
-      .sort((a, b) => b.date.localeCompare(a.date))
-    let previousSets: ExerciseSetLog[] | undefined
-    for (const log of sortedLogs) {
-      const match = log.exercises.find(
-        (e) => e.exerciseId === exercise.exerciseId || e.name.trim() === exercise.name.trim(),
-      )
-      if (match && match.sets.some((s) => s.weight !== undefined || s.reps !== undefined || s.rir !== undefined)) {
-        previousSets = match.sets
-        break
-      }
-    }
-    if (!previousSets) return
-    const exercises = base.exercises.map((ex, i) => {
-      if (i !== exerciseIndex) return ex
-      return {
-        ...ex,
-        sets: ex.sets.map((set, setIndex) => {
-          const isEmpty = set.weight === undefined && set.reps === undefined && set.rir === undefined
-          const prev = previousSets?.[setIndex]
-          if (isEmpty && prev && (prev.weight !== undefined || prev.reps !== undefined || prev.rir !== undefined)) {
-            return { ...prev }
-          }
-          return set
+          return isSetEmpty(set) ? { ...lastFilled } : set
         }),
       }
     })
@@ -686,8 +898,8 @@ function App() {
   }
 
   function persistTemplates(nextTemplates: WorkoutTemplate[], immediate = false) {
-    const allTemplates = [...getBuiltinTemplates(), ...nextTemplates.filter((t) => !t.isBuiltin)]
-    schedulePersist({ dailyLogs, workoutLogs, workoutTemplates: allTemplates }, immediate)
+    const customTemplates = nextTemplates.filter((t) => !t.isBuiltin)
+    schedulePersist({ dailyLogs, workoutLogs, workoutTemplates: customTemplates }, immediate)
   }
 
   function createCustomTemplate() {
@@ -703,7 +915,7 @@ function App() {
       isBuiltin: false,
     }
     const nextTemplates = [...workoutTemplates.filter((t) => !t.isBuiltin), nextTemplate]
-    setWorkoutTemplates([...getBuiltinTemplates(), ...nextTemplates])
+    setWorkoutTemplates(nextTemplates)
     persistTemplates(nextTemplates, true)
   }
 
@@ -797,6 +1009,22 @@ function App() {
     persistTemplates(nextTemplates, true)
   }
 
+  async function exportTemplateToken() {
+    return exportWorkoutTemplateToken(workoutTemplates)
+  }
+
+  async function importTemplateToken(token: string) {
+    if (!currentUser) throw new Error('请先登录')
+    const result = await importWorkoutTemplateToken(token)
+    setWorkoutTemplates(result.workoutTemplates)
+    cacheData(currentUser.id, { dailyLogs, workoutLogs, workoutTemplates: result.workoutTemplates })
+    setSyncState('synced')
+    setLastSyncedAt(new Date().toISOString())
+    setAutoRetryEnabled(false)
+    setSyncMessage(`已导入 ${result.importedCount} 个训练模板。`)
+    return { importedCount: result.importedCount }
+  }
+
   function saveCurrentWorkoutAsTemplate() {
     if (!selectedWorkout || selectedWorkout.exercises.length === 0) {
       setNoticeMessage('当前没有可保存的训练动作。')
@@ -807,8 +1035,79 @@ function App() {
     persistTemplates(nextTemplates, true)
   }
 
-  function exportData() {
-    downloadBackup(createBackup(dailyLogs, workoutLogs, workoutTemplates))
+  async function exportData(options: ExportOptions, format: ExportFormat = 'json') {
+    if (!currentUser) return
+    setExportPending(true)
+    setSyncMessage('正在生成导出文件...')
+    try {
+      const payload = await exportCurrentUserData()
+      const scopedPayload = buildScopedExportPayload(payload, options, exportAnchorDate)
+      const scope = scopedPayload.exportScope
+      const rangeLabel = scope.startDate && scope.endDate ? `${scope.startDate}-${scope.endDate}` : 'all'
+      if (format === 'copySummary') {
+        const ok = await writeToClipboard(buildExportSummaryText(scopedPayload))
+        if (!ok) throw new Error('复制摘要失败，请检查浏览器剪贴板权限。')
+      } else if (format === 'summary') {
+        downloadText(buildExportSummaryText(scopedPayload), `bodybuild-summary-${currentUser.username}-${rangeLabel}`, scopedPayload.exportedAt)
+      } else if (format === 'csv') {
+        downloadCsv(buildExportCsvText(scopedPayload), `bodybuild-table-${currentUser.username}-${rangeLabel}`, scopedPayload.exportedAt)
+      } else {
+        downloadJson(scopedPayload, `bodybuild-user-${currentUser.username}-${rangeLabel}`)
+      }
+      setShowExportDialog(false)
+      setExportInitialOptions(undefined)
+      setExportInitialOutputFormat('summary')
+      setSyncState('synced')
+      setAutoRetryEnabled(false)
+      const actionLabel = format === 'copySummary' ? '复制摘要' : format === 'summary' ? '导出摘要' : format === 'csv' ? '导出 CSV' : '导出 JSON'
+      setSyncMessage(`已${actionLabel}：${buildExportResultSummary(scopedPayload, format)}。`)
+    } catch (error) {
+      setSyncState('offline')
+      setAutoRetryEnabled(false)
+      setSyncMessage(error instanceof Error ? error.message : '导出当前用户数据失败')
+    } finally {
+      setExportPending(false)
+    }
+  }
+
+  function openExportDialog(
+    rangePreset: ExportRangePreset = 'last30',
+    anchorDate = selectedDate,
+    initialOptions?: Partial<ExportOptions>,
+    initialOutputFormat: ExportFormat = 'summary',
+  ) {
+    setExportInitialRangePreset(rangePreset)
+    setExportInitialOptions(initialOptions)
+    setExportInitialOutputFormat(initialOutputFormat)
+    setExportAnchorDate(anchorDate)
+    setShowExportDialog(true)
+  }
+
+  async function savePlanData(nextPlanData: UserPlanData): Promise<UserPlanData> {
+    if (!currentUser) throw new Error('请先登录')
+    setSyncState('saving')
+    setSyncMessage('正在保存个人计划...')
+    const saved = await saveUserPlanData(nextPlanData)
+    setDailyTargetsByDay(saved.dailyTargets)
+    setWorkoutPlansByDay(saved.workoutPlans)
+    setSyncState('synced')
+    setLastSyncedAt(new Date().toISOString())
+    setAutoRetryEnabled(false)
+    setSyncMessage('个人计划已保存。')
+    return saved
+  }
+
+  async function savePreferenceData(nextPreference: UserPreference): Promise<UserPreference> {
+    if (!currentUser) throw new Error('请先登录')
+    setSyncState('saving')
+    setSyncMessage('正在保存个人配置...')
+    const saved = mergeUserPreference(await saveUserPreference(nextPreference))
+    setUserPreference(saved)
+    setSyncState('synced')
+    setLastSyncedAt(new Date().toISOString())
+    setAutoRetryEnabled(false)
+    setSyncMessage('个人配置已保存。')
+    return saved
   }
 
   const [copyPreviewText, setCopyPreviewText] = useState<string | null>(null)
@@ -886,10 +1185,104 @@ function App() {
     }
   }
 
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setLoginPending(true)
+    setLoginError('')
+    try {
+      const user = await login(loginUsername, loginPassword)
+      setCurrentUser(user)
+      setAuthState('authenticated')
+      setLoginPassword('')
+      const empty = emptyAppData()
+      setDailyLogs(empty.dailyLogs)
+      setWorkoutLogs(empty.workoutLogs)
+      setWorkoutTemplates(empty.workoutTemplates)
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : '登录失败')
+      setAuthState('anonymous')
+    } finally {
+      setLoginPending(false)
+    }
+  }
+
+  async function handleLogout() {
+    await logout().catch((error) => {
+      console.warn('退出登录失败：', error)
+    })
+    setCurrentUser(null)
+    setAuthState('anonymous')
+    const empty = emptyAppData()
+    setDailyLogs(empty.dailyLogs)
+    setWorkoutLogs(empty.workoutLogs)
+    setWorkoutTemplates(empty.workoutTemplates)
+    setDailyTargetsByDay(defaultDailyTargets)
+    setWorkoutPlansByDay(defaultWorkoutPlans)
+    setUserPreference(defaultUserPreference)
+    setSyncState('offline')
+    setLastSyncedAt(null)
+    setAutoRetryEnabled(false)
+    setSyncMessage('已退出登录。')
+  }
+
+  if (authState === 'checking') {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+        <LoadingBlock className="w-full max-w-sm" title="正在检查登录状态..." />
+      </main>
+    )
+  }
+
+  if (authState === 'anonymous') {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+        <form
+          className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+          onSubmit={(event) => void handleLogin(event)}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-950 dark:text-slate-50">减脂增肌追踪</h1>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">登录后查看你的训练和饮食记录。</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">邀请制使用；没有自助注册，请使用管理员发来的昵称和密码。</p>
+            </div>
+            <ThemeToggle preference={colorPreference} resolved={resolvedColorScheme} onCycle={cycleColorScheme} />
+          </div>
+          <label className="mt-6 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            昵称
+            <input
+              className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              type="text"
+              value={loginUsername}
+              onChange={(event) => setLoginUsername(event.target.value)}
+              autoComplete="username"
+              required
+            />
+          </label>
+          <label className="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            密码
+            <input
+              className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              type="password"
+              value={loginPassword}
+              onChange={(event) => setLoginPassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </label>
+          {loginError ? <StatusMessage className="mt-3" tone="danger">{loginError}</StatusMessage> : null}
+          <Button className="mt-6 w-full" type="submit" disabled={loginPending}>
+            {loginPending ? '登录中...' : '登录'}
+          </Button>
+        </form>
+      </main>
+    )
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-4 sm:px-6 lg:px-8">
-        <header className="mb-4 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-none">
+        <header className="mb-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-none">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-slate-950 dark:text-slate-50 sm:text-3xl">减脂增肌追踪</h1>
@@ -902,11 +1295,25 @@ function App() {
                       : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-600/40 dark:bg-rose-900/30 dark:text-rose-100'
                 }`}
               >
-                {syncState === 'synced' ? '已同步' : syncState === 'saving' ? '保存中' : syncState === 'loading' ? '连接中' : '服务器连接失败'}
+                {syncState === 'synced'
+                  ? lastSyncedLabel
+                    ? `已同步 ${lastSyncedLabel}`
+                    : '已同步'
+                  : syncState === 'saving'
+                    ? '保存中'
+                    : syncState === 'loading'
+                      ? '连接中'
+                      : '服务器连接失败'}
               </div>
             </div>
-            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-start">
               <ThemeToggle preference={colorPreference} resolved={resolvedColorScheme} onCycle={cycleColorScheme} />
+              {currentUser ? (
+                <div className="col-span-2 flex min-h-11 items-center justify-center rounded-md border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 sm:col-span-1">
+                  {currentUser.displayName}
+                  {currentUser.role === 'admin' ? <span className="ml-2 text-xs text-emerald-700 dark:text-emerald-300">管理员</span> : null}
+                </div>
+              ) : null}
               <Button
                 className={`col-span-2 sm:col-span-1 transition ${
                   copyStatus === 'success'
@@ -920,38 +1327,72 @@ function App() {
               >
                 {copyStatus === 'success' ? '✓ 已复制' : copyStatus === 'error' ? '✗ 复制失败' : '复制今天'}
               </Button>
-              <Button className="w-full sm:w-auto" variant="secondary" onClick={previewTodayData}>
-                预览
-              </Button>
-              <Button className="w-full sm:w-auto" variant="secondary" onClick={exportData}>
-                导出 JSON
-              </Button>
+              <details className="relative col-span-2 sm:col-span-1">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">
+                  更多
+                </summary>
+                <div className="absolute right-0 z-30 mt-2 grid w-44 gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                  <Button
+                    className="w-full justify-start px-3"
+                    variant="ghost"
+                    onClick={(event) => {
+                      event.currentTarget.closest('details')?.removeAttribute('open')
+                      previewTodayData()
+                    }}
+                  >
+                    预览复制
+                  </Button>
+                  <Button
+                    className="w-full justify-start px-3"
+                    variant="ghost"
+                    onClick={(event) => {
+                      event.currentTarget.closest('details')?.removeAttribute('open')
+                      openExportDialog()
+                    }}
+                  >
+                    导出
+                  </Button>
+                  <Button
+                    className="w-full justify-start px-3"
+                    variant="ghost"
+                    onClick={(event) => {
+                      event.currentTarget.closest('details')?.removeAttribute('open')
+                      void handleLogout()
+                    }}
+                  >
+                    退出
+                  </Button>
+                </div>
+              </details>
             </div>
           </div>
           <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{syncMessage}</p>
-          {slowSave ? (
-            <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">网络较慢，仍在尝试...本地缓存已先保存。</p>
-          ) : null}
+          {slowSave ? <StatusMessage className="mt-2" tone="warning">网络较慢，仍在尝试...本地缓存已先保存。</StatusMessage> : null}
           {syncState === 'offline' ? (
             <div className="mt-2">
+              {autoRetryEnabled ? (
+                <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+                  已先保存在本机；恢复连接或回到页面时会自动重试。
+                </p>
+              ) : null}
               <Button variant="secondary" className="px-3" onClick={() => void retrySync()}>
                 重试同步
               </Button>
             </div>
           ) : null}
-          {noticeMessage ? <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{noticeMessage}</p> : null}
-          {copyMessage ? <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-400">{copyMessage}</p> : null}
+          {noticeMessage ? <StatusMessage className="mt-3" tone="neutral">{noticeMessage}</StatusMessage> : null}
+          {copyMessage ? <StatusMessage className="mt-2" tone="positive">{copyMessage}</StatusMessage> : null}
         </header>
 
-        <nav className="sticky top-0 z-10 mb-4 overflow-x-auto border-y border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/95 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-950/95">
+        <nav className="sticky top-0 z-10 mb-4 overflow-x-auto border-y border-slate-200 bg-slate-50 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-950/95">
           <div className="flex min-w-max gap-2">
-            {tabs.map((tab) => (
+            {visibleTabs.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => changeTab(tab.key)}
                 className={`h-10 rounded-md px-4 text-sm font-medium transition ${
-                  activeTab === tab.key
+                  contentTab === tab.key
                     ? 'bg-slate-950 text-white dark:bg-slate-100 dark:text-slate-950'
                     : 'bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
                 }`}
@@ -964,20 +1405,11 @@ function App() {
 
         {syncState === 'loading' && dailyLogs.length === 0 && workoutLogs.length === 0 && !initialLoaded ? (
           <div className="grid gap-4">
-            <div className="animate-pulse rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-              <div className="h-6 w-48 rounded bg-slate-200 dark:bg-slate-700" />
-              <div className="mt-4 grid grid-cols-3 gap-3">
-                <div className="h-20 rounded-lg bg-slate-100 dark:bg-slate-800" />
-                <div className="h-20 rounded-lg bg-slate-100 dark:bg-slate-800" />
-                <div className="h-20 rounded-lg bg-slate-100 dark:bg-slate-800" />
-              </div>
-              <div className="mt-4 h-3 w-full rounded-full bg-slate-100 dark:bg-slate-800" />
-            </div>
-            <p className="text-center text-sm text-slate-500 dark:text-slate-400">正在连接服务器数据文件…</p>
+            <LoadingBlock title="正在连接服务器数据文件..." lines={4} />
           </div>
         ) : (
           <>
-        {activeTab === 'today' ? (
+        {contentTab === 'today' ? (
           <TodayTab
             today={today}
             todayKey={todayKey}
@@ -986,10 +1418,12 @@ function App() {
             todayLog={todayLog}
             todayWorkout={todayWorkout}
             dashboardStats={dashboardStats}
+            todaySnapshot={todaySnapshot}
+            trendAlerts={trendAlerts}
             dailyRecommendations={dailyRecommendations}
             weekendRisk={weekendRisk}
             hasWeeklyCalorieLogs={hasWeeklyCalorieLogs}
-            weeklyCalorieTarget={weeklyCalorieTarget}
+            weeklyCalorieTarget={userWeeklyCalorieTarget}
             todayCalorieTarget={todayCalorieTarget}
             signedRemaining={signedRemaining}
             remainingTone={remainingTone}
@@ -998,7 +1432,27 @@ function App() {
           />
         ) : null}
 
-        {activeTab === 'daily' ? (
+        {contentTab === 'profile' && currentUser ? (
+          <ProfileTab
+            key={`${currentUser.id}-${initialLoaded ? 'ready' : 'loading'}`}
+            currentUser={currentUser}
+            preference={userPreference}
+            planData={currentPlanData}
+            onSavePreference={savePreferenceData}
+            onSavePlan={savePlanData}
+          />
+        ) : null}
+
+        {contentTab === 'plan' ? (
+          <PlanTab
+            key={`${currentUser?.id ?? 'anonymous'}-${initialLoaded ? 'ready' : 'loading'}`}
+            planData={currentPlanData}
+            weeklyCalorieTarget={userWeeklyCalorieTarget}
+            onSave={savePlanData}
+          />
+        ) : null}
+
+        {contentTab === 'daily' ? (
           <DailyRecordTab
             selectedDate={selectedDate}
             today={today}
@@ -1008,14 +1462,18 @@ function App() {
             workoutLogs={workoutLogs}
             syncState={syncState}
             savePending={savePending}
+            lastSyncedLabel={lastSyncedLabel}
+            sleepFloorHours={userPreference.sleepFloorHours ?? defaultUserPreference.sleepFloorHours}
+            fatigueThreshold={userPreference.fatigueThreshold ?? defaultUserPreference.fatigueThreshold}
             onDateChange={handleDateChange}
             onUpdateDailyLog={updateDailyLog}
             onQuickAction={quickDailyAction}
             onCopySelectedDate={() => void copySelectedDateData()}
+            onExportSelectedDate={() => openExportDialog('today')}
           />
         ) : null}
 
-        {activeTab === 'workout' ? (
+        {contentTab === 'workout' ? (
           <WorkoutTab
             selectedDate={selectedDate}
             today={today}
@@ -1024,12 +1482,14 @@ function App() {
             selectedTemplate={selectedTemplate}
             selectedTemplateId={selectedTemplateId}
             templateOptions={templateOptions}
+            recommendedPlanName={workoutPlansByDay[getDayKey(selectedDate)].name}
             workoutSummary={workoutSummary}
             visibleWorkoutExercises={visibleWorkoutExercises}
             previousRecordsByExerciseKey={previousRecordsByExerciseKey}
             showOnlyUnfinishedExercises={showOnlyUnfinishedExercises}
             workoutTemplates={workoutTemplates}
             syncState={syncState}
+            workoutMarkedComplete={(selectedLog.workoutCompletion ?? 0) >= 100}
             onDateChange={handleDateChange}
             onTemplateChange={setSelectedTemplateId}
             onApplyTemplate={(template) => void replaceWorkoutFromTemplate(template)}
@@ -1046,7 +1506,6 @@ function App() {
             onMoveExerciseDown={moveExerciseDown}
             onAddExercise={addExerciseToWorkout}
             onFillEmptySets={fillEmptySetsFromLast}
-            onApplyPreviousByIndex={applyPreviousSetsByIndex}
             onSaveAsTemplate={saveCurrentWorkoutAsTemplate}
             onCreateTemplate={createCustomTemplate}
             onUpdateTemplate={updateTemplate}
@@ -1054,16 +1513,31 @@ function App() {
             onAddTemplateExercise={addTemplateExercise}
             onDeleteTemplateExercise={deleteTemplateExercise}
             onDeleteTemplate={deleteTemplate}
+            onExportTemplateToken={exportTemplateToken}
+            onImportTemplateToken={importTemplateToken}
+            onExportSelectedWorkout={() =>
+              openExportDialog('today', selectedDate, {
+                includeDailyLogs: false,
+                includeWorkoutLogs: true,
+                includeWorkoutTemplates: false,
+                includeProfile: false,
+                includePlanData: false,
+                includePreference: false,
+                slimMode: true,
+              }, 'csv')
+            }
+            onFinishWorkout={finishSelectedWorkout}
           />
         ) : null}
 
-        {activeTab === 'dashboard' ? (
-          <Suspense fallback={<div className="animate-pulse rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"><div className="h-6 w-48 rounded bg-slate-200 dark:bg-slate-700" /></div>}>
+        {contentTab === 'dashboard' ? (
+          <Suspense fallback={<LoadingBlock title="正在加载仪表盘..." lines={2} />}>
           <DashboardTab
             dashboardStats={dashboardStats}
             trendData={trendData}
             trainingPerformanceData={trainingPerformanceData}
             trendDays={trendDays}
+            weeklyCalorieTarget={userWeeklyCalorieTarget}
             showAllPerformanceLines={showAllPerformanceLines}
             twoWeekAdjustment={twoWeekAdjustment}
             weekendRisk={weekendRisk}
@@ -1073,7 +1547,7 @@ function App() {
           </Suspense>
         ) : null}
 
-        {activeTab === 'weekly' ? (
+        {contentTab === 'weekly' ? (
           <WeeklyTab
             weeklySummary={weeklySummary}
             weeklyAnchorDate={weeklyAnchorDate}
@@ -1081,9 +1555,17 @@ function App() {
             twoWeekAdjustment={twoWeekAdjustment}
             weekendRisk={weekendRisk}
             weeklyConclusionCard={weeklyConclusionCard}
+            trendAlerts={trendAlerts}
+            weeklyActionRecommendations={weeklyActionRecommendations}
+            weekendCalorieUpperKcal={userPreference.weekendCalorieUpperKcal ?? defaultUserPreference.weekendCalorieUpperKcal}
             dailyLogs={dailyLogs}
             onAnchorChange={setWeeklyAnchorDate}
+            onExportWeek={() => openExportDialog('thisWeek', weeklyAnchorDate)}
           />
+        ) : null}
+
+        {contentTab === 'admin' && currentUser?.role === 'admin' ? (
+          <AdminUsersTab currentUser={currentUser} />
         ) : null}
       </>
       )}
@@ -1094,6 +1576,24 @@ function App() {
           text={copyPreviewText}
           onClose={() => setCopyPreviewText(null)}
           onConfirm={() => void confirmCopyFromPreview()}
+        />
+      ) : null}
+      {showExportDialog ? (
+        <ExportDataDialog
+          today={exportAnchorDate}
+          dailyLogs={dailyLogs}
+          workoutLogs={workoutLogs}
+          workoutTemplates={workoutTemplates}
+          initialRangePreset={exportInitialRangePreset}
+          initialOptions={exportInitialOptions}
+          initialOutputFormat={exportInitialOutputFormat}
+          pending={exportPending}
+          onClose={() => {
+            setShowExportDialog(false)
+            setExportInitialOptions(undefined)
+            setExportInitialOutputFormat('summary')
+          }}
+          onExport={(options, format) => void exportData(options, format)}
         />
       ) : null}
     </main>

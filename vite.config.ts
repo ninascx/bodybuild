@@ -50,24 +50,7 @@ export default defineConfig({
         skipWaiting: true,
         // 删除旧版本预缓存
         cleanupOutdatedCaches: true,
-        // /api/* 走 NetworkFirst：优先用网络，断网时回退到上一次缓存
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              networkTimeoutSeconds: 5,
-              expiration: {
-                maxEntries: 32,
-                maxAgeSeconds: 60 * 60 * 24 * 7, // 一周
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-        ],
+        // 多用户网站里的 /api/* 都可能包含个人数据，不能进入 Service Worker 缓存。
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
       },

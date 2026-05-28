@@ -14,7 +14,7 @@ export function TipsDetails({
     <details
       open={open}
       onToggle={(event) => setOpen((event.target as HTMLDetailsElement).open)}
-      className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-none"
+      className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-none sm:p-4"
     >
       <summary className="cursor-pointer text-lg font-semibold text-slate-950 dark:text-slate-50">{summary}</summary>
       {children}
