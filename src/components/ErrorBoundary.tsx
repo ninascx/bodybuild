@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { createBackup, downloadBackup, loadCachedData } from '../lib/storage'
+import { createBackup, downloadBackup, loadAllCachedData } from '../lib/storage'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -29,7 +29,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   exportCache = () => {
     try {
-      const cached = loadCachedData()
+      const cached = loadAllCachedData()
       downloadBackup(createBackup(cached.dailyLogs, cached.workoutLogs, cached.workoutTemplates))
       this.setState({ exportMessage: '已导出本地缓存到下载目录。' })
     } catch (error) {

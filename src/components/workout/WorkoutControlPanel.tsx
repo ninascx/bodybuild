@@ -3,7 +3,6 @@ import type { WorkoutLog } from '../../types'
 import type { SyncState } from '../../lib/storage'
 import type { WorkoutSummary, WorkoutTemplateOption } from '../../lib/workout'
 import { addDays, getDayKey } from '../../lib/dates'
-import { workoutPlans } from '../../data/plans'
 import { Badge, Button, Card } from '../ui'
 
 export function WorkoutControlPanel({
@@ -14,6 +13,9 @@ export function WorkoutControlPanel({
   selectedTemplate,
   selectedTemplateId,
   templateOptions,
+  recommendedPlanName,
+  workoutStatusLabel,
+  workoutStatusTone,
   syncState,
   restDay,
   onDateChange,
@@ -29,6 +31,9 @@ export function WorkoutControlPanel({
   selectedTemplate: WorkoutTemplateOption | undefined
   selectedTemplateId: string
   templateOptions: WorkoutTemplateOption[]
+  recommendedPlanName: string
+  workoutStatusLabel?: string
+  workoutStatusTone?: 'positive' | 'warning' | 'neutral'
   syncState: SyncState
   restDay: boolean
   onDateChange: (date: string) => void
@@ -40,6 +45,7 @@ export function WorkoutControlPanel({
   const hasWorkout = Boolean(selectedWorkout)
   const recommendedId = `builtin-${getDayKey(selectedDate)}`
   const previewExercises = selectedTemplate?.exercises ?? []
+  const canStartSelectedTemplate = Boolean(selectedTemplate && selectedTemplate.exercises.length > 0)
 
   // 当天还没开练时默认展开预览，已经记录了则折叠。用 soft-controlled state 保留用户手动切换。
   const [previewOpen, setPreviewOpen] = useState(!hasWorkout)
@@ -57,6 +63,8 @@ export function WorkoutControlPanel({
       : syncState === 'saving' || syncState === 'loading'
         ? { text: '保存中…', className: 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/30 dark:text-amber-100' }
         : { text: '离线', className: 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-600/40 dark:bg-rose-900/30 dark:text-rose-100' }
+  const statusBadgeLabel = workoutStatusLabel ?? (hasWorkout ? '已记录' : '未开始')
+  const statusBadgeTone = workoutStatusTone ?? (hasWorkout ? 'positive' : 'neutral')
 
   return (
     <Card className="border-slate-300 dark:border-slate-600">
@@ -64,14 +72,14 @@ export function WorkoutControlPanel({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            {restDay ? <Badge tone="neutral">休息日</Badge> : <Badge tone={hasWorkout ? 'positive' : 'neutral'}>{hasWorkout ? '已记录' : '未开始'}</Badge>}
-            {!restDay ? (
+            {restDay ? <Badge tone="neutral">休息日</Badge> : <Badge tone={statusBadgeTone}>{statusBadgeLabel}</Badge>}
+            {!restDay && !hasWorkout ? (
               <Badge tone={selectedTemplate?.source === 'custom' ? 'warning' : 'neutral'}>
                 {selectedTemplate?.source === 'custom' ? '自定义模板' : '内置计划'}
               </Badge>
             ) : null}
           </div>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-50">
+          <h2 className="mt-2 text-xl font-semibold text-slate-950 dark:text-slate-50 sm:text-2xl">
             {restDay ? '休息日' : selectedWorkout?.workoutName ?? selectedTemplate?.name ?? '选择今天的训练'}
           </h2>
         </div>
@@ -80,7 +88,7 @@ export function WorkoutControlPanel({
         </span>
       </div>
 
-      {/* Row 2: date + plan select */}
+      {/* Row 2: date */}
       <div className="mt-4 grid gap-3 lg:grid-cols-[auto_1fr] lg:items-end">
         <div className="grid gap-2 sm:grid-cols-2 lg:w-80">
           <label className="grid min-w-0 gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -119,49 +127,35 @@ export function WorkoutControlPanel({
           </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto] lg:items-end">
-          <label className="grid min-w-0 gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
-            <span>训练计划（今日推荐：{workoutPlans[getDayKey(selectedDate)].name}）</span>
-            <select
-              value={selectedTemplateId}
-              onChange={(event) => onTemplateChange(event.target.value)}
-              className="h-11 rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 px-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30"
-            >
-              <optgroup label="内置计划">
-                {templateOptions
-                  .filter((t) => t.source === 'builtin' && t.exercises.length > 0)
-                  .map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.id === recommendedId ? '今日推荐 · ' : ''}{t.name} · {t.focus}
-                    </option>
-                  ))}
-              </optgroup>
-              <optgroup label="自定义模板">
-                {templateOptions
-                  .filter((t) => t.source === 'custom')
-                  .map((t) => (
-                    <option key={t.id} value={t.id}>{t.name} · {t.focus}</option>
-                  ))}
-              </optgroup>
-            </select>
-          </label>
-          <Button onClick={() => selectedTemplate && onApplyTemplate(selectedTemplate)} disabled={!selectedTemplate || selectedTemplate.exercises.length === 0}>
-            填入所选
+        {!restDay && !hasWorkout ? (
+          <PlanPicker
+            selectedTemplate={selectedTemplate}
+            selectedTemplateId={selectedTemplateId}
+            templateOptions={templateOptions}
+            recommendedId={recommendedId}
+            recommendedPlanName={recommendedPlanName}
+            showActions={false}
+            onTemplateChange={onTemplateChange}
+            onApplyTemplate={onApplyTemplate}
+            onApplyRecommended={onApplyRecommended}
+          />
+        ) : null}
+      </div>
+
+      {!restDay && !hasWorkout ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button onClick={() => selectedTemplate && onApplyTemplate(selectedTemplate)} disabled={!canStartSelectedTemplate}>
+            选择计划开始
           </Button>
+          {!canStartSelectedTemplate ? (
+            <Button variant="secondary" onClick={onAddExercise}>空白训练</Button>
+          ) : null}
           <Button variant="secondary" onClick={onApplyRecommended}>今日推荐</Button>
         </div>
-      </div>
-
-      {/* Row 3: quick actions */}
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Button onClick={() => (hasWorkout ? onAddExercise() : selectedTemplate && onApplyTemplate(selectedTemplate))}>
-          {hasWorkout ? '新增动作' : '选择计划开始'}
-        </Button>
-        <Button variant="secondary" onClick={onAddExercise}>空白训练</Button>
-      </div>
+      ) : null}
 
       {/* Row 4: plan preview (collapsible, auto-open when no workout) */}
-      {selectedTemplate ? (
+      {!restDay && !hasWorkout && selectedTemplate ? (
         <details
           open={previewOpen}
           onToggle={(event) => setPreviewOpen((event.target as HTMLDetailsElement).open)}
@@ -199,14 +193,96 @@ export function WorkoutControlPanel({
         </details>
       ) : null}
 
+      {!restDay && hasWorkout ? (
+        <details className="mt-4 rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
+          <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
+            更换训练计划
+          </summary>
+          <div className="border-t border-slate-200 px-3 py-3 dark:border-slate-700">
+            <PlanPicker
+              selectedTemplate={selectedTemplate}
+              selectedTemplateId={selectedTemplateId}
+              templateOptions={templateOptions}
+              recommendedId={recommendedId}
+              recommendedPlanName={recommendedPlanName}
+              onTemplateChange={onTemplateChange}
+              onApplyTemplate={onApplyTemplate}
+              onApplyRecommended={onApplyRecommended}
+            />
+          </div>
+        </details>
+      ) : null}
+
       {/* Row 5: workout metrics */}
-      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <WorkoutMetric label="动作数" value={`${workoutSummary.exerciseCount}`} />
-        <WorkoutMetric label="已填组数" value={`${workoutSummary.filledSets}/${workoutSummary.totalSets}`} />
-        <WorkoutMetric label="记录进度" value={`${workoutSummary.completionPercent}%`} />
-        <WorkoutMetric label="本次训练量" value={`${Math.round(workoutSummary.totalVolume)} kg`} />
-      </div>
+      {!restDay && hasWorkout ? (
+        <div className="mt-5 hidden grid-cols-2 gap-2 sm:grid sm:grid-cols-4">
+          <WorkoutMetric label="动作数" value={`${workoutSummary.exerciseCount}`} />
+          <WorkoutMetric label="已填组数" value={`${workoutSummary.filledSets}/${workoutSummary.totalSets}`} />
+          <WorkoutMetric label="记录进度" value={`${workoutSummary.completionPercent}%`} />
+          <WorkoutMetric label="本次训练量" value={`${Math.round(workoutSummary.totalVolume)} kg`} />
+        </div>
+      ) : null}
     </Card>
+  )
+}
+
+function PlanPicker({
+  selectedTemplate,
+  selectedTemplateId,
+  templateOptions,
+  recommendedId,
+  recommendedPlanName,
+  showActions = true,
+  onTemplateChange,
+  onApplyTemplate,
+  onApplyRecommended,
+}: {
+  selectedTemplate: WorkoutTemplateOption | undefined
+  selectedTemplateId: string
+  templateOptions: WorkoutTemplateOption[]
+  recommendedId: string
+  recommendedPlanName: string
+  showActions?: boolean
+  onTemplateChange: (id: string) => void
+  onApplyTemplate: (template: WorkoutTemplateOption) => void
+  onApplyRecommended: () => void
+}) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto] lg:items-end">
+      <label className="grid min-w-0 gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+        <span>训练计划（今日推荐：{recommendedPlanName}）</span>
+        <select
+          value={selectedTemplateId}
+          onChange={(event) => onTemplateChange(event.target.value)}
+          className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/30"
+        >
+          <optgroup label="内置计划">
+            {templateOptions
+              .filter((t) => t.source === 'builtin')
+              .map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.id === recommendedId ? '今日推荐 · ' : ''}{t.name} · {t.focus}
+                </option>
+              ))}
+          </optgroup>
+          <optgroup label="自定义模板">
+            {templateOptions
+              .filter((t) => t.source === 'custom')
+              .map((t) => (
+                <option key={t.id} value={t.id}>{t.name} · {t.focus}</option>
+              ))}
+          </optgroup>
+        </select>
+      </label>
+      {showActions ? (
+        <>
+          <Button variant="secondary" onClick={() => selectedTemplate && onApplyTemplate(selectedTemplate)} disabled={!selectedTemplate || selectedTemplate.exercises.length === 0}>
+            填入所选
+          </Button>
+          <Button variant="secondary" onClick={onApplyRecommended}>今日推荐</Button>
+        </>
+      ) : null}
+    </div>
   )
 }
 

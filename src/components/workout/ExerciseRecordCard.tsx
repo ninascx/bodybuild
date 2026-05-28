@@ -1,18 +1,41 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ExerciseLog, ExerciseSetLog } from '../../types'
 import type { PreviousExerciseRecord } from '../../lib/metrics'
-import { isSetComplete } from '../../lib/workout'
+import { formatTargetRepRange, isSetComplete, isSetEmpty, parseTargetRepRange, targetRepQuickOptions } from '../../lib/workout'
 import { Badge, Button, Field, TextInput } from '../ui'
 import { NumberField } from '../NumberField'
 
 const RIR_OPTIONS = [0, 1, 2, 3] as const
 
-function parseTargetReps(target: string): { min: number; max: number } | null {
-  const match = target.match(/(\d+)-(\d+)\s*(?:次|reps?|$)/i)
-  if (match) {
-    return { min: Number(match[1]), max: Number(match[2]) }
+function formatPreviousSummary(previousRecord: PreviousExerciseRecord): string {
+  const parts = [`上次 ${previousRecord.date.slice(5)}`, `${previousRecord.bestWeight} kg`]
+  if (previousRecord.reps !== undefined) parts.push(`${previousRecord.reps} 次`)
+  if (previousRecord.rir !== undefined) parts.push(`RIR ${previousRecord.rir}`)
+  return parts.join(' · ')
+}
+
+function formatSetSummary(set: Partial<ExerciseSetLog>): string | null {
+  const parts: string[] = []
+  if (set.weight !== undefined) parts.push(`${set.weight}kg`)
+  if (set.reps !== undefined) parts.push(`${set.reps}次`)
+  if (set.rir !== undefined) parts.push(`RIR ${set.rir}`)
+  return parts.length ? parts.join(' × ') : null
+}
+
+function previousRecordPatch(previousRecord: PreviousExerciseRecord, setIndex: number): Partial<ExerciseSetLog> {
+  const previousSet = previousRecord.allSets?.[setIndex]
+  if (previousSet && isSetComplete(previousSet)) {
+    return {
+      weight: previousSet.weight,
+      reps: previousSet.reps,
+      rir: previousSet.rir,
+    }
   }
-  return null
+  return {
+    weight: previousRecord.bestWeight,
+    reps: previousRecord.reps,
+    rir: previousRecord.rir,
+  }
 }
 
 export function ExerciseRecordCard({
@@ -28,7 +51,6 @@ export function ExerciseRecordCard({
   onMoveExerciseUp,
   onMoveExerciseDown,
   onFillEmptySets,
-  onApplyPreviousByIndex,
   forceCollapsed,
   compact = false,
 }: {
@@ -44,7 +66,6 @@ export function ExerciseRecordCard({
   onMoveExerciseUp: (exerciseIndex: number) => void
   onMoveExerciseDown: (exerciseIndex: number) => void
   onFillEmptySets: (exerciseIndex: number) => void
-  onApplyPreviousByIndex: (exerciseIndex: number) => void
   forceCollapsed?: boolean
   compact?: boolean
 }) {
@@ -81,7 +102,7 @@ export function ExerciseRecordCard({
   const handleCopyPrevious = (setIndex: number) => {
     if (setIndex <= 0) return
     const previous = exercise.sets[setIndex - 1]
-    if (!previous) return
+    if (!previous || !isSetComplete(previous)) return
     onUpdateSet(exerciseIndex, setIndex, {
       weight: previous.weight,
       reps: previous.reps,
@@ -92,13 +113,8 @@ export function ExerciseRecordCard({
   const handleApplyPreviousToEmpty = () => {
     if (!previousRecord) return
     exercise.sets.forEach((set, setIndex) => {
-      const isEmpty = set.weight === undefined && set.reps === undefined && set.rir === undefined
-      if (isEmpty) {
-        onUpdateSet(exerciseIndex, setIndex, {
-          weight: previousRecord.bestWeight,
-          reps: previousRecord.reps,
-          rir: previousRecord.rir,
-        })
+      if (isSetEmpty(set)) {
+        onUpdateSet(exerciseIndex, setIndex, previousRecordPatch(previousRecord, setIndex))
       }
     })
   }
@@ -115,12 +131,13 @@ export function ExerciseRecordCard({
     return sum
   }, 0)
 
-  const hasEmptySet = exercise.sets.some(
-    (set) => set.weight === undefined && set.reps === undefined && set.rir === undefined,
-  )
-  const hasFilledSet = exercise.sets.some(
-    (set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined,
-  )
+  const emptySetCount = exercise.sets.filter(isSetEmpty).length
+  const hasEmptySet = emptySetCount > 0
+  const hasFilledSet = exercise.sets.some(isSetComplete)
+  const previousSummary =
+    previousRecord
+      ? formatPreviousSummary(previousRecord)
+      : null
 
   return (
     <div
@@ -138,31 +155,12 @@ export function ExerciseRecordCard({
             <span>{exerciseIndex + 1}. {exercise.name}</span>
             {isPersonalRecord ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-500/30 dark:text-amber-200">
-                🎉 PR
+                PR
               </span>
             ) : null}
           </p>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{exercise.target}</p>
-          {previousRecord ? (
-            <div className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">
-              <p>
-                上次（{previousRecord.date.slice(5)}）：{previousRecord.bestWeight} kg
-                {previousRecord.reps !== undefined ? ` × ${previousRecord.reps} 次` : ''}
-                {previousRecord.rir !== undefined ? ` · RIR ${previousRecord.rir}` : ''}
-              </p>
-              {previousRecord.allSets && previousRecord.allSets.length > 0 ? (
-                <p className="mt-0.5">
-                  {previousRecord.allSets.map((set) => {
-                    const parts: string[] = []
-                    if (set.weight !== undefined) parts.push(`${set.weight}kg`)
-                    if (set.reps !== undefined) parts.push(`${set.reps}次`)
-                    if (set.rir !== undefined) parts.push(`RIR${set.rir}`)
-                    return parts.length > 0 ? parts.join('×') : null
-                  }).filter(Boolean).join(', ')}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
+          {previousSummary ? <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">{previousSummary}</p> : null}
           {totalVolume > 0 ? (
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               本次训练量 {Math.round(totalVolume)} kg
@@ -171,7 +169,7 @@ export function ExerciseRecordCard({
           ) : null}
           {exercise.notes?.trim() ? (
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-              💡 {exercise.notes.trim()}
+              {exercise.notes.trim()}
             </p>
           ) : null}
         </div>
@@ -189,10 +187,32 @@ export function ExerciseRecordCard({
               const previous = setIndex > 0 ? exercise.sets[setIndex - 1] : undefined
               const canCopy =
                 previous !== undefined &&
-                (previous.weight !== undefined || previous.reps !== undefined || previous.rir !== undefined)
-              const targetRange = parseTargetReps(exercise.target)
+                isSetComplete(previous)
+              const targetRange = parseTargetRepRange(exercise.target)
+              const targetRepOptions = targetRepQuickOptions(targetRange)
+              const previousPatch = previousRecord ? previousRecordPatch(previousRecord, setIndex) : null
+              const previousSameSet = previousRecord?.allSets?.[setIndex]
+              const previousSetSummary = previousSameSet ? formatSetSummary(previousSameSet) : null
+              const fallbackPreviousSummary = previousPatch && !previousSetSummary
+                ? formatSetSummary(previousPatch)
+                : null
+              const previousHintSummary = previousSetSummary ?? fallbackPreviousSummary
               return (
                 <div key={setIndex} className="grid min-w-0 gap-2 rounded-md bg-slate-50 p-2 dark:bg-slate-800">
+                  {previousHintSummary ? (
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-emerald-100 bg-white px-2.5 py-1.5 text-xs text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200">
+                      <span>
+                        {previousSetSummary ? '上次同组' : '上次最佳'}：<span className="font-semibold">{previousHintSummary}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => previousPatch && onUpdateSet(exerciseIndex, setIndex, previousPatch)}
+                        className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 font-medium text-emerald-800 transition hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-100"
+                      >
+                        {isSetEmpty(set) ? '套用' : '覆盖'}
+                      </button>
+                    </div>
+                  ) : null}
                   {/* 桌面端三列并排，手机端 kg + 次数一行、RIR 按钮一行 */}
                   <div className="grid min-w-0 gap-2 sm:grid-cols-[1fr_1fr_auto]">
                     <div className="grid grid-cols-2 gap-2 sm:contents">
@@ -245,8 +265,26 @@ export function ExerciseRecordCard({
                             {set.reps >= targetRange.min && set.reps <= targetRange.max ? (
                               <span className="text-emerald-600 dark:text-emerald-400">✓ 达标</span>
                             ) : (
-                              <span className="text-amber-600 dark:text-amber-400">目标 {targetRange.min}-{targetRange.max}</span>
+                              <span className="text-amber-600 dark:text-amber-400">目标 {formatTargetRepRange(targetRange)}</span>
                             )}
+                          </div>
+                        ) : null}
+                        {targetRepOptions.length > 0 ? (
+                          <div className={`grid gap-1 sm:hidden ${targetRepOptions.length === 1 ? 'grid-cols-1' : targetRepOptions.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                            {targetRepOptions.map((reps) => (
+                              <button
+                                key={reps}
+                                type="button"
+                                onClick={() => onUpdateSet(exerciseIndex, setIndex, { reps })}
+                                className={`min-h-9 rounded-md border px-2 text-xs font-semibold transition ${
+                                  set.reps === reps
+                                    ? 'border-emerald-500 bg-emerald-100 text-emerald-900 dark:border-emerald-500 dark:bg-emerald-900/40 dark:text-emerald-100'
+                                    : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                                }`}
+                              >
+                                {reps}
+                              </button>
+                            ))}
                           </div>
                         ) : null}
                       </div>
@@ -288,17 +326,12 @@ export function ExerciseRecordCard({
             <Button variant="secondary" className="px-2" onClick={() => onDeleteLastSet(exerciseIndex)} disabled={exercise.sets.length <= 1}>删最后组</Button>
             {previousRecord && hasEmptySet ? (
               <Button variant="secondary" className="px-2" onClick={handleApplyPreviousToEmpty}>
-                套用上次{previousRecord.reps !== undefined ? ` ${previousRecord.bestWeight}kg×${previousRecord.reps}` : ''}
-              </Button>
-            ) : null}
-            {previousRecord && hasEmptySet ? (
-              <Button variant="secondary" className="px-2" onClick={() => onApplyPreviousByIndex(exerciseIndex)}>
-                按序号套用上次
+                按上次补 {emptySetCount} 个空组
               </Button>
             ) : null}
             {hasFilledSet && hasEmptySet ? (
               <Button variant="secondary" className="px-2" onClick={() => onFillEmptySets(exerciseIndex)}>
-                复制已填到空组
+                复制已填到 {emptySetCount} 个空组
               </Button>
             ) : null}
           </div>
@@ -325,6 +358,21 @@ export function ExerciseRecordCard({
               <Button variant="ghost" onClick={() => onDeleteExercise(exerciseIndex)}>删除动作</Button>
             </div>
           </details>
+
+          {previousRecord?.allSets && previousRecord.allSets.length > 0 ? (
+            <details className="mt-3 rounded-md border border-emerald-100 bg-emerald-50/60 p-3 dark:border-emerald-700/30 dark:bg-emerald-900/20">
+              <summary className="cursor-pointer text-sm font-semibold text-emerald-800 dark:text-emerald-200">上次详细组</summary>
+              <p className="mt-2 text-xs leading-5 text-emerald-700 dark:text-emerald-300">
+                {previousRecord.allSets.map((set, index) => {
+                  const parts: string[] = []
+                  if (set.weight !== undefined) parts.push(`${set.weight}kg`)
+                  if (set.reps !== undefined) parts.push(`${set.reps}次`)
+                  if (set.rir !== undefined) parts.push(`RIR${set.rir}`)
+                  return parts.length > 0 ? `${index + 1}. ${parts.join(' × ')}` : null
+                }).filter(Boolean).join('  ')}
+              </p>
+            </details>
+          ) : null}
         </>
       )}
     </div>

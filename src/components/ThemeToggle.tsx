@@ -22,7 +22,7 @@ export function ThemeToggle({
       onClick={onCycle}
       title={`主题：${label}（点击切换）`}
       aria-label={`主题：${label}`}
-      className="inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+      className="inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
     >
       <span aria-hidden="true">{icon}</span>
       <span className="hidden sm:inline">主题</span>

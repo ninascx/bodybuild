@@ -1,4 +1,4 @@
-import { Badge, Button, Card, RecommendationBox } from '../components/ui'
+import { Badge, Button, Card, EmptyState, RecommendationBox } from '../components/ui'
 import { SummaryRow } from '../components/SummaryRow'
 import { addDays, getDayKey, startOfWeekSunday } from '../lib/dates'
 import { roundMetric } from '../lib/metrics'
@@ -13,8 +13,12 @@ type WeeklyTabProps = {
   twoWeekAdjustment: AdjustmentRecommendation
   weekendRisk: AdjustmentRecommendation
   weeklyConclusionCard: AdjustmentRecommendation
+  trendAlerts: AdjustmentRecommendation[]
+  weeklyActionRecommendations: AdjustmentRecommendation[]
+  weekendCalorieUpperKcal: number
   dailyLogs: DailyLog[]
   onAnchorChange: (date: string) => void
+  onExportWeek: () => void
 }
 
 export function WeeklyTab(props: WeeklyTabProps) {
@@ -59,11 +63,22 @@ export function WeeklyTab(props: WeeklyTabProps) {
           >
             下一周 ›
           </Button>
+          <Button variant="secondary" className="px-3" onClick={props.onExportWeek}>
+            导出本周
+          </Button>
         </div>
       </div>
       <div className="lg:col-span-2">
         <RecommendationBox title={props.weeklyConclusionCard.title} message={props.weeklyConclusionCard.message} tone={props.weeklyConclusionCard.tone} />
       </div>
+      <Card className="lg:col-span-2">
+        <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">下周怎么调</h2>
+        <div className="mt-3 grid gap-2 md:grid-cols-3">
+          {props.weeklyActionRecommendations.map((item) => (
+            <RecommendationBox key={item.title} title={item.title} message={item.message} tone={item.tone} />
+          ))}
+        </div>
+      </Card>
       <Card>
         <h2 className="text-xl font-semibold text-slate-950 dark:text-slate-50">本周总结</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{props.weeklySummary.weekStart} 至 {props.weeklySummary.weekEnd}</p>
@@ -78,6 +93,14 @@ export function WeeklyTab(props: WeeklyTabProps) {
       </Card>
       <div className="grid gap-4">
         <RecommendationBox title={props.twoWeekAdjustment.title} message={props.twoWeekAdjustment.message} tone={props.twoWeekAdjustment.tone} />
+        <Card>
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">趋势提醒</h2>
+          <div className="mt-3 grid gap-2">
+            {props.trendAlerts.map((item) => (
+              <RecommendationBox key={item.title} title={item.title} message={item.message} tone={item.tone} />
+            ))}
+          </div>
+        </Card>
         <RecommendationBox title={props.weekendRisk.title} message={props.weekendRisk.message} tone={props.weekendRisk.tone} />
         <Card>
           <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">下一周建议</h2>
@@ -100,17 +123,17 @@ export function WeeklyTab(props: WeeklyTabProps) {
           <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">周末规则检查</h2>
           <div className="mt-3 grid gap-2">
             {weekendLogs.map((log) => (
-                <div key={log.date} className="rounded-lg border border-slate-200 p-3 text-sm">
+                <div key={log.date} className="rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
                   <p className="font-medium text-slate-950 dark:text-slate-50">{log.date} · {dayNames[getDayKey(log.date)]}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <Badge tone={(log.calories ?? 0) > weekendRules.caloriesUpperKcal ? 'danger' : 'positive'}>热量 {log.calories ?? '未填'} kcal</Badge>
+                    <Badge tone={(log.calories ?? 0) > props.weekendCalorieUpperKcal ? 'danger' : 'positive'}>热量 {log.calories ?? '未填'} kcal</Badge>
                     <Badge tone={log.protein !== undefined && log.protein < weekendRules.proteinMinG ? 'warning' : 'positive'}>蛋白质 {log.protein ?? '未填'} g</Badge>
                     <Badge tone={log.steps !== undefined && log.steps < weekendRules.stepsMinSteps ? 'warning' : 'positive'}>步数 {log.steps ?? '未填'}</Badge>
                   </div>
                 </div>
               ))}
             {weekendLogs.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400">本周还没有周五/周六记录。</p>
+              <EmptyState title="本周还没有周五/周六记录" message="周末记录会在这里集中检查热量、蛋白和步数。" />
             ) : null}
           </div>
         </Card>

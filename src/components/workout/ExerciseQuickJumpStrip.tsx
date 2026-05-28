@@ -1,4 +1,5 @@
 import type { ExerciseLog } from '../../types'
+import { isSetComplete } from '../../lib/workout'
 
 function getStickyOffset(): number {
   const stickyNav = document.querySelector<HTMLElement>('nav.sticky')
@@ -31,25 +32,21 @@ export function ExerciseQuickJumpStrip({
     >
       <div className="flex min-w-max gap-1.5">
         {exercises.map((exercise, index) => {
-          const filled = exercise.sets.some(
-            (set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined,
-          )
-          const fullyFilled =
-            exercise.sets.length > 0 &&
-            exercise.sets.every(
-              (set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined,
-            )
+          const isVisible = visible.has(index)
+          const filled = exercise.sets.some(isSetComplete)
+          const fullyFilled = exercise.sets.length > 0 && exercise.sets.every(isSetComplete)
           const tone = fullyFilled
             ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-700/40'
             : filled
               ? 'bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-900/30 dark:text-amber-100 dark:border-amber-600/40'
               : 'bg-white text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
-          const dim = !visible.has(index) ? 'opacity-50' : ''
+          const dim = !isVisible ? 'cursor-not-allowed opacity-45' : ''
           return (
             <button
               key={`jump-${exercise.exerciseId}-${index}`}
               type="button"
               onClick={() => scrollToExercise(index)}
+              disabled={!isVisible}
               title={exercise.name}
               aria-label={`跳转到 ${exercise.name}`}
               className={`min-h-8 shrink-0 rounded-full border px-2.5 text-xs font-medium transition ${tone} ${dim}`}

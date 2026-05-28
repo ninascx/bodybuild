@@ -1,5 +1,5 @@
 import { dailyTargets, weeklyCalorieTarget } from '../data/plans'
-import type { DailyLog, WorkoutLog, WeeklySummary } from '../types'
+import type { DailyLog, DailyTarget, DayKey, UserPreference, WorkoutLog, WeeklySummary } from '../types'
 import {
   addDays,
   endOfWeekSaturday,
@@ -10,6 +10,8 @@ import {
   sortByDateDesc,
   startOfWeekSunday,
 } from './dates'
+import { mergeUserPreference } from './userPreferences'
+import { isSetComplete } from './workout'
 
 export interface DashboardStats {
   currentWeight?: number
@@ -60,6 +62,8 @@ export interface TrainingPerformancePoint {
   romanianDeadlift?: number
 }
 
+type DailyTargetMap = Record<DayKey, DailyTarget>
+
 function average(values: Array<number | undefined>): number | undefined {
   const valid = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
   if (valid.length === 0) return undefined
@@ -92,16 +96,21 @@ export function logsForWeek(logs: DailyLog[], dateValue: string): DailyLog[] {
   return sortByDateAsc(logs).filter((log) => isDateInRange(log.date, start, end))
 }
 
-export function calculateDashboardStats(logs: DailyLog[], today: string): DashboardStats {
+export function calculateDashboardStats(
+  logs: DailyLog[],
+  today: string,
+  targets: DailyTargetMap = dailyTargets,
+  calorieTarget = weeklyCalorieTarget,
+): DashboardStats {
   const weekLogs = logsForWeek(logs, today)
   const currentWeight = sortByDateDesc(logs).find((log) => log.morningWeightKg !== undefined)?.morningWeightKg
   const calories = weekLogs.map((log) => log.calories)
   const steps = weekLogs.map((log) => log.steps)
   const proteinMetDays = weekLogs.filter((log) => {
     if (log.protein === undefined) return false
-    return log.protein >= dailyTargets[getDayKey(log.date)].protein
+    return log.protein >= targets[getDayKey(log.date)].protein
   }).length
-  const trainingDays = weekLogs.filter((log) => dailyTargets[getDayKey(log.date)].isTrainingDay)
+  const trainingDays = weekLogs.filter((log) => targets[getDayKey(log.date)].isTrainingDay)
   const completedTraining = trainingDays.filter((log) => log.trained || (log.workoutCompletion ?? 0) >= 80).length
   const weekTotalCalories = calories.reduce<number>((sum, value) => sum + (value ?? 0), 0)
 
@@ -112,9 +121,9 @@ export function calculateDashboardStats(logs: DailyLog[], today: string): Dashbo
   const previousSteps = previousWeekLogs.map((log) => log.steps)
   const previousProteinMetDays = previousWeekLogs.filter((log) => {
     if (log.protein === undefined) return false
-    return log.protein >= dailyTargets[getDayKey(log.date)].protein
+    return log.protein >= targets[getDayKey(log.date)].protein
   }).length
-  const previousTrainingDays = previousWeekLogs.filter((log) => dailyTargets[getDayKey(log.date)].isTrainingDay)
+  const previousTrainingDays = previousWeekLogs.filter((log) => targets[getDayKey(log.date)].isTrainingDay)
   const previousCompletedTraining = previousTrainingDays.filter((log) => log.trained || (log.workoutCompletion ?? 0) >= 80).length
 
   return {
@@ -125,7 +134,7 @@ export function calculateDashboardStats(logs: DailyLog[], today: string): Dashbo
     trainingCompletionRate: trainingDays.length ? Math.round((completedTraining / trainingDays.length) * 100) : 0,
     averageSteps: round(average(steps), 0),
     weekTotalCalories,
-    calorieBudget: calculateWeeklyCalorieBudget(logs, today),
+    calorieBudget: calculateWeeklyCalorieBudget(logs, today, calorieTarget),
     previous: {
       averageWeight7: averageWeight(logs, previousWeekAnchor, 7),
       weekAverageCalories: round(average(previousCalories), 0),
@@ -138,7 +147,7 @@ export function calculateDashboardStats(logs: DailyLog[], today: string): Dashbo
   }
 }
 
-export function buildTrendData(logs: DailyLog[], today: string, days = 30): TrendPoint[] {
+export function buildTrendData(logs: DailyLog[], today: string, days = 30, targets: DailyTargetMap = dailyTargets): TrendPoint[] {
   const sorted = sortByDateAsc(logs)
   const windowStart = addDays(today, -(days - 1))
 
@@ -172,7 +181,7 @@ export function buildTrendData(logs: DailyLog[], today: string, days = 30): Tren
   for (let i = 0; i < sorted.length; i++) {
     const log = sorted[i]
     if (log.date < windowStart || log.date > today) continue
-    const target = dailyTargets[getDayKey(log.date)]
+    const target = targets[getDayKey(log.date)]
     result.push({
       date: log.date.slice(5),
       fullDate: log.date,
@@ -187,13 +196,13 @@ export function buildTrendData(logs: DailyLog[], today: string, days = 30): Tren
   return result
 }
 
-export function calculateWeeklyCalorieBudget(logs: DailyLog[], today: string): WeeklyCalorieBudget {
+export function calculateWeeklyCalorieBudget(logs: DailyLog[], today: string, calorieTarget = weeklyCalorieTarget): WeeklyCalorieBudget {
   const weekLogs = logsForWeek(logs, today)
   const consumed = weekLogs.reduce((sum, log) => sum + (log.calories ?? 0), 0)
-  const remaining = weeklyCalorieTarget - consumed
+  const remaining = calorieTarget - consumed
   const remainingDays = Math.max(1, 7 - getDayKey(today))
   return {
-    target: weeklyCalorieTarget,
+    target: calorieTarget,
     consumed,
     remaining,
     remainingDays,
@@ -239,7 +248,14 @@ export function buildTrainingPerformanceData(workoutLogs: WorkoutLog[], today: s
   })
 }
 
-export function createWeeklySummary(logs: DailyLog[], today: string): WeeklySummary {
+export function createWeeklySummary(
+  logs: DailyLog[],
+  today: string,
+  targets: DailyTargetMap = dailyTargets,
+  calorieTarget = weeklyCalorieTarget,
+  preference?: UserPreference,
+): WeeklySummary {
+  const settings = mergeUserPreference(preference)
   const weekStart = startOfWeekSunday(today)
   const weekEnd = endOfWeekSaturday(today)
   const previousEnd = addDays(weekStart, -1)
@@ -254,21 +270,21 @@ export function createWeeklySummary(logs: DailyLog[], today: string): WeeklySumm
   const loggedCaloriesDays = weekLogs.filter((log) => log.calories !== undefined).length
   const weekendLogs = weekLogs.filter((log) => [5, 6].includes(getDayKey(log.date)))
   const weekendAverageCalories = round(average(weekendLogs.map((log) => log.calories)), 0)
-  const trainingLogs = weekLogs.filter((log) => dailyTargets[getDayKey(log.date)].isTrainingDay)
+  const trainingLogs = weekLogs.filter((log) => targets[getDayKey(log.date)].isTrainingDay)
   const completedTraining = trainingLogs.filter((log) => log.trained || (log.workoutCompletion ?? 0) >= 80).length
   const suggestions: string[] = []
 
   let calorieStatus: WeeklySummary['calorieStatus'] = 'unknown'
   if (loggedCaloriesDays >= 4) {
-    if (totalCalories < weeklyCalorieTarget - 900) calorieStatus = 'low'
-    else if (totalCalories > weeklyCalorieTarget + 900) calorieStatus = 'high'
+    if (totalCalories < calorieTarget - 900) calorieStatus = 'low'
+    else if (totalCalories > calorieTarget + 900) calorieStatus = 'high'
     else calorieStatus = 'on-track'
   }
 
-  if (calorieStatus === 'on-track') suggestions.push('本周热量接近 16000 kcal，先保持当前节奏。')
+  if (calorieStatus === 'on-track') suggestions.push(`本周热量接近 ${calorieTarget} kcal，先保持当前节奏。`)
   if (calorieStatus === 'high') suggestions.push('本周热量偏高，优先检查周五周六是否超过自由饮食上限。')
   if (calorieStatus === 'low') suggestions.push('本周热量偏低，留意训练状态和疲劳，不用用极端节食补偿。')
-  if ((weekendAverageCalories ?? 0) > 3000) suggestions.push('周末两天平均热量超过 3000 kcal，优先控制周末自由饮食，不要用极端压低工作日热量来补偿。')
+  if ((weekendAverageCalories ?? 0) > settings.weekendCalorieUpperKcal) suggestions.push(`周末两天平均热量超过 ${settings.weekendCalorieUpperKcal} kcal，优先控制周末自由饮食，不要用极端压低工作日热量来补偿。`)
   if (trainingLogs.length > 0 && completedTraining / trainingLogs.length < 0.8) suggestions.push('训练完成率偏低，下周优先保证主项和胸部关键动作。')
   if (suggestions.length === 0) suggestions.push('数据还不够完整，先连续记录体重、热量、步数和训练完成度。')
 
@@ -286,7 +302,7 @@ export function createWeeklySummary(logs: DailyLog[], today: string): WeeklySumm
     totalCalories,
     calorieStatus,
     weekendAverageCalories,
-    weekendOverLimit: (weekendAverageCalories ?? 0) > 3000,
+    weekendOverLimit: (weekendAverageCalories ?? 0) > settings.weekendCalorieUpperKcal,
     suggestions,
   }
 }
@@ -313,7 +329,7 @@ export function findPreviousExerciseRecord(
         (exerciseName.trim() && exercise.name.trim() === exerciseName.trim()),
     )
     if (!match) continue
-    const filledSets = match.sets.filter((set) => set.weight !== undefined && set.weight > 0)
+    const filledSets = match.sets.filter(isSetComplete)
     if (filledSets.length === 0) continue
     const bestSet = filledSets.reduce((best, current) =>
       (current.weight ?? 0) > (best.weight ?? 0) ? current : best,
@@ -323,7 +339,7 @@ export function findPreviousExerciseRecord(
       bestWeight: bestSet.weight as number,
       reps: bestSet.reps,
       rir: bestSet.rir,
-      allSets: match.sets.filter((set) => set.weight !== undefined || set.reps !== undefined),
+      allSets: match.sets.filter(isSetComplete),
     }
   }
   return undefined

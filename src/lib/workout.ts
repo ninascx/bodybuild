@@ -1,4 +1,4 @@
-import type { DailyLog, ExerciseLog, ExercisePlan, ExerciseSetLog, WorkoutLog, WorkoutTemplate } from '../types'
+import type { DailyLog, DayKey, ExerciseLog, ExercisePlan, ExerciseSetLog, WorkoutLog, WorkoutPlan, WorkoutTemplate } from '../types'
 import { workoutPlans, getBuiltinTemplates } from '../data/plans'
 import { getDayKey } from './dates'
 import { createId } from './ids'
@@ -25,12 +25,47 @@ export type WorkoutSummary = {
   totalVolume: number
 }
 
+export type TargetRepRange = {
+  min: number
+  max: number
+}
+
 export function upsertByDate<T extends { date: string }>(items: T[], date: string, patch: Partial<T>): T[] {
   const existing = items.find((item) => item.date === date)
   if (existing) {
     return items.map((item) => (item.date === date ? { ...item, ...patch } : item))
   }
   return [...items, { date, ...patch } as T]
+}
+
+export function parseTargetRepRange(target: string): TargetRepRange | null {
+  if (typeof target !== 'string') return null
+
+  const rangeMatch = target.match(/(\d+)\s*(?:-|–|—|~|～|至|到|to)\s*(\d+)\s*(?:次|reps?|$)/i)
+  if (rangeMatch) {
+    const min = Number(rangeMatch[1])
+    const max = Number(rangeMatch[2])
+    return min <= max ? { min, max } : { min: max, max: min }
+  }
+
+  const exactMatch = target.match(/(?:^|[^\d])(\d+)\s*(?:次|reps?)(?:[^\d]|$)/i)
+  if (exactMatch) {
+    const reps = Number(exactMatch[1])
+    return { min: reps, max: reps }
+  }
+
+  return null
+}
+
+export function formatTargetRepRange(range: TargetRepRange): string {
+  return range.min === range.max ? `${range.min}` : `${range.min}-${range.max}`
+}
+
+export function targetRepQuickOptions(range: TargetRepRange | null): number[] {
+  if (!range) return []
+  if (range.min === range.max) return [range.min]
+  const middle = Math.round((range.min + range.max) / 2)
+  return Array.from(new Set([range.min, middle, range.max])).sort((a, b) => a - b)
 }
 
 export function estimateSetCount(target: string): number {
@@ -58,8 +93,8 @@ export function createWorkoutFromTemplate(date: string, template: WorkoutTemplat
   }
 }
 
-export function createWorkoutFromPlan(date: string): WorkoutLog {
-  const plan = workoutPlans[getDayKey(date)]
+export function createWorkoutFromPlan(date: string, planOverride?: WorkoutPlan): WorkoutLog {
+  const plan = planOverride ?? workoutPlans[getDayKey(date)]
   return createWorkoutFromTemplate(date, {
     id: `builtin-${plan.day}`,
     name: plan.name,
@@ -69,8 +104,20 @@ export function createWorkoutFromPlan(date: string): WorkoutLog {
   })
 }
 
-export function builtinTemplateOptions(): WorkoutTemplateOption[] {
-  return getBuiltinTemplates().map((template) => ({
+export function builtinTemplateOptions(plans?: Record<DayKey, WorkoutPlan>): WorkoutTemplateOption[] {
+  const templates = plans
+    ? Object.values(plans).map((plan) => ({
+        id: `builtin-${plan.day}`,
+        name: plan.name,
+        focus: plan.focus,
+        category: '内置',
+        exercises: plan.exercises,
+        createdAt: '',
+        updatedAt: '',
+        isBuiltin: true,
+      }))
+    : getBuiltinTemplates()
+  return templates.map((template) => ({
     id: template.id,
     name: template.name,
     focus: template.focus,
@@ -167,6 +214,10 @@ export function summarizeWorkout(workout: WorkoutLog | undefined): WorkoutSummar
 
 export function isSetComplete(set: ExerciseSetLog): boolean {
   return set.weight !== undefined && set.reps !== undefined
+}
+
+export function isSetEmpty(set: ExerciseSetLog): boolean {
+  return set.weight === undefined && set.reps === undefined && set.rir === undefined
 }
 
 export function isExerciseFilled(exercise: ExerciseLog): boolean {

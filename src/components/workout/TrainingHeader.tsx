@@ -6,10 +6,12 @@ import { useState } from 'react'
 export function TrainingHeader({
   workoutName,
   workoutSummary,
+  workoutMarkedComplete,
   onExitTrainingMode,
 }: {
   workoutName: string
   workoutSummary: WorkoutSummary
+  workoutMarkedComplete: boolean
   onExitTrainingMode: () => void
 }) {
   return (
@@ -18,9 +20,9 @@ export function TrainingHeader({
         <div>
           <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
             训练模式
-            {workoutSummary.completionPercent === 100 ? (
+            {workoutMarkedComplete || workoutSummary.completionPercent === 100 ? (
               <span className="ml-2 inline-flex items-center rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-semibold text-white dark:bg-emerald-400 dark:text-emerald-950">
-                ✓ 全部完成
+                {workoutMarkedComplete ? '✓ 已完成' : '动作已满'}
               </span>
             ) : null}
           </p>
@@ -61,22 +63,32 @@ export function TrainingTimerFloat({
   restActive,
   restDefaultDuration,
   autoStartRest,
+  workoutMarkedComplete,
+  workoutReadyToConfirm,
+  canFinishWorkout,
+  remainingSetCount,
   onExitTrainingMode,
   onSkipRest,
   onAdjustRestDuration,
   onStartRest,
   onToggleAutoStart,
+  onFinishWorkout,
 }: {
   elapsedSeconds: number
   restSeconds: number
   restActive: boolean
   restDefaultDuration: number
   autoStartRest: boolean
+  workoutMarkedComplete: boolean
+  workoutReadyToConfirm: boolean
+  canFinishWorkout: boolean
+  remainingSetCount: number
   onExitTrainingMode: () => void
   onSkipRest: () => void
   onAdjustRestDuration: (delta: number) => void
   onStartRest: () => void
   onToggleAutoStart: () => void
+  onFinishWorkout: () => void
 }) {
   const [collapsed, setCollapsed] = useState(false)
 
@@ -186,7 +198,7 @@ export function TrainingTimerFloat({
               onClick={onSkipRest}
               className="min-h-9 rounded-md bg-emerald-600 px-4 text-sm font-medium text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
             >
-              完成休息
+              结束休息
             </button>
             <button
               type="button"
@@ -217,13 +229,39 @@ export function TrainingTimerFloat({
           </label>
         </div>
       )}
-      <button
-        type="button"
-        onClick={onExitTrainingMode}
-        className="mt-2 min-h-9 w-full rounded-md border border-slate-200 px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-      >
-        退出训练模式
-      </button>
+      {workoutMarkedComplete ? (
+        <button
+          type="button"
+          onClick={onExitTrainingMode}
+          className="mt-2 min-h-9 w-full rounded-md border border-slate-200 px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+        >
+          返回记录
+        </button>
+      ) : (
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <div>
+            <button
+              type="button"
+              onClick={onFinishWorkout}
+              disabled={!canFinishWorkout}
+              title={workoutReadyToConfirm ? '所有组已填完，确认后同步到今日记录' : '填完所有组的重量和次数后可确认完成'}
+              className="min-h-9 w-full rounded-md bg-emerald-600 px-3 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+            >
+              {workoutReadyToConfirm ? '确认完成' : '完成训练'}
+            </button>
+            <p className="mt-1 text-center text-[11px] text-slate-500 dark:text-slate-400">
+              {workoutReadyToConfirm ? '可同步完成' : remainingSetCount > 0 ? `剩 ${remainingSetCount} 组` : '先记录训练'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onExitTrainingMode}
+            className="min-h-9 rounded-md border border-slate-200 px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            退出训练模式
+          </button>
+        </div>
+      )}
     </div>
   )
 }
