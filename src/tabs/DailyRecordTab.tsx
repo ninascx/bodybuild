@@ -313,19 +313,21 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
                 : '核心记录已补齐。'}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={missingQuickLabels.length === 0 ? 'positive' : 'warning'}>已填 {completedQuickCount}/{quickRequiredItems.length}</Badge>
-            <Badge tone="positive">30 秒</Badge>
-            <Button variant="secondary" className="px-3" disabled={!yesterdayLog} onClick={copyYesterdayQuickFields}>
+          <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
+            <Badge tone={missingQuickLabels.length === 0 ? 'positive' : 'warning'} className="col-span-2 sm:col-span-1">
+              已填 {completedQuickCount}/{quickRequiredItems.length}
+            </Badge>
+            <Badge tone="positive" className="col-span-2 sm:col-span-1">30 秒</Badge>
+            <Button variant="secondary" className="text-xs sm:px-3" disabled={!yesterdayLog} onClick={copyYesterdayQuickFields}>
               沿用昨天
             </Button>
-            <Button variant="secondary" className="px-3" disabled={!hasFillableTargetQuickFields} title="只补空项，不覆盖已填内容" onClick={fillTargetQuickFields}>
+            <Button variant="secondary" className="text-xs sm:px-3" disabled={!hasFillableTargetQuickFields} title="只补空项，不覆盖已填内容" onClick={fillTargetQuickFields}>
               按目标补空
             </Button>
             {!props.selectedTarget.isTrainingDay ? (
               <Button
                 variant="secondary"
-                className="px-3"
+                className="text-xs sm:px-3"
                 disabled={props.selectedLog.trained === false}
                 onClick={markPlannedRestDay}
               >
@@ -333,18 +335,24 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
               </Button>
             ) : null}
             {props.selectedLog.trained === false || (!props.selectedTarget.isTrainingDay && props.selectedLog.trained !== true) ? (
-              <Button variant="secondary" className="px-3" onClick={markTrainingStarted}>
+              <Button
+                variant="secondary"
+                className="text-xs sm:px-3"
+                onClick={markTrainingStarted}
+                title={props.selectedTarget.isTrainingDay ? '标记今天已训练' : '休息日额外训练，会标记为已训练'}
+              >
                 {props.selectedTarget.isTrainingDay ? '改为训练' : '记录加练'}
+                <span className="ml-1 text-[10px] opacity-70">→已训练</span>
               </Button>
             ) : null}
             {canSyncWorkoutCompletion ? (
-              <Button variant="secondary" className="px-3" onClick={syncWorkoutCompletion}>
+              <Button variant="secondary" className="col-span-2 text-xs sm:col-span-1 sm:px-3" onClick={syncWorkoutCompletion}>
                 {workoutCompletionFromLog >= 100 ? '同步训练完成' : `同步训练 ${workoutCompletionFromLog}%`}
               </Button>
             ) : null}
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div className="grid gap-1">
             <NumberField className={quickFieldClass} label="体重 kg" value={props.selectedLog.morningWeightKg} step="0.1" kind="decimal" range={{ min: 20, max: 300 }} onChange={(value) => props.onUpdateDailyLog({ morningWeightKg: value })} />
             {renderYesterdayQuick(yesterdayLog?.morningWeightKg, 'kg', () => props.onQuickAction({ morningWeightKg: yesterdayLog?.morningWeightKg }))}
@@ -453,8 +461,8 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
             />
           </Field>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="min-w-16 text-xs text-emerald-800 dark:text-emerald-200">
+        <div className="mt-3 flex items-center gap-2">
+          <span className="text-xs text-emerald-800 dark:text-emerald-200">
             {props.savePending
               ? '待保存...'
               : props.syncState === 'synced'
@@ -465,51 +473,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
                   ? '保存中...'
                   : '离线缓存中'}
           </span>
-          <Button
-            variant="secondary"
-            className="px-3"
-            disabled={sleepAlreadyAtTarget}
-            title={sleepAlreadyAtTarget ? '睡眠已达到个人底线' : undefined}
-            onClick={() => props.onQuickAction({ sleepHours: props.sleepFloorHours })}
-          >
-            {sleepAlreadyAtTarget ? '睡眠已达标' : '睡眠达标'}
-          </Button>
-          <Button
-            variant="secondary"
-            className="px-3"
-            disabled={calorieTarget === undefined || caloriesAlreadyAtTarget}
-            title={caloriesAlreadyAtTarget ? '热量已填为目标值' : calorieTarget === undefined ? '尚未设置热量目标' : undefined}
-            onClick={() => props.onQuickAction({ calories: calorieTarget })}
-          >
-            {caloriesAlreadyAtTarget ? '热量已填目标' : '热量目标'}
-          </Button>
-          <Button
-            variant="secondary"
-            className="px-3"
-            disabled={proteinAlreadyAtTarget}
-            title={proteinAlreadyAtTarget ? '蛋白已达到目标' : undefined}
-            onClick={() => props.onQuickAction({ protein: props.selectedTarget.protein })}
-          >
-            {proteinAlreadyAtTarget ? '蛋白已达标' : '蛋白达标'}
-          </Button>
-          <Button
-            variant="secondary"
-            className="px-3"
-            disabled={trainingAlreadyComplete}
-            title={trainingAlreadyComplete ? '训练完成度已为 100%' : undefined}
-            onClick={() => props.onQuickAction({ trained: true, workoutCompletion: 100 })}
-          >
-            {trainingAlreadyComplete ? '训练已完成' : '训练 100%'}
-          </Button>
-          <Button
-            variant="secondary"
-            className="px-3"
-            disabled={stepsAlreadyAtTarget}
-            title={stepsAlreadyAtTarget ? '步数已达到目标' : undefined}
-            onClick={() => props.onQuickAction({ steps: props.selectedTarget.stepTarget })}
-          >
-            {stepsAlreadyAtTarget ? '步数已达标' : '步数达标'}
-          </Button>
         </div>
       </div>
 

@@ -132,6 +132,7 @@ export function MobileCurrentExerciseView({
   const [currentSetIndex, setCurrentSetIndex] = useState(() => (exercise ? firstIncompleteSetIndex(exercise) : 0))
   const [bulkFillCompleted, setBulkFillCompleted] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
+  const [bottomBarExpanded, setBottomBarExpanded] = useState(false)
 
   useEffect(() => {
     const handleResize = () => {
@@ -605,25 +606,39 @@ export function MobileCurrentExerciseView({
       </div>
 
       <div
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-2xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 shadow-2xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
         style={{ transform: keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : undefined }}
       >
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{exercise.name}</p>
-            <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
-              第 {safeCurrentSetIndex + 1} 组 · {currentSetStatus}
-            </p>
+        <button
+          type="button"
+          onClick={() => setBottomBarExpanded(!bottomBarExpanded)}
+          className="w-full px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] text-left"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{exercise.name}</p>
+              <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+                第 {safeCurrentSetIndex + 1} 组 · {currentSetStatus}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <div className="text-right" title={`默认休息 ${restDefaultDuration}s`}>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">{restActive ? '休息' : '进度'}</p>
+                <p className={`text-sm font-bold tabular-nums ${restActive && restSeconds === 0 ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
+                  {restActive ? formatTime(restSeconds) : `${workoutSummary.completionPercent}%`}
+                </p>
+              </div>
+              <svg className={`h-5 w-5 text-slate-400 transition-transform ${bottomBarExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
-          <div className="shrink-0 text-right" title={`默认休息 ${restDefaultDuration}s`}>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">{restActive ? '休息' : '进度'}</p>
-            <p className={`text-sm font-bold tabular-nums ${restActive && restSeconds === 0 ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
-              {restActive ? formatTime(restSeconds) : `${workoutSummary.completionPercent}%`}
-            </p>
-          </div>
-        </div>
-        {restActive ? (
-          <div className="mb-2 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2 dark:border-emerald-700/40 dark:bg-emerald-900/30">
+        </button>
+        </button>
+        {bottomBarExpanded && (
+          <div className="border-t border-slate-200 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 dark:border-slate-700">
+            {restActive ? (
+              <div className="mb-2 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2 dark:border-emerald-700/40 dark:bg-emerald-900/30">
             <button
               type="button"
               onClick={() => onAdjustRestDuration(-15)}
@@ -671,6 +686,8 @@ export function MobileCurrentExerciseView({
         <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
           <span className="min-w-0 truncate">{bottomCompletionHint}</span>
         </div>
+          </div>
+        )}
       </div>
     </div>
   )
