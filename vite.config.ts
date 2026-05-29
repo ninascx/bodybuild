@@ -22,6 +22,8 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         lang: 'zh-CN',
+        categories: ['health', 'fitness', 'lifestyle'],
+        prefer_related_applications: false,
         icons: [
           {
             src: 'pwa-192x192.png',

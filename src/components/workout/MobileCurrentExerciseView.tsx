@@ -634,7 +634,6 @@ export function MobileCurrentExerciseView({
             </div>
           </div>
         </button>
-        </button>
         {bottomBarExpanded && (
           <div className="border-t border-slate-200 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 dark:border-slate-700">
             {restActive ? (

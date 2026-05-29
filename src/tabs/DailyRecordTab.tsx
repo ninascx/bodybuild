@@ -225,15 +225,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
   const canSyncWorkoutCompletion =
     workoutCompletionFromLog > 0 &&
     (props.selectedLog.trained !== true || (props.selectedLog.workoutCompletion ?? 0) !== workoutCompletionFromLog)
-  const sleepAlreadyAtTarget =
-    props.selectedLog.sleepHours !== undefined && props.selectedLog.sleepHours >= props.sleepFloorHours
-  const caloriesAlreadyAtTarget = calorieTarget !== undefined && props.selectedLog.calories === calorieTarget
-  const proteinAlreadyAtTarget =
-    props.selectedLog.protein !== undefined && props.selectedLog.protein >= props.selectedTarget.protein
-  const stepsAlreadyAtTarget =
-    props.selectedLog.steps !== undefined && props.selectedLog.steps >= props.selectedTarget.stepTarget
-  const trainingAlreadyComplete =
-    props.selectedLog.trained === true && (props.selectedLog.workoutCompletion ?? 0) >= 100
   const syncWorkoutCompletion = () => {
     if (!canSyncWorkoutCompletion) return
     props.onQuickAction({
@@ -304,53 +295,64 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
 
       {/* 快捷记录 — 放在日历上方，手机端优先看到 */}
       <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-700/40 dark:bg-emerald-900/30">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="font-semibold text-emerald-950 dark:text-emerald-100">一屏快速记录</h3>
-            <p className="mt-1 text-xs text-emerald-800 dark:text-emerald-200">
+            <h3 className="font-semibold text-emerald-950 dark:text-emerald-100">快速记录</h3>
+            <p className="mt-0.5 text-xs text-emerald-800 dark:text-emerald-200">
               {missingQuickLabels.length > 0
                 ? `待填：${missingQuickLabels.join('、')}`
-                : '核心记录已补齐。'}
+                : '已补齐'}
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
-            <Badge tone={missingQuickLabels.length === 0 ? 'positive' : 'warning'} className="col-span-2 sm:col-span-1">
-              已填 {completedQuickCount}/{quickRequiredItems.length}
-            </Badge>
-            <Badge tone="positive" className="col-span-2 sm:col-span-1">30 秒</Badge>
-            <Button variant="secondary" className="text-xs sm:px-3" disabled={!yesterdayLog} onClick={copyYesterdayQuickFields}>
-              沿用昨天
+          <Badge tone={missingQuickLabels.length === 0 ? 'positive' : 'warning'}>
+            {completedQuickCount}/{quickRequiredItems.length}
+          </Badge>
+        </div>
+
+        {/* 移动端：快捷操作按钮 */}
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:hidden">
+          <Button variant="secondary" className="text-xs" disabled={!yesterdayLog} onClick={copyYesterdayQuickFields}>
+            沿用昨天
+          </Button>
+          <Button variant="secondary" className="text-xs" disabled={!hasFillableTargetQuickFields} title="只补空项，不覆盖已填内容" onClick={fillTargetQuickFields}>
+            按目标补空
+          </Button>
+        </div>
+
+        {/* 桌面端：所有操作按钮 */}
+        <div className="mt-3 hidden sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+          <Button variant="secondary" className="text-xs" disabled={!yesterdayLog} onClick={copyYesterdayQuickFields}>
+            沿用昨天
+          </Button>
+          <Button variant="secondary" className="text-xs" disabled={!hasFillableTargetQuickFields} title="只补空项，不覆盖已填内容" onClick={fillTargetQuickFields}>
+            按目标补空
+          </Button>
+          {!props.selectedTarget.isTrainingDay ? (
+            <Button
+              variant="secondary"
+              className="text-xs"
+              disabled={props.selectedLog.trained === false}
+              onClick={markPlannedRestDay}
+            >
+              按计划休息
             </Button>
-            <Button variant="secondary" className="text-xs sm:px-3" disabled={!hasFillableTargetQuickFields} title="只补空项，不覆盖已填内容" onClick={fillTargetQuickFields}>
-              按目标补空
+          ) : null}
+          {props.selectedLog.trained === false || (!props.selectedTarget.isTrainingDay && props.selectedLog.trained !== true) ? (
+            <Button
+              variant="secondary"
+              className="text-xs"
+              onClick={markTrainingStarted}
+              title={props.selectedTarget.isTrainingDay ? '标记今天已训练' : '休息日额外训练，会标记为已训练'}
+            >
+              {props.selectedTarget.isTrainingDay ? '改为训练' : '记录加练'}
+              <span className="ml-1 text-[10px] opacity-70">→已训练</span>
             </Button>
-            {!props.selectedTarget.isTrainingDay ? (
-              <Button
-                variant="secondary"
-                className="text-xs sm:px-3"
-                disabled={props.selectedLog.trained === false}
-                onClick={markPlannedRestDay}
-              >
-                按计划休息
-              </Button>
-            ) : null}
-            {props.selectedLog.trained === false || (!props.selectedTarget.isTrainingDay && props.selectedLog.trained !== true) ? (
-              <Button
-                variant="secondary"
-                className="text-xs sm:px-3"
-                onClick={markTrainingStarted}
-                title={props.selectedTarget.isTrainingDay ? '标记今天已训练' : '休息日额外训练，会标记为已训练'}
-              >
-                {props.selectedTarget.isTrainingDay ? '改为训练' : '记录加练'}
-                <span className="ml-1 text-[10px] opacity-70">→已训练</span>
-              </Button>
-            ) : null}
-            {canSyncWorkoutCompletion ? (
-              <Button variant="secondary" className="col-span-2 text-xs sm:col-span-1 sm:px-3" onClick={syncWorkoutCompletion}>
-                {workoutCompletionFromLog >= 100 ? '同步训练完成' : `同步训练 ${workoutCompletionFromLog}%`}
-              </Button>
-            ) : null}
-          </div>
+          ) : null}
+          {canSyncWorkoutCompletion ? (
+            <Button variant="secondary" className="text-xs" onClick={syncWorkoutCompletion}>
+              {workoutCompletionFromLog >= 100 ? '同步训练完成' : `同步训练 ${workoutCompletionFromLog}%`}
+            </Button>
+          ) : null}
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div className="grid gap-1">
@@ -374,34 +376,40 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
             {renderYesterdayQuick(yesterdayLog?.sleepHours, 'h', () => props.onQuickAction({ sleepHours: yesterdayLog?.sleepHours }))}
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-8">
-          {quickStatuses.map((status) => (
-            <div
-              key={status.label}
-              className={`min-w-0 rounded-lg border bg-white p-2 dark:bg-slate-900 sm:p-3 ${
-                status.tone === 'positive'
-                  ? 'border-emerald-200 text-emerald-900 dark:border-emerald-700/40 dark:text-emerald-100'
-                  : status.tone === 'warning'
-                    ? 'border-amber-200 text-amber-950 dark:border-amber-600/40 dark:text-amber-100'
-                    : 'border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200'
-              }`}
-            >
-              <p className="text-xs font-medium opacity-75">{status.label}</p>
-              <p className="mt-1 truncate text-sm font-semibold sm:text-base">{status.value}</p>
-              <p className="mt-1 truncate text-xs opacity-70">{status.helper}</p>
-            </div>
-          ))}
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+          {quickStatuses.map((status, index) => {
+            // 移动端只显示前4个核心状态：体重、热量、蛋白、训练
+            const hideOnMobile = index >= 4
+            return (
+              <div
+                key={status.label}
+                className={`min-w-0 rounded-lg border bg-white p-2.5 dark:bg-slate-900 ${
+                  hideOnMobile ? 'hidden sm:block' : ''
+                } ${
+                  status.tone === 'positive'
+                    ? 'border-emerald-200 text-emerald-900 dark:border-emerald-700/40 dark:text-emerald-100'
+                    : status.tone === 'warning'
+                      ? 'border-amber-200 text-amber-950 dark:border-amber-600/40 dark:text-amber-100'
+                      : 'border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200'
+                }`}
+              >
+                <p className="text-xs font-medium opacity-75">{status.label}</p>
+                <p className="mt-1 truncate text-base font-semibold">{status.value}</p>
+                <p className="mt-1 truncate text-xs opacity-70">{status.helper}</p>
+              </div>
+            )
+          })}
         </div>
-        <div className="mt-4 grid gap-3 lg:grid-cols-3">
-          <div className="rounded-lg border border-emerald-200 bg-white p-3 dark:border-emerald-700/40 dark:bg-slate-900">
+        <div className="mt-3 grid gap-2 sm:grid-cols-3 sm:gap-3">
+          <div className="rounded-lg border border-emerald-200 bg-white p-2.5 dark:border-emerald-700/40 dark:bg-slate-900">
             <p className="text-xs font-medium text-emerald-800 dark:text-emerald-200">是否训练</p>
-            <div className="mt-2 grid grid-cols-3 gap-2">
+            <div className="mt-2 grid grid-cols-3 gap-1.5">
               {([['', '未填'], ['yes', '是'], ['no', '否']] as const).map(([val, label]) => (
                 <button
                   key={val}
                   type="button"
                   onClick={() => setTrainedValue(val === '' ? undefined : val === 'yes')}
-                  className={`min-h-11 rounded-md border px-3 text-sm font-medium transition ${
+                  className={`min-h-10 rounded-md border text-sm font-medium transition ${
                     (val === '' ? trainedValue === undefined : val === 'yes' ? trainedValue === true : trainedValue === false)
                       ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm dark:border-emerald-500 dark:bg-emerald-500'
                       : 'border-emerald-200 text-slate-700 hover:border-emerald-400 dark:border-emerald-700/40 dark:text-slate-200'
@@ -412,15 +420,15 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
               ))}
             </div>
           </div>
-          <div className="rounded-lg border border-emerald-200 bg-white p-3 dark:border-emerald-700/40 dark:bg-slate-900">
-            <p className="text-xs font-medium text-emerald-800 dark:text-emerald-200">训练完成度</p>
-            <div className="mt-2 grid grid-cols-4 gap-2">
+          <div className="rounded-lg border border-emerald-200 bg-white p-2.5 dark:border-emerald-700/40 dark:bg-slate-900">
+            <p className="text-xs font-medium text-emerald-800 dark:text-emerald-200">完成度</p>
+            <div className="mt-2 grid grid-cols-4 gap-1.5">
               {[0, 50, 80, 100].map((value) => (
                 <button
                   key={value}
                   type="button"
                   onClick={() => setWorkoutCompletionValue(value)}
-                  className={`min-h-11 rounded-md border px-2 text-sm font-medium transition ${
+                  className={`min-h-10 rounded-md border text-sm font-medium transition ${
                     props.selectedLog.workoutCompletion === value
                       ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm dark:border-emerald-500 dark:bg-emerald-500'
                       : 'border-emerald-200 text-slate-700 hover:border-emerald-400 dark:border-emerald-700/40 dark:text-slate-200'
@@ -431,16 +439,15 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
               ))}
             </div>
           </div>
-          <div className="rounded-lg border border-emerald-200 bg-white p-3 dark:border-emerald-700/40 dark:bg-slate-900">
-            <p className="text-xs font-medium text-emerald-800 dark:text-emerald-200">疲劳评分</p>
-            <p className="mt-1 text-[11px] text-emerald-700/80 dark:text-emerald-200/80">建议低于 {props.fatigueThreshold}</p>
-            <div className="mt-2 grid grid-cols-5 gap-2">
+          <div className="rounded-lg border border-emerald-200 bg-white p-2.5 dark:border-emerald-700/40 dark:bg-slate-900">
+            <p className="text-xs font-medium text-emerald-800 dark:text-emerald-200">疲劳 (建议≤{props.fatigueThreshold})</p>
+            <div className="mt-2 grid grid-cols-5 gap-1.5">
               {[0, 3, 5, 7, 9].map((value) => (
                 <button
                   key={value}
                   type="button"
                   onClick={() => props.onQuickAction({ fatigueScore: value })}
-                  className={`min-h-11 rounded-md border px-2 text-sm font-medium transition ${
+                  className={`min-h-10 rounded-md border text-sm font-medium transition ${
                     props.selectedLog.fatigueScore === value
                       ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm dark:border-emerald-500 dark:bg-emerald-500'
                       : 'border-emerald-200 text-slate-700 hover:border-emerald-400 dark:border-emerald-700/40 dark:text-slate-200'
@@ -452,10 +459,10 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
             </div>
           </div>
         </div>
-        <div className="mt-3">
-          <Field label="当天备注">
+        <div className="mt-2">
+          <Field label="备注">
             <TextArea
-              className="min-h-20 border-emerald-200 bg-white dark:border-emerald-700/40 dark:bg-slate-900"
+              className="min-h-16 border-emerald-200 bg-white dark:border-emerald-700/40 dark:bg-slate-900"
               value={props.selectedLog.notes ?? ''}
               onChange={(event) => props.onUpdateDailyLog({ notes: event.target.value })}
             />
