@@ -1447,7 +1447,6 @@ function App() {
           <PlanTab
             key={`${currentUser?.id ?? 'anonymous'}-${initialLoaded ? 'ready' : 'loading'}`}
             planData={currentPlanData}
-            weeklyCalorieTarget={userWeeklyCalorieTarget}
             onSave={savePlanData}
           />
         ) : null}

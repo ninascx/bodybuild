@@ -49,11 +49,10 @@ function buildPlanCatalog(data: UserPlanData): WorkoutPlan[] {
 
 type PlanTabProps = {
   planData: UserPlanData
-  weeklyCalorieTarget: number
   onSave: (planData: UserPlanData) => Promise<UserPlanData>
 }
 
-export function PlanTab({ planData, weeklyCalorieTarget, onSave }: PlanTabProps) {
+export function PlanTab({ planData, onSave }: PlanTabProps) {
   const sourceDraft = useMemo(() => clonePlanData(planData), [planData])
   const [draftOverride, setDraftOverride] = useState<UserPlanData | null>(null)
   const [saving, setSaving] = useState(false)
@@ -138,7 +137,6 @@ export function PlanTab({ planData, weeklyCalorieTarget, onSave }: PlanTabProps)
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-xl font-semibold text-slate-950 dark:text-slate-50">个人计划</h2>
-              <Badge tone="neutral">周目标约 {weeklyCalorieTarget} kcal</Badge>
               <Badge tone="neutral">{trainingDayCount} 个训练日</Badge>
               {dirty ? <Badge tone="warning">未保存</Badge> : null}
             </div>

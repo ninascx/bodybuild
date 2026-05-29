@@ -12,6 +12,7 @@
 - 今日页显示记录缺口、训练节奏建议、本周热量/步数/训练完成度。
 - 记录页提供一屏快速记录：体重、热量、蛋白、步数、睡眠、疲劳、训练完成度；围度收在更多记录里。
 - 计划页只负责把一周每天关联到训练计划或休息日，不单独维护饮食目标和动作内容。
+- 训练页手机端使用当前动作优先视图，底部固定控制台显示当前组、休息计时、上一组/上次套用、下一组/下一动作，并允许随时结束训练。
 - 周报页给出趋势提醒和下周调整动作。
 - 训练模板支持 64 位 token 导入/导出。
 - 管理员可创建 SQLite 备份、按范围导出单用户数据、清空单用户数据。
@@ -50,7 +51,7 @@ npm run dev
 ## 生产部署
 
 ```bash
-npm install
+npm ci --include=dev
 npm run prisma:generate
 npm run db:init
 npm run build
@@ -156,6 +157,26 @@ npm run prod:check
 自检还会确认构建后的 Service Worker 不包含 API 缓存策略。
 自检还会调用管理员 SQLite 备份接口，并打开备份文件确认刚写入的用户、每日记录和训练记录已经进入备份。
 自检还会把 API JSON 提交上限临时调低，确认超大请求会返回中文 JSON 错误而不是默认错误页。
+
+## 更新部署
+
+已有服务器更新时建议按这个顺序：
+
+```bash
+cd /opt/bodybuild
+sqlite3 /var/lib/bodybuild/bodybuild.db "PRAGMA wal_checkpoint(TRUNCATE);"
+cp /var/lib/bodybuild/bodybuild.db "/var/lib/bodybuild/bodybuild-$(date +%F-%H%M%S).db"
+git pull
+npm ci --include=dev
+npm run prisma:generate
+npm run db:init
+npm run build
+sudo systemctl restart bodybuild
+curl http://127.0.0.1:8787/api/health
+```
+
+如果服务器没有 `sqlite3` 命令，可先执行 `sudo apt update && sudo apt install -y sqlite3`，或直接使用管理员页面“创建备份”。
+如果用的是管理员页面的“创建备份”，可以先在网页里创建备份，再从 `git pull` 开始执行。更新后第一次访问建议强制刷新浏览器，确保加载最新静态资源。
 
 ## 管理员流程
 

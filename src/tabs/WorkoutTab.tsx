@@ -316,7 +316,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
   )
 
   return (
-    <div className={`grid gap-4 ${effectiveTrainingMode ? 'pb-56' : ''}`}>
+    <div className={`grid gap-4 ${effectiveTrainingMode ? 'pb-72 md:pb-4' : ''}`}>
       {effectiveTrainingMode ? (
         <>
           <div className="hidden md:block">
@@ -336,7 +336,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
               autoStartRest={autoStartRest}
               workoutMarkedComplete={props.workoutMarkedComplete}
               workoutReadyToConfirm={workoutReadyToConfirm}
-              canFinishWorkout={workoutReadyToConfirm}
+              canFinishWorkout={!props.workoutMarkedComplete}
               remainingSetCount={remainingSetCount}
               onExitTrainingMode={() => setTrainingMode(false)}
               onSkipRest={handleSkipRest}

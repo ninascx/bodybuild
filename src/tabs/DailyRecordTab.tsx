@@ -344,7 +344,7 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
             ) : null}
           </div>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
           <div className="grid gap-1">
             <NumberField className={quickFieldClass} label="体重 kg" value={props.selectedLog.morningWeightKg} step="0.1" kind="decimal" range={{ min: 20, max: 300 }} onChange={(value) => props.onUpdateDailyLog({ morningWeightKg: value })} />
             {renderYesterdayQuick(yesterdayLog?.morningWeightKg, 'kg', () => props.onQuickAction({ morningWeightKg: yesterdayLog?.morningWeightKg }))}
@@ -366,11 +366,11 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
             {renderYesterdayQuick(yesterdayLog?.sleepHours, 'h', () => props.onQuickAction({ sleepHours: yesterdayLog?.sleepHours }))}
           </div>
         </div>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+        <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-8">
           {quickStatuses.map((status) => (
             <div
               key={status.label}
-              className={`rounded-lg border bg-white p-3 dark:bg-slate-900 ${
+              className={`min-w-0 rounded-lg border bg-white p-2 dark:bg-slate-900 sm:p-3 ${
                 status.tone === 'positive'
                   ? 'border-emerald-200 text-emerald-900 dark:border-emerald-700/40 dark:text-emerald-100'
                   : status.tone === 'warning'
@@ -379,8 +379,8 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
               }`}
             >
               <p className="text-xs font-medium opacity-75">{status.label}</p>
-              <p className="mt-1 text-base font-semibold">{status.value}</p>
-              <p className="mt-1 text-xs opacity-70">{status.helper}</p>
+              <p className="mt-1 truncate text-sm font-semibold sm:text-base">{status.value}</p>
+              <p className="mt-1 truncate text-xs opacity-70">{status.helper}</p>
             </div>
           ))}
         </div>
