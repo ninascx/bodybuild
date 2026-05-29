@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { PreviousExerciseRecord } from '../../lib/metrics'
 import type { WorkoutSummary } from '../../lib/workout'
 import { formatTargetRepRange, formatTime, isSetComplete, isSetEmpty, parseTargetRepRange, targetRepQuickOptions } from '../../lib/workout'
@@ -92,6 +92,7 @@ type MobileCurrentExerciseViewProps = {
   onJumpToNextIncomplete: () => void
   onUpdateSet: (exerciseIndex: number, setIndex: number, patch: Partial<ExerciseSetLog>) => void
   onAddSet: (exerciseIndex: number) => void
+  onAddExercise: () => void
   onStartRest: () => void
   onSkipRest: () => void
   onAdjustRestDuration: (delta: number) => void
@@ -119,6 +120,7 @@ export function MobileCurrentExerciseView({
   onJumpToNextIncomplete,
   onUpdateSet,
   onAddSet,
+  onAddExercise,
   onStartRest,
   onSkipRest,
   onAdjustRestDuration,
@@ -129,8 +131,34 @@ export function MobileCurrentExerciseView({
   const exercise = workout.exercises[currentExerciseIndex]
   const [currentSetIndex, setCurrentSetIndex] = useState(() => (exercise ? firstIncompleteSetIndex(exercise) : 0))
   const [bulkFillCompleted, setBulkFillCompleted] = useState(false)
+  const [keyboardHeight, setKeyboardHeight] = useState(0)
 
-  if (!exercise) return null
+  useEffect(() => {
+    const handleResize = () => {
+      const vh = window.visualViewport?.height ?? window.innerHeight
+      const height = Math.max(0, window.innerHeight - vh)
+      setKeyboardHeight(height)
+    }
+    window.visualViewport?.addEventListener('resize', handleResize)
+    return () => window.visualViewport?.removeEventListener('resize', handleResize)
+  }, [])
+
+  if (!exercise) {
+    return (
+      <div className="space-y-3 pb-32 md:hidden">
+        <Card className="p-4">
+          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">当前训练还没有动作</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+            先添加一个动作，再开始记录重量、次数和 RIR。
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Button onClick={onAddExercise}>新增动作</Button>
+            <Button variant="secondary" onClick={onExitTrainingMode}>返回训练页</Button>
+          </div>
+        </Card>
+      </div>
+    )
+  }
 
   const previousRecord = previousRecordsByExerciseKey.get(`${exercise.exerciseId}::${exercise.name.trim()}`)
   const safeCurrentSetIndex = Math.min(currentSetIndex, Math.max(0, exercise.sets.length - 1))
@@ -191,14 +219,12 @@ export function MobileCurrentExerciseView({
     : canConfirmWorkout
       ? '所有组已填完，确认后同步到今日记录'
       : '现在结束本次训练，已记录的组会保留，今日记录会标记训练完成'
-  const bottomSetActionLabel = !currentSetComplete
-    ? '本组待填'
-    : hasAnotherIncompleteSet
-      ? '下一组'
-      : shouldSuggestNextExercise
-        ? '下一动作'
-        : '本动作完成'
-  const bottomSetActionDisabled = !currentSetComplete || (!hasAnotherIncompleteSet && !shouldSuggestNextExercise)
+  const bottomNextLabel = hasAnotherIncompleteSet
+    ? '下一组'
+    : shouldSuggestNextExercise
+      ? '下一动作'
+      : '下一动作'
+  const bottomNextDisabled = !hasAnotherIncompleteSet && !shouldSuggestNextExercise && currentExerciseIndex >= workout.exercises.length - 1
   const bottomCompletionHint = workoutMarkedComplete
     ? '本次训练已同步到今日记录。'
     : canConfirmWorkout
@@ -257,6 +283,22 @@ export function MobileCurrentExerciseView({
     }
   }
 
+  function handleBottomNextAction() {
+    if (hasAnotherIncompleteSet) {
+      setCurrentSetIndex(nextSetIndex)
+      return
+    }
+    if (suggestedExerciseIndex !== null) {
+      onJumpToExercise(suggestedExerciseIndex)
+      return
+    }
+    if (shouldSuggestNextExercise) {
+      onJumpToNextIncomplete()
+      return
+    }
+    onJumpToExercise(nextExerciseIndex)
+  }
+
   function applyPreviousRecordToEmptySets() {
     if (!previousRecord) return
     const nextSets = exercise.sets.map((set, setIndex) =>
@@ -306,43 +348,40 @@ export function MobileCurrentExerciseView({
         </div>
       </div>
 
-      <div className="mt-3 grid gap-3">
+      <div className="mt-2 grid gap-2">
         <Card className="border-emerald-200 dark:border-emerald-700/40">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 动作 {currentExerciseIndex + 1}/{workout.exercises.length}
               </p>
-              <h3 className="mt-1 text-xl font-semibold leading-tight text-slate-950 dark:text-slate-50">{exercise.name}</h3>
-              <p className="mt-1 text-sm leading-5 text-slate-600 dark:text-slate-300">{exercise.target}</p>
+              <h3 className="mt-0.5 text-lg font-semibold leading-tight text-slate-950 dark:text-slate-50">{exercise.name}</h3>
+              <p className="mt-0.5 text-xs leading-5 text-slate-600 dark:text-slate-300">{exercise.target}</p>
             </div>
             <Badge tone={completed ? 'positive' : 'neutral'}>{completed ? '已完成' : `${completedExerciseSetCount}/${exercise.sets.length}`}</Badge>
           </div>
 
-          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 dark:border-slate-700 dark:bg-slate-800">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">本动作</p>
-              <p className="mt-0.5 text-sm font-semibold text-slate-950 dark:text-slate-50">
-                {completedExerciseSetCount}/{exercise.sets.length}
-              </p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 dark:border-slate-700 dark:bg-slate-800">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">还剩</p>
-              <p className={`mt-0.5 text-sm font-semibold ${remainingExerciseSetCount === 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-950 dark:text-slate-50'}`}>
-                {remainingExerciseSetCount} 组
-              </p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 dark:border-slate-700 dark:bg-slate-800">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">当前</p>
-              <p className="mt-0.5 text-sm font-semibold text-slate-950 dark:text-slate-50">第 {safeCurrentSetIndex + 1} 组</p>
-            </div>
+          <div className="mt-2 flex items-center gap-1.5 overflow-x-auto pb-1">
+            <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              本动作 {completedExerciseSetCount}/{exercise.sets.length}
+            </span>
+            <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              当前第 {safeCurrentSetIndex + 1} 组
+            </span>
+            <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${
+              remainingExerciseSetCount === 0
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200'
+                : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+            }`}>
+              还剩 {remainingExerciseSetCount} 组
+            </span>
           </div>
 
           {previousRecord ? (
-            <details className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-100">
-              <summary className="cursor-pointer list-none font-medium">{formatPreviousSummary(previousRecord)}</summary>
+            <details className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs text-emerald-900 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-100">
+              <summary className="cursor-pointer list-none font-medium text-[11px]">{formatPreviousSummary(previousRecord)}</summary>
               {previousRecord.allSets?.length ? (
-                <p className="mt-1 text-xs leading-5">
+                <p className="mt-1 text-[11px] leading-5">
                   {previousRecord.allSets.map((set, index) => {
                     const parts: string[] = []
                     if (set.weight !== undefined) parts.push(`${set.weight}kg`)
@@ -355,7 +394,7 @@ export function MobileCurrentExerciseView({
             </details>
           ) : null}
 
-          <div className="mt-3 grid grid-cols-4 gap-2">
+          <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
             {exercise.sets.map((set, index) => {
               const setDone = isSetComplete(set)
               const isCurrent = index === safeCurrentSetIndex
@@ -364,7 +403,7 @@ export function MobileCurrentExerciseView({
                   key={index}
                   type="button"
                   onClick={() => setCurrentSetIndex(index)}
-                  className={`min-h-12 rounded-lg border px-2 text-center text-xs font-medium ${
+                  className={`min-h-10 min-w-[4rem] shrink-0 rounded-full border px-2 text-center text-xs font-medium ${
                     isCurrent
                       ? 'border-emerald-400 bg-emerald-50 text-emerald-900 dark:border-emerald-500 dark:bg-emerald-900/30 dark:text-emerald-100'
                       : setDone
@@ -372,10 +411,10 @@ export function MobileCurrentExerciseView({
                         : 'border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'
                   }`}
                 >
-                  <span className="block">第 {index + 1} 组</span>
-                  <span className="mt-1 block truncate font-semibold">
+                  <span className="block">#{index + 1}</span>
+                  <span className="mt-0.5 block truncate text-[11px] font-semibold">
                     {set.weight !== undefined || set.reps !== undefined
-                      ? `${set.weight ?? '-'}kg x ${set.reps ?? '-'}`
+                      ? `${set.weight ?? '-'}×${set.reps ?? '-'}`
                       : '待填'}
                   </span>
                 </button>
@@ -384,32 +423,31 @@ export function MobileCurrentExerciseView({
           </div>
 
           {currentSet ? (
-            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+            <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-800">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">当前第 {safeCurrentSetIndex + 1} 组</p>
+                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">第 {safeCurrentSetIndex + 1} 组 {targetRange ? `· 目标 ${formatTargetRepRange(targetRange)}` : ''}</p>
                 <Badge tone={currentSetComplete ? 'positive' : 'neutral'}>{currentSetComplete ? '已填' : '待填'}</Badge>
               </div>
               {previousSameSetSummary ? (
-                <div className="mt-2 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200">
+                <div className="mt-1.5 rounded-md border border-emerald-200 bg-white px-2 py-1 text-[11px] text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200">
                   上次同组：<span className="font-semibold">{previousSameSetSummary}</span>
                 </div>
               ) : copyRecordPatch ? (
-                <div className="mt-2 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200">
+                <div className="mt-1.5 rounded-md border border-emerald-200 bg-white px-2 py-1 text-[11px] text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200">
                   上次最佳：<span className="font-semibold">{formatSetSummary(copyRecordPatch) ?? '可套用'}</span>
                 </div>
               ) : null}
               {targetRange ? (
-                <p className={`mt-1 text-xs ${repsInTarget ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'}`}>
-                  目标 {formatTargetRepRange(targetRange)} 次{repsInTarget ? ' · 已达标' : ''}
+                <p className={`mt-1 text-[11px] ${repsInTarget ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'}`}>
+                  {repsInTarget ? '✓ 已达标' : ''}
                 </p>
               ) : null}
               {quickFillPatch && quickFillLabel ? (
-                <Button className="mt-3 w-full" onClick={() => applyPatchToCurrentSet(quickFillPatch)}>
-                  {quickFillLabel}
-                  {quickFillSummary ? ` · ${quickFillSummary}` : ''}
+                <Button className="mt-1.5 w-full py-1.5 text-xs" onClick={() => applyPatchToCurrentSet(quickFillPatch)}>
+                  {quickFillLabel}{quickFillSummary ? ` · ${quickFillSummary}` : ''}
                 </Button>
               ) : null}
-              <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="mt-2 grid grid-cols-2 gap-2">
                 <NumberField
                   label="重量 kg"
                   value={currentSet.weight}
@@ -417,14 +455,14 @@ export function MobileCurrentExerciseView({
                   kind="decimal"
                   range={{ min: 0, max: 500, allowZero: true }}
                   onChange={(value) => updateCurrentSet({ weight: value })}
-                  className="h-14 text-base"
+                  className="h-12 text-base"
                 />
                 <NumberField
                   label="次数"
                   value={currentSet.reps}
                   range={{ min: 1, max: 100 }}
                   onChange={(value) => updateCurrentSet({ reps: value })}
-                  className="h-14 text-base"
+                  className="h-12 text-base"
                 />
               </div>
               {targetRepOptions.length > 0 ? (
@@ -445,47 +483,47 @@ export function MobileCurrentExerciseView({
                   ))}
                 </div>
               ) : null}
-              <div className="mt-2 grid grid-cols-2 gap-3">
-                <div className="grid grid-cols-2 gap-2">
+              <div className="mt-1.5 grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1.5">
                   <Button
                     variant="secondary"
-                    className="min-h-10 px-2 text-xs"
+                    className="min-h-9 px-1.5 text-xs"
                     onClick={() => updateCurrentSet({ weight: Math.max(0, (currentSet.weight ?? 0) - 2.5) })}
                   >
                     -2.5kg
                   </Button>
                   <Button
                     variant="secondary"
-                    className="min-h-10 px-2 text-xs"
+                    className="min-h-9 px-1.5 text-xs"
                     onClick={() => updateCurrentSet({ weight: (currentSet.weight ?? 0) + 2.5 })}
                   >
                     +2.5kg
                   </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1.5">
                   <Button
                     variant="secondary"
-                    className="min-h-10 px-2 text-xs"
+                    className="min-h-9 px-1.5 text-xs"
                     onClick={() => updateCurrentSet({ reps: Math.max(1, (currentSet.reps ?? 1) - 1) })}
                   >
                     -1次
                   </Button>
                   <Button
                     variant="secondary"
-                    className="min-h-10 px-2 text-xs"
+                    className="min-h-9 px-1.5 text-xs"
                     onClick={() => updateCurrentSet({ reps: (currentSet.reps ?? 0) + 1 })}
                   >
                     +1次
                   </Button>
                 </div>
               </div>
-              <div className="mt-3 grid grid-cols-4 gap-2">
+              <div className="mt-1.5 grid grid-cols-4 gap-1.5">
                 {RIR_OPTIONS.map((value) => (
                   <button
                     key={value}
                     type="button"
                     onClick={() => updateCurrentSet({ rir: currentSet.rir === value ? undefined : value }, true)}
-                    className={`min-h-12 rounded-md border text-sm font-semibold transition ${
+                    className={`min-h-10 rounded-md border text-xs font-semibold transition ${
                       currentSet.rir === value
                         ? 'border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/40 dark:text-amber-100'
                         : 'border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400'
@@ -496,54 +534,69 @@ export function MobileCurrentExerciseView({
                 ))}
               </div>
               <Button
-                className="mt-3 w-full"
+                className="mt-2 w-full py-2.5"
                 onClick={handleCurrentSetAction}
                 disabled={currentSetActionDisabled}
               >
                 {currentSetActionLabel}
               </Button>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <Button variant="secondary" className="px-2" onClick={() => applyPatchToCurrentSet(copyPreviousPatch)} disabled={!copyPreviousPatch}>
-                  复制上一组
-                </Button>
-                <Button variant="secondary" className="px-2" onClick={() => applyPatchToCurrentSet(copyRecordPatch)} disabled={!copyRecordPatch}>
-                  套用上次
-                </Button>
-              </div>
-              {hasEmptySet ? (
-                <div className="mt-2 grid gap-2">
-                  <Button variant="secondary" className="w-full" onClick={applyCurrentSetToEmptySets} disabled={!currentSetComplete}>
-                    复制本组到 {emptySetCount} 个空组
+              <details className="mt-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+                <summary className="cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-200">更多操作</summary>
+                <div className="mt-2 grid grid-cols-2 gap-1.5">
+                  <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={() => applyPatchToCurrentSet(copyPreviousPatch)} disabled={!copyPreviousPatch}>
+                    复制上一组
                   </Button>
-                  {previousRecord ? (
-                    <Button variant="secondary" className="w-full" onClick={applyPreviousRecordToEmptySets}>
-                      按上次填入 {emptySetCount} 个空组
-                    </Button>
-                  ) : null}
+                  <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={() => applyPatchToCurrentSet(copyRecordPatch)} disabled={!copyRecordPatch}>
+                    套用上次
+                  </Button>
+                  <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={onAddExercise}>
+                    新增动作
+                  </Button>
                 </div>
-              ) : null}
-              {hasAnotherIncompleteSet ? (
-                <Button className="mt-2 w-full" onClick={() => setCurrentSetIndex(nextSetIndex)}>
-                  下一未填组
-                </Button>
-              ) : null}
+                {hasEmptySet ? (
+                  <div className="mt-1.5 grid gap-1.5">
+                    <Button variant="secondary" className="w-full py-1.5 text-xs" onClick={applyCurrentSetToEmptySets} disabled={!currentSetComplete}>
+                      复制本组到 {emptySetCount} 个空组
+                    </Button>
+                    {previousRecord ? (
+                      <Button variant="secondary" className="w-full py-1.5 text-xs" onClick={applyPreviousRecordToEmptySets}>
+                        按上次填入 {emptySetCount} 个空组
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : null}
+                {hasAnotherIncompleteSet ? (
+                  <Button variant="secondary" className="mt-1.5 w-full py-1.5 text-xs" onClick={() => setCurrentSetIndex(nextSetIndex)}>
+                    下一未填组
+                  </Button>
+                ) : null}
+                <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <input
+                    type="checkbox"
+                    checked={autoStartRest}
+                    onChange={onToggleAutoStart}
+                    className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  完成组后自动休息
+                </label>
+              </details>
             </div>
           ) : (
             <Button className="mt-4 w-full" onClick={() => onAddSet(currentExerciseIndex)}>添加一组</Button>
           )}
 
           {canFinishWorkout && !workoutMarkedComplete ? (
-            <div className="mt-4 rounded-lg border border-emerald-300 bg-emerald-50 p-3 dark:border-emerald-600/40 dark:bg-emerald-900/30">
-              <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">所有组已填完</p>
-              <p className="mt-1 text-xs leading-5 text-emerald-800 dark:text-emerald-200">确认后会同步到今日记录，并把训练完成度记为 100%。</p>
-              <Button className="mt-2 w-full" onClick={onFinishWorkout}>
+            <div className="mt-2 rounded-lg border border-emerald-300 bg-emerald-50 p-2.5 dark:border-emerald-600/40 dark:bg-emerald-900/30">
+              <p className="text-xs font-medium text-emerald-900 dark:text-emerald-100">所有组已填完</p>
+              <p className="mt-1 text-[11px] leading-5 text-emerald-800 dark:text-emerald-200">确认后会同步到今日记录，并把训练完成度记为 100%。</p>
+              <Button className="mt-1.5 w-full py-2" onClick={onFinishWorkout}>
                 确认完成训练
               </Button>
             </div>
           ) : shouldSuggestNextExercise ? (
-            <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-700/40 dark:bg-emerald-900/30">
-              <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">当前动作已完成</p>
-              <Button className="mt-2 w-full" onClick={() => suggestedExerciseIndex !== null ? onJumpToExercise(suggestedExerciseIndex) : onJumpToNextIncomplete()}>
+            <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 dark:border-emerald-700/40 dark:bg-emerald-900/30">
+              <p className="text-xs font-medium text-emerald-900 dark:text-emerald-100">当前动作已完成</p>
+              <Button className="mt-1.5 w-full py-2" onClick={() => suggestedExerciseIndex !== null ? onJumpToExercise(suggestedExerciseIndex) : onJumpToNextIncomplete()}>
                 去下一个未完成动作
               </Button>
             </div>
@@ -551,95 +604,72 @@ export function MobileCurrentExerciseView({
         </Card>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-2xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
-        <div className="mb-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{exercise.name}</p>
-              <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
-                动作 {currentExerciseIndex + 1}/{workout.exercises.length} · 第 {safeCurrentSetIndex + 1} 组 · {currentSetStatus}
-              </p>
-            </div>
-            <div className="shrink-0 text-right" title={`默认休息 ${restDefaultDuration}s`}>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">{restActive ? '休息' : '进度'}</p>
-              <p className={`text-sm font-bold tabular-nums ${restActive && restSeconds === 0 ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
-                {restActive ? formatTime(restSeconds) : `${workoutSummary.completionPercent}%`}
-              </p>
-            </div>
+      <div
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-2xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
+        style={{ transform: keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : undefined }}
+      >
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{exercise.name}</p>
+            <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+              第 {safeCurrentSetIndex + 1} 组 · {currentSetStatus}
+            </p>
           </div>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-            <div
-              className="h-full rounded-full bg-emerald-500 transition-all"
-              style={{ width: `${workoutSummary.completionPercent}%` }}
-            />
+          <div className="shrink-0 text-right" title={`默认休息 ${restDefaultDuration}s`}>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">{restActive ? '休息' : '进度'}</p>
+            <p className={`text-sm font-bold tabular-nums ${restActive && restSeconds === 0 ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
+              {restActive ? formatTime(restSeconds) : `${workoutSummary.completionPercent}%`}
+            </p>
           </div>
         </div>
         {restActive ? (
-          <div className="mb-2 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2">
+          <div className="mb-2 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2 dark:border-emerald-700/40 dark:bg-emerald-900/30">
             <button
               type="button"
               onClick={() => onAdjustRestDuration(-15)}
-              className="min-h-9 rounded-md border border-slate-200 px-3 text-xs font-medium text-slate-700 dark:border-slate-700 dark:text-slate-300"
+              className="min-h-9 rounded-md border border-emerald-200 bg-white px-3 text-xs font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200"
             >
               -15s
             </button>
-            <div className="rounded-md bg-slate-50 px-3 py-1.5 text-center dark:bg-slate-800">
+            <div className="rounded-md bg-white px-3 py-1.5 text-center dark:bg-slate-900">
               <p className={`text-base font-bold tabular-nums ${restSeconds === 0 ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}`}>{formatTime(restSeconds)}</p>
             </div>
             <button
               type="button"
               onClick={() => onAdjustRestDuration(15)}
-              className="min-h-9 rounded-md border border-slate-200 px-3 text-xs font-medium text-slate-700 dark:border-slate-700 dark:text-slate-300"
+              className="min-h-9 rounded-md border border-emerald-200 bg-white px-3 text-xs font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200"
             >
               +15s
             </button>
             <Button className="min-h-9 px-3 text-xs" onClick={onSkipRest}>结束</Button>
           </div>
         ) : null}
-        <div className="grid grid-cols-[1fr_1fr_1fr_1.2fr] gap-2">
-          <Button variant="secondary" className="min-h-10 px-2 text-xs" onClick={() => applyPatchToCurrentSet(copyPreviousPatch)} disabled={!copyPreviousPatch || !currentSet}>
-            上一组
+        <div className="grid grid-cols-[1fr_1.15fr_1.15fr] gap-2">
+          <Button variant="secondary" className="min-h-12 px-2 text-xs" onClick={() => onJumpToExercise(previousExerciseIndex)} disabled={currentExerciseIndex === 0}>
+            上一动作
           </Button>
-          <Button variant="secondary" className="min-h-10 px-2 text-xs" onClick={() => applyPatchToCurrentSet(copyRecordPatch)} disabled={!copyRecordPatch || !currentSet}>
-            上次
-          </Button>
-          <Button variant="secondary" className="min-h-10 px-2 text-xs" onClick={handleCurrentSetAction} disabled={bottomSetActionDisabled}>
-            {bottomSetActionLabel}
+          <Button className="min-h-12 px-2 text-sm" onClick={handleBottomNextAction} disabled={bottomNextDisabled}>
+            {bottomNextLabel}
           </Button>
           <Button
-            variant={workoutMarkedComplete ? 'secondary' : 'primary'}
-            className="min-h-10 px-2 text-xs"
+            variant="secondary"
+            className="min-h-12 px-2 text-xs"
             onClick={handleBottomPrimaryAction}
             title={bottomPrimaryTitle}
           >
             {bottomPrimaryLabel}
           </Button>
         </div>
-        <div className="mt-2 grid grid-cols-4 gap-2">
-          <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={() => onJumpToExercise(previousExerciseIndex)} disabled={currentExerciseIndex === 0}>
-            上一动作
+        <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+          <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={() => applyPatchToCurrentSet(quickFillPatch)} disabled={!quickFillPatch || !currentSet}>
+            {quickFillLabel ?? '快速套用'}
           </Button>
-          <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={() => onJumpToExercise(nextExerciseIndex)} disabled={currentExerciseIndex >= workout.exercises.length - 1}>
-            下一动作
-          </Button>
-          <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={onJumpToNextIncomplete} disabled={!hasNextIncompleteExercise}>
-            下一未完
-          </Button>
-          <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={onStartRest} disabled={restActive}>
-            {restActive ? '休息中' : '休息'}
+          <Button variant="secondary" className="min-h-9 px-3 text-xs" onClick={onStartRest} disabled={restActive}>
+            休息
           </Button>
         </div>
         <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
           <span className="min-w-0 truncate">{bottomCompletionHint}</span>
-          <label className="flex shrink-0 items-center gap-1">
-            <input
-              type="checkbox"
-              checked={autoStartRest}
-              onChange={onToggleAutoStart}
-              className="h-3.5 w-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-            />
-            自动休息
-          </label>
         </div>
       </div>
     </div>

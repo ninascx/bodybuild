@@ -367,6 +367,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
               onJumpToNextIncomplete={jumpToNextIncomplete}
               onUpdateSet={handleUpdateSet}
               onAddSet={props.onAddSet}
+              onAddExercise={props.onAddExercise}
               onStartRest={handleStartRest}
               onSkipRest={handleSkipRest}
               onAdjustRestDuration={handleAdjustRestDuration}
@@ -449,6 +450,11 @@ export function WorkoutTab(props: WorkoutTabProps) {
               </Button>
             ) : null}
             {hasWorkout ? (
+              <Button variant="secondary" className="px-3" onClick={props.onAddExercise}>
+                新增动作
+              </Button>
+            ) : null}
+            {hasWorkout ? (
               <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 dark:border-slate-700 dark:bg-slate-800">
                 <button
                   type="button"
@@ -510,7 +516,10 @@ export function WorkoutTab(props: WorkoutTabProps) {
                         : '开始训练'}
                 </Button>
                 <p className="text-center text-xs text-slate-500 dark:text-slate-400">{completionHint}</p>
-                <div className={`grid gap-2 ${hasIncompleteExercise ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="secondary" className="px-2" onClick={props.onAddExercise}>
+                    新增动作
+                  </Button>
                   <Button variant="secondary" className="px-2" onClick={() => setShowOnlyUnfinished(!props.showOnlyUnfinishedExercises)}>
                     {props.showOnlyUnfinishedExercises ? '查看全部' : '只看未完成'}
                   </Button>
@@ -549,7 +558,12 @@ export function WorkoutTab(props: WorkoutTabProps) {
             ))}
 
             {props.visibleWorkoutExercises.length === 0 ? (
-              <EmptyState title="当前筛选下没有未完成动作" message="可以切回「全部动作」继续查看或修改。" />
+              <div className="grid gap-2">
+                <EmptyState title="当前筛选下没有未完成动作" message="可以新增动作，或切回「全部动作」继续查看。" />
+                <Button className="w-full sm:w-auto" onClick={props.onAddExercise}>
+                  新增动作
+                </Button>
+              </div>
             ) : null}
 
             <details className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
