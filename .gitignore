@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-server
 *.local
 .env
 .env.*
@@ -29,3 +30,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Tool configurations and outputs
+.codex/
+repomix-output.*
+
+# Claude Code local configuration
+.claude/
