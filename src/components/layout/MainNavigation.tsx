@@ -1,5 +1,5 @@
 import { cn } from '../../lib/cn'
-import { Button, DropdownMenu } from '../ui'
+import { Button } from '../ui'
 
 type MainNavigationProps<T extends string> = {
   tabs: Array<{ key: T; label: string }>

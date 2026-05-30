@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Badge, Button, EmptyState, InsightCard, RecommendationBox, SectionHeader } from '../ui'
+import { Button, EmptyState, InsightCard, RecommendationBox, SectionHeader } from '../ui'
 import { BudgetTile, MacroTile } from '../BudgetTile'
 import { TipsDetails } from '../TipsDetails'
 import type { AdjustmentRecommendation, DailyLog, DailyTarget, WorkoutPlan } from '../../types'

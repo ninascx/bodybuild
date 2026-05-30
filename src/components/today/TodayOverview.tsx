@@ -1,4 +1,4 @@
-import { ActionCard, Badge, Button, InsightCard, MetricGrid, SectionHeader, StatusHero } from '../ui'
+import { ActionCard, Button, InsightCard, SectionHeader, StatusHero } from '../ui'
 import { dayNames } from '../../data/plans'
 import type { DailyTarget } from '../../types'
 import type { TodaySnapshot } from '../../lib/statusInsights'

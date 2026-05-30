@@ -30,80 +30,6 @@ export type DailyCheckInPanelProps = {
   canCompleteCommonRecord: boolean
 }
 
-type CheckItem = { label: string; done: boolean }
-
-function getPrimaryActionLabel(canComplete: boolean, missingCount: number, canSyncWorkoutCompletion: boolean) {
-  if (!canComplete) return '常用记录已完成'
-  if (missingCount > 0) return '完成今日缺口'
-  if (canSyncWorkoutCompletion) return '同步训练完成度'
-  return '更新常用记录'
-}
-
-function TodayGapPanel({
-  items,
-  primaryActionLabel,
-  canCompleteCommonRecord,
-  onCompleteCommonRecord,
-}: {
-  items: CheckItem[]
-  primaryActionLabel: string
-  canCompleteCommonRecord: boolean
-  onCompleteCommonRecord: () => void
-}) {
-  const completedCount = items.filter((item) => item.done).length
-  const missingItems = items.filter((item) => !item.done)
-  const complete = missingItems.length === 0
-
-  return (
-    <section className="rounded-lg border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900 sm:p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">今日缺口</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-            {complete ? '常用项已经齐了，后面只补细节。' : `先补 ${missingItems.length} 项，今天的判断才可靠。`}
-          </p>
-        </div>
-        <Badge tone={complete ? 'positive' : 'warning'}>{completedCount}/{items.length}</Badge>
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {complete ? (
-          <>
-            <span className="inline-flex min-h-8 items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 text-xs font-semibold text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/20 dark:text-emerald-200 sm:hidden">
-              已补齐
-            </span>
-            {items.map((item) => (
-              <span
-                key={item.label}
-                className="hidden min-h-8 items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 sm:inline-flex"
-              >
-                已填 {item.label}
-              </span>
-            ))}
-          </>
-        ) : missingItems.map((item) => (
-          <span
-            key={item.label}
-            className="inline-flex min-h-8 items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 text-xs font-semibold text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/30 dark:text-amber-100"
-          >
-            待填 {item.label}
-          </span>
-        ))}
-        {complete ? (
-          null
-        ) : null}
-      </div>
-
-      <Button
-        className="mt-3 w-full"
-        onClick={onCompleteCommonRecord}
-        disabled={!canCompleteCommonRecord}
-      >
-        {primaryActionLabel}
-      </Button>
-    </section>
-  )
-}
 
 function DailyTrainingPanel({
   selectedLog,
@@ -252,17 +178,6 @@ function DailyStatusDetails({ statuses }: { statuses: QuickStatus[] }) {
 }
 
 export function DailyCheckInPanel(props: DailyCheckInPanelProps) {
-  const checkItems: CheckItem[] = [
-    { label: '体重', done: props.selectedLog.morningWeightKg !== undefined },
-    { label: '热量', done: props.selectedLog.calories !== undefined },
-    { label: '蛋白', done: props.selectedLog.protein !== undefined },
-    { label: '步数', done: props.selectedLog.steps !== undefined },
-    { label: '睡眠', done: props.selectedLog.sleepHours !== undefined },
-    { label: '训练', done: props.selectedLog.trained !== undefined },
-  ]
-  const missingCount = checkItems.filter((item) => !item.done).length
-  const primaryActionLabel = getPrimaryActionLabel(props.canCompleteCommonRecord, missingCount, props.canSyncWorkoutCompletion)
-
   return (
     <div className="grid gap-3 sm:gap-4">
       <DailyEssentialsForm {...props} />
