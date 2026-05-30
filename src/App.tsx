@@ -68,25 +68,21 @@ import { ExportDataDialog } from './components/ExportDataDialog'
 import { AppShell } from './components/layout/AppShell'
 import { LoginScreen } from './components/layout/LoginScreen'
 import { TodayTab } from './tabs/TodayTab'
-import { ProfileTab } from './tabs/ProfileTab'
-import { PlanTab } from './tabs/PlanTab'
 import { DailyRecordTab } from './tabs/DailyRecordTab'
 import { WorkoutTab } from './tabs/WorkoutTab'
-const DashboardTab = lazy(() => import('./tabs/DashboardTab').then((mod) => ({ default: mod.DashboardTab })))
-import { WeeklyTab } from './tabs/WeeklyTab'
+const AnalyticsTab = lazy(() => import('./tabs/AnalyticsTab').then((mod) => ({ default: mod.AnalyticsTab })))
+import { SettingsTab } from './tabs/SettingsTab'
 import { AdminUsersTab } from './tabs/AdminUsersTab'
 import { DailyRecordSkeleton } from './components/DailyRecordSkeleton'
 
-type TabKey = 'today' | 'profile' | 'plan' | 'daily' | 'workout' | 'dashboard' | 'weekly' | 'admin'
+type TabKey = 'today' | 'daily' | 'workout' | 'analytics' | 'settings' | 'admin'
 
 const baseTabs: Array<{ key: TabKey; label: string }> = [
   { key: 'today', label: '概览' },
-  { key: 'profile', label: '设置' },
-  { key: 'plan', label: '计划' },
   { key: 'daily', label: '日志' },
   { key: 'workout', label: '训练' },
-  { key: 'dashboard', label: '趋势' },
-  { key: 'weekly', label: '周报' },
+  { key: 'analytics', label: '分析' },
+  { key: 'settings', label: '设置' },
 ]
 const adminTab: { key: TabKey; label: string } = { key: 'admin', label: '用户管理' }
 const allTabs = [...baseTabs, adminTab]
@@ -1346,22 +1342,14 @@ function App() {
           />
         ) : null}
 
-        {contentTab === 'profile' && currentUser ? (
-          <ProfileTab
+        {contentTab === 'settings' && currentUser ? (
+          <SettingsTab
             key={`${currentUser.id}-${initialLoaded ? 'ready' : 'loading'}`}
             currentUser={currentUser}
             preference={userPreference}
             planData={currentPlanData}
             onSavePreference={savePreferenceData}
             onSavePlan={savePlanData}
-          />
-        ) : null}
-
-        {contentTab === 'plan' ? (
-          <PlanTab
-            key={`${currentUser?.id ?? 'anonymous'}-${initialLoaded ? 'ready' : 'loading'}`}
-            planData={currentPlanData}
-            onSave={savePlanData}
           />
         ) : null}
 
@@ -1443,9 +1431,9 @@ function App() {
           />
         ) : null}
 
-        {contentTab === 'dashboard' ? (
-          <Suspense fallback={<LoadingBlock title="正在加载仪表盘..." lines={2} />}>
-          <DashboardTab
+        {contentTab === 'analytics' ? (
+          <Suspense fallback={<LoadingBlock title="正在加载分析..." lines={2} />}>
+          <AnalyticsTab
             dashboardStats={dashboardStats}
             trendData={trendData}
             trainingPerformanceData={trainingPerformanceData}
@@ -1454,27 +1442,20 @@ function App() {
             showAllPerformanceLines={showAllPerformanceLines}
             twoWeekAdjustment={twoWeekAdjustment}
             weekendRisk={weekendRisk}
-            onTrendDaysChange={setTrendDays}
-            onTogglePerformanceLines={() => setShowAllPerformanceLines((value) => !value)}
-          />
-          </Suspense>
-        ) : null}
-
-        {contentTab === 'weekly' ? (
-          <WeeklyTab
             weeklySummary={weeklySummary}
             weeklyAnchorDate={weeklyAnchorDate}
             today={today}
-            twoWeekAdjustment={twoWeekAdjustment}
-            weekendRisk={weekendRisk}
             weeklyConclusionCard={weeklyConclusionCard}
             trendAlerts={trendAlerts}
             weeklyActionRecommendations={weeklyActionRecommendations}
             weekendCalorieUpperKcal={userPreference.weekendCalorieUpperKcal ?? defaultUserPreference.weekendCalorieUpperKcal}
             dailyLogs={dailyLogs}
+            onTrendDaysChange={setTrendDays}
+            onTogglePerformanceLines={() => setShowAllPerformanceLines((value) => !value)}
             onAnchorChange={setWeeklyAnchorDate}
             onExportWeek={() => openExportDialog('thisWeek', weeklyAnchorDate)}
           />
+          </Suspense>
         ) : null}
 
         {contentTab === 'admin' && currentUser?.role === 'admin' ? (
