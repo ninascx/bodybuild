@@ -21,11 +21,9 @@ export type DailyCheckInPanelProps = {
   onCopyYesterday: () => void
   onFillTarget: () => void
   onSyncWorkoutCompletion: () => void
-  onCompleteCommonRecord: () => void
   hasFillableTargetFields: boolean
   canSyncWorkoutCompletion: boolean
   workoutCompletionFromLog: number
-  canCompleteCommonRecord: boolean
 }
 
 

@@ -210,30 +210,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
     if (Object.keys(patch).length === 0) return
     props.onQuickAction(patch)
   }
-  const buildCommonRecordPatch = (): Partial<DailyLog> => {
-    const patch: Partial<DailyLog> = {}
-    if (props.selectedLog.morningWeightKg === undefined && yesterdayLog?.morningWeightKg !== undefined) {
-      patch.morningWeightKg = yesterdayLog.morningWeightKg
-    }
-    if (props.selectedLog.calories === undefined && calorieTarget !== undefined) patch.calories = calorieTarget
-    if (props.selectedLog.protein === undefined) patch.protein = props.selectedTarget.protein
-    if (props.selectedLog.steps === undefined) patch.steps = props.selectedTarget.stepTarget
-    if (props.selectedLog.sleepHours === undefined) patch.sleepHours = props.sleepFloorHours
-    if (props.selectedLog.trained === undefined) {
-      patch.trained = props.selectedTarget.isTrainingDay ? true : false
-      patch.workoutCompletion = props.selectedTarget.isTrainingDay ? (props.selectedLog.workoutCompletion ?? 0) : 0
-    }
-    if (workoutCompletionFromLog > 0 && (props.selectedLog.trained !== true || (props.selectedLog.workoutCompletion ?? 0) !== workoutCompletionFromLog)) {
-      patch.trained = true
-      patch.workoutCompletion = workoutCompletionFromLog
-    }
-    return patch
-  }
-  const completeCommonRecord = () => {
-    const patch = buildCommonRecordPatch()
-    if (Object.keys(patch).length === 0) return
-    props.onQuickAction(patch)
-  }
   const hasFillableTargetQuickFields =
     (props.selectedLog.calories === undefined && calorieTarget !== undefined) ||
     props.selectedLog.protein === undefined ||
@@ -244,7 +220,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
   const canSyncWorkoutCompletion =
     workoutCompletionFromLog > 0 &&
     (props.selectedLog.trained !== true || (props.selectedLog.workoutCompletion ?? 0) !== workoutCompletionFromLog)
-  const canCompleteCommonRecord = Object.keys(buildCommonRecordPatch()).length > 0
   const syncWorkoutCompletion = () => {
     if (!canSyncWorkoutCompletion) return
     props.onQuickAction({
@@ -299,11 +274,9 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         onCopyYesterday={copyYesterdayQuickFields}
         onFillTarget={fillTargetQuickFields}
         onSyncWorkoutCompletion={syncWorkoutCompletion}
-        onCompleteCommonRecord={completeCommonRecord}
         hasFillableTargetFields={hasFillableTargetQuickFields}
         canSyncWorkoutCompletion={canSyncWorkoutCompletion}
         workoutCompletionFromLog={workoutCompletionFromLog}
-        canCompleteCommonRecord={canCompleteCommonRecord}
       />
 
       <section className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/70">
