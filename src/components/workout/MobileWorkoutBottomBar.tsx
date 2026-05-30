@@ -57,7 +57,7 @@ export function MobileWorkoutBottomBar({
 }) {
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 shadow-2xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 shadow-lg backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
       style={{ transform: keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : undefined }}
     >
       {/* Rest timer — prominent when active */}
@@ -81,7 +81,7 @@ export function MobileWorkoutBottomBar({
       <div className="flex items-center gap-2 px-3 pt-2">
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-semibold text-slate-700 dark:text-slate-300">{exerciseName}</p>
-          <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+          <p className="truncate text-xs text-slate-500 dark:text-slate-400">
             第 {setIndex + 1} 组 · {currentSetStatus} · {workoutSummary.completionPercent}%
           </p>
         </div>
@@ -93,7 +93,7 @@ export function MobileWorkoutBottomBar({
       </div>
 
       {/* Main action buttons */}
-      <div className="grid grid-cols-[1fr_1.2fr_1.2fr] gap-2 px-3 pt-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+      <div className="grid grid-cols-[1fr_1.2fr_1.2fr] gap-2 px-3 pt-1.5 pb-1.5">
         <Button variant="secondary" className="min-h-12 px-2 text-xs" onClick={onPreviousExercise} disabled={!canGoPrevious}>
           上一动作
         </Button>
@@ -107,12 +107,12 @@ export function MobileWorkoutBottomBar({
 
       {/* Quick actions row */}
       <div className="flex items-center gap-2 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
-        <Button variant="secondary" className="flex-1 px-2 py-1.5 text-[11px]" onClick={onQuickFill} disabled={quickFillDisabled}>
+        <Button variant="secondary" className="flex-1 px-2 py-1.5 text-xs" onClick={onQuickFill} disabled={quickFillDisabled}>
           {quickFillLabel ?? '快速套用'}
         </Button>
       </div>
       {bottomCompletionHint ? (
-        <p className="px-3 pb-1 text-center text-[11px] text-slate-400 dark:text-slate-500">{bottomCompletionHint}</p>
+        <p className="px-3 pb-1 text-center text-xs text-slate-500 dark:text-slate-400">{bottomCompletionHint}</p>
       ) : null}
     </div>
   )

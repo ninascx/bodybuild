@@ -25,7 +25,7 @@ export function ThemeToggle({
       aria-label={`主题：${label}`}
       className="min-w-11 gap-1.5 px-3 shadow-none"
     >
-      <span aria-hidden="true" className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
+      <span aria-hidden="true" className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
         {shortLabel}
       </span>
       <span className="hidden sm:inline">主题</span>

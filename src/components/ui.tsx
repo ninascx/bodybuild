@@ -1,4 +1,4 @@
-import type { AriaRole, ReactNode } from 'react'
+import type { AriaRole, ReactNode, KeyboardEvent } from 'react'
 import type { RecommendationTone } from '../types'
 import { cn } from '../lib/cn'
 import { Button, Card, Badge, Field, TextInput, TextArea, Select, Checkbox, DisclosurePanel, DropdownMenu } from './ui/index'
@@ -253,17 +253,39 @@ export function SegmentedControl<T extends string>({
   options: Array<{ value: T; label: ReactNode; disabled?: boolean }>
   onChange: (value: T) => void
 }) {
+  const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>, currentValue: T) => {
+    const enabledOptions = options.filter((o) => !o.disabled)
+    const currentIndex = enabledOptions.findIndex((o) => o.value === currentValue)
+    let nextIndex: number | undefined
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault()
+      nextIndex = (currentIndex + 1) % enabledOptions.length
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      nextIndex = (currentIndex - 1 + enabledOptions.length) % enabledOptions.length
+    }
+    if (nextIndex !== undefined) {
+      onChange(enabledOptions[nextIndex].value)
+    }
+  }
+
   return (
-    <div className="inline-flex max-w-full flex-wrap rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
+    <div
+      role="radiogroup"
+      className="inline-flex max-w-full flex-wrap rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900"
+    >
       {options.map((option) => {
         const selected = value === option.value
         return (
           <button
             key={option.value}
             type="button"
-            aria-pressed={selected}
+            role="radio"
+            aria-checked={selected}
             disabled={option.disabled}
+            tabIndex={selected ? 0 : -1}
             onClick={() => onChange(option.value)}
+            onKeyDown={(e) => handleKeyDown(e, option.value)}
             className={cn(
               'min-h-11 min-w-11 cursor-pointer rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 disabled:cursor-not-allowed disabled:opacity-45 dark:focus-visible:ring-orange-600',
               selected

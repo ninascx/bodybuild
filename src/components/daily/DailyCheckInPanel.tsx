@@ -42,7 +42,7 @@ function DailyTrainingPanel({
     <div className="space-y-2">
       {/* Row 1: training kind + completion */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0 w-10">
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 shrink-0 w-10">
           {selectedTarget.isTrainingDay ? '训练日' : '休息日'}
         </span>
         <SegmentedControl
@@ -57,7 +57,7 @@ function DailyTrainingPanel({
             workoutCompletion: value === 'yes' ? selectedLog.workoutCompletion : 0,
           })}
         />
-        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">完成</span>
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">完成</span>
         <SegmentedControl
           value={selectedLog.workoutCompletion === undefined ? 'unset' : String(selectedLog.workoutCompletion)}
           options={[0, 50, 80, 100].map((value) => ({ value: String(value), label: `${value}%` }))}
@@ -70,14 +70,14 @@ function DailyTrainingPanel({
 
       {/* Row 2: fatigue + optional sync */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">疲劳 ≤{fatigueThreshold}</span>
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 shrink-0">疲劳 ≤{fatigueThreshold}</span>
         <SegmentedControl
           value={selectedLog.fatigueScore === undefined ? 'unset' : String(selectedLog.fatigueScore)}
           options={[0, 3, 5, 7, 9].map((value) => ({ value: String(value), label: String(value) }))}
           onChange={(value) => onQuickAction({ fatigueScore: Number(value) })}
         />
         {canSyncWorkoutCompletion ? (
-          <Button variant="secondary" className="text-[11px] shadow-none" onClick={onSyncWorkoutCompletion}>同步训练 {workoutCompletionFromLog}%</Button>
+          <Button variant="secondary" className="text-xs shadow-none" onClick={onSyncWorkoutCompletion}>同步训练 {workoutCompletionFromLog}%</Button>
         ) : null}
       </div>
     </div>
@@ -112,10 +112,10 @@ function DailyQuickTools({
   if (!yesterdayLog && !hasFillableTargetFields) return null
   return (
     <div className="flex flex-wrap gap-1.5">
-      <Button variant="secondary" className="text-[11px] shadow-none" disabled={!yesterdayLog} onClick={onCopyYesterday}>
+      <Button variant="secondary" className="text-xs shadow-none" disabled={!yesterdayLog} onClick={onCopyYesterday}>
         沿用昨天
       </Button>
-      <Button variant="secondary" className="text-[11px] shadow-none" disabled={!hasFillableTargetFields} onClick={onFillTarget}>
+      <Button variant="secondary" className="text-xs shadow-none" disabled={!hasFillableTargetFields} onClick={onFillTarget}>
         按目标补空
       </Button>
     </div>
@@ -133,7 +133,7 @@ function CompactStatusCard({ status }: { status: QuickStatus }) {
             : 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
       }`}
     >
-      <p className="text-[11px] font-medium opacity-75">{status.label}</p>
+      <p className="text-xs font-medium opacity-75">{status.label}</p>
       <p className="mt-0.5 truncate text-sm font-semibold tabular-nums">{status.value}</p>
     </div>
   )
@@ -146,13 +146,13 @@ function DailyStatusGrid({ statuses }: { statuses: QuickStatus[] }) {
   return (
     <div className="grid gap-3">
       <div>
-        <p className="mb-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">身体数据</p>
+        <p className="mb-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">身体数据</p>
         <div className="grid grid-cols-4 gap-1.5">
           {body.map((s) => <CompactStatusCard key={s.label} status={s} />)}
         </div>
       </div>
       <div>
-        <p className="mb-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">状态数据</p>
+        <p className="mb-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">状态数据</p>
         <div className="grid grid-cols-4 gap-1.5">
           {state.map((s) => <CompactStatusCard key={s.label} status={s} />)}
         </div>

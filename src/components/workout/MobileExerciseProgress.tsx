@@ -72,13 +72,13 @@ export function MobileExerciseProgressCard({
       </div>
 
       <div className="mt-2 flex items-center gap-1.5 overflow-x-auto pb-1">
-        <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+        <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
           本动作 {completedSetCount}/{exercise.sets.length}
         </span>
-        <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+        <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
           当前第 {currentSetIndex + 1} 组
         </span>
-        <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${
+        <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
           remainingSetCount === 0
             ? 'border-emerald-200 bg-white text-emerald-700 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-300'
             : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
@@ -91,11 +91,11 @@ export function MobileExerciseProgressCard({
         <DisclosurePanel
           className="mt-2 border-slate-200 bg-slate-50 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
           title={formatPreviousSummary(previousRecord)}
-          summaryClassName="text-[11px] font-medium text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-900"
+          summaryClassName="text-xs font-medium text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-900"
           contentClassName="border-slate-200 py-2 dark:border-slate-700"
         >
           {previousRecord.allSets?.length ? (
-            <p className="text-[11px] leading-5">
+            <p className="text-xs leading-5">
               {previousRecord.allSets.map((set, index) => {
                 const summary = formatSetSummary(set)
                 return summary ? `${index + 1}. ${summary}` : null
@@ -125,7 +125,7 @@ export function MobileExerciseProgressCard({
               )}
             >
               <span className="block">#{index + 1}</span>
-              <span className="mt-0.5 block truncate text-[11px] font-semibold">
+              <span className="mt-0.5 block truncate text-xs font-semibold">
                 {formatSetSummary(set) ?? '待填'}
               </span>
             </Button>

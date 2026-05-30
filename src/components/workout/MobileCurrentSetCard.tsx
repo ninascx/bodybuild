@@ -90,17 +90,17 @@ export function MobileCurrentSetCard({
       </div>
 
       {previousSameSetSummary ? (
-        <div className="mt-1.5 rounded-md border border-emerald-200 bg-white px-2 py-1 text-[11px] text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200">
+        <div className="mt-1.5 rounded-md border border-emerald-200 bg-white px-2 py-1 text-xs text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200">
           上次同组：<span className="font-semibold">{previousSameSetSummary}</span>
         </div>
       ) : copyRecordSummary ? (
-        <div className="mt-1.5 rounded-md border border-emerald-200 bg-white px-2 py-1 text-[11px] text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200">
+        <div className="mt-1.5 rounded-md border border-emerald-200 bg-white px-2 py-1 text-xs text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200">
           上次最佳：<span className="font-semibold">{copyRecordSummary}</span>
         </div>
       ) : null}
 
       {targetRange ? (
-        <p className={`mt-1 text-[11px] ${repsInTarget ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'}`}>
+        <p className={`mt-1 text-xs ${repsInTarget ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'}`}>
           {repsInTarget ? '✓ 已达标' : ''}
         </p>
       ) : null}

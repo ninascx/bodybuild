@@ -90,7 +90,7 @@ export function MiniCalendar({
     <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">最近 6 周</p>
-        <p className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+        <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
           <span className="inline-flex items-center gap-1">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" /> 已记录
           </span>
@@ -99,7 +99,7 @@ export function MiniCalendar({
           </span>
         </p>
       </div>
-      <div className="mt-2 grid grid-cols-7 gap-1 text-center text-[11px] text-slate-400 dark:text-slate-500">
+      <div className="mt-2 grid grid-cols-7 gap-1 text-center text-xs text-slate-400 dark:text-slate-500">
         {weekHeaders.map((label) => (
           <div key={label} className="py-0.5">
             {label}

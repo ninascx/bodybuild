@@ -241,7 +241,7 @@ export function TrainingTimerFloat({
             >
               {workoutReadyToConfirm ? '确认完成' : '结束训练'}
             </Button>
-            <p className="mt-1 text-center text-[11px] text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-center text-xs text-slate-500 dark:text-slate-400">
               {workoutReadyToConfirm ? '可同步完成' : remainingSetCount > 0 ? `剩 ${remainingSetCount} 组，可结束` : '可结束训练'}
             </p>
           </div>
