@@ -1,4 +1,4 @@
-import { Badge, Button, Field, SegmentedControl, TextArea } from '../ui'
+import { Button, Field, SegmentedControl, TextArea } from '../ui'
 import type { DailyLog, DailyTarget } from '../../types'
 import type { SyncState } from '../../lib/storage'
 import { DailyEssentialsForm } from './DailyEssentialsForm'
@@ -44,15 +44,16 @@ function DailyTrainingPanel({
 }: DailyCheckInPanelProps) {
   return (
     <div className="space-y-2">
-      {/* One-row training + fatigue */}
+      {/* Row 1: training kind + completion */}
       <div className="flex flex-wrap items-center gap-2">
-        {selectedTarget.isTrainingDay ? <Badge tone="positive">计划训练日</Badge> : <span className="text-xs font-medium text-slate-500 dark:text-slate-400">计划休息日</span>}
-
+        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0 w-10">
+          {selectedTarget.isTrainingDay ? '训练日' : '休息日'}
+        </span>
         <SegmentedControl
           value={selectedLog.trained === undefined ? 'unset' : selectedLog.trained ? 'yes' : 'no'}
           options={[
             { value: 'unset', label: '未填' },
-            { value: 'yes', label: '训练' },
+            { value: 'yes', label: '已训练' },
             { value: 'no', label: '休息' },
           ]}
           onChange={(value) => onQuickAction({
@@ -60,7 +61,7 @@ function DailyTrainingPanel({
             workoutCompletion: value === 'yes' ? selectedLog.workoutCompletion : 0,
           })}
         />
-
+        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">完成</span>
         <SegmentedControl
           value={selectedLog.workoutCompletion === undefined ? 'unset' : String(selectedLog.workoutCompletion)}
           options={[0, 50, 80, 100].map((value) => ({ value: String(value), label: `${value}%` }))}
@@ -69,31 +70,24 @@ function DailyTrainingPanel({
             workoutCompletion: Number(value),
           })}
         />
-
-        <span className="text-[11px] text-slate-500 dark:text-slate-400">疲劳≤{fatigueThreshold}</span>
-        <SegmentedControl
-          value={selectedLog.fatigueScore === undefined ? 'unset' : String(selectedLog.fatigueScore)}
-          options={[0, 3, 5, 7, 9].map((value) => ({ value: String(value), label: value }))}
-          onChange={(value) => onQuickAction({ fatigueScore: Number(value) })}
-        />
       </div>
 
-      {/* Quick action buttons */}
-      <div className="flex flex-wrap gap-1.5">
-        {!selectedTarget.isTrainingDay ? (
-          <Button variant="secondary" className="text-[11px] shadow-none" disabled={selectedLog.trained === false} onClick={onMarkRestDay}>
-            按计划休息
-          </Button>
+      {/* Row 2: fatigue + quick actions */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">疲劳 ≤{fatigueThreshold}</span>
+        <SegmentedControl
+          value={selectedLog.fatigueScore === undefined ? 'unset' : String(selectedLog.fatigueScore)}
+          options={[0, 3, 5, 7, 9].map((value) => ({ value: String(value), label: String(value) }))}
+          onChange={(value) => onQuickAction({ fatigueScore: Number(value) })}
+        />
+        {!selectedTarget.isTrainingDay && selectedLog.trained !== false ? (
+          <Button variant="secondary" className="text-[11px] shadow-none" onClick={onMarkRestDay}>按计划休息</Button>
         ) : null}
-        {selectedLog.trained === false || (!selectedTarget.isTrainingDay && selectedLog.trained !== true) ? (
-          <Button variant="secondary" className="text-[11px] shadow-none" onClick={onMarkTrainingStarted}>
-            记录加练
-          </Button>
+        {(selectedLog.trained === false || (!selectedTarget.isTrainingDay && selectedLog.trained !== true)) ? (
+          <Button variant="secondary" className="text-[11px] shadow-none" onClick={onMarkTrainingStarted}>记录加练</Button>
         ) : null}
         {canSyncWorkoutCompletion ? (
-          <Button variant="secondary" className="text-[11px] shadow-none" onClick={onSyncWorkoutCompletion}>
-            同步训练 {workoutCompletionFromLog}%
-          </Button>
+          <Button variant="secondary" className="text-[11px] shadow-none" onClick={onSyncWorkoutCompletion}>同步训练 {workoutCompletionFromLog}%</Button>
         ) : null}
       </div>
     </div>
