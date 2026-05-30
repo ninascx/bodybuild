@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "uimax": {
+      "command": "npx",
+      "args": ["-y", "uimax-mcp"]
+    }
+  }
+}
