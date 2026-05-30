@@ -30,7 +30,7 @@ function QuickValueButton({ label, onClick, disabled = false }: { label: string;
       variant="secondary"
       onClick={onClick}
       disabled={disabled}
-      className="min-h-11 rounded-md px-2.5 py-1 text-xs shadow-none"
+      className="min-h-8 rounded-md px-2 py-0.5 text-xs shadow-none"
     >
       {label}
     </Button>
