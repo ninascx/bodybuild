@@ -22,7 +22,7 @@ export function AdminUsersTab({ currentUser }: AdminUsersTabProps) {
       <FormPanel
         title="用户管理"
         description="创建昵称账户，管理登录状态、角色、密码和用户数据导出。"
-        badges={<Badge tone="neutral">{adminUsers.users.length} 个用户</Badge>}
+        badges={<span className="text-xs font-medium text-slate-500 dark:text-slate-400">{adminUsers.users.length} 个用户</span>}
         actions={
           <>
             <Button variant="secondary" className="px-3" onClick={() => void adminUsers.loadUsers()} loading={adminUsers.loadingUsers}>
@@ -61,7 +61,7 @@ export function AdminUsersTab({ currentUser }: AdminUsersTabProps) {
         <Card>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-semibold text-slate-950 dark:text-slate-50">账户列表</h3>
-            <Badge tone="neutral">{adminUsers.users.length} 个用户</Badge>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{adminUsers.users.length} 个用户</span>
           </div>
           <AdminUserList
             users={adminUsers.users}

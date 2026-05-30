@@ -138,7 +138,7 @@ export function PlanTab({ planData, onSave }: PlanTabProps) {
         description="这里只设置每天关联哪一个训练计划；动作内容和饮食目标不在这里单独填写。"
         badges={
           <>
-            <Badge tone="neutral">{trainingDayCount} 个训练日</Badge>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{trainingDayCount} 个训练日</span>
             {dirty ? <Badge tone="warning">未保存</Badge> : null}
           </>
         }
@@ -159,7 +159,7 @@ export function PlanTab({ planData, onSave }: PlanTabProps) {
       </FormPanel>
 
       <Card>
-        <FormSection title="每日训练关联" actions={<Badge tone="neutral">7 天</Badge>}>
+        <FormSection title="每日训练关联" actions={<span className="text-xs font-medium text-slate-500 dark:text-slate-400">7 天</span>}>
           {planCatalog.length === 0 ? (
             <EmptyState title="还没有可关联的训练计划" message="先使用默认计划，或在训练页创建/导入模板后再关联。" />
           ) : (

@@ -109,7 +109,7 @@ export function ProfileTab({ currentUser, preference, planData, onSavePreference
         description={currentUser.displayName}
         badges={
           <>
-            <Badge tone="neutral">@{currentUser.username}</Badge>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">@{currentUser.username}</span>
             {dirty ? <Badge tone="warning">未保存</Badge> : null}
           </>
         }

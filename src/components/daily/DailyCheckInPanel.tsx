@@ -135,9 +135,7 @@ function DailyTrainingPanel({
     <section className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900 sm:p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-base font-semibold text-slate-950 dark:text-slate-50">训练状态</h3>
-        <Badge tone={selectedTarget.isTrainingDay ? 'positive' : 'neutral'}>
-          {selectedTarget.isTrainingDay ? '计划训练日' : '计划休息日'}
-        </Badge>
+        {selectedTarget.isTrainingDay ? <Badge tone="positive">计划训练日</Badge> : <span className="text-xs font-medium text-slate-500 dark:text-slate-400">计划休息日</span>}
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
@@ -237,27 +235,17 @@ function StatusCard({ status }: { status: QuickStatus }) {
 }
 
 function DailyStatusDetails({ statuses }: { statuses: QuickStatus[] }) {
-  const bodyStatuses = [statuses[0]]
-  const nutritionStatuses = [statuses[1], statuses[2], statuses[3]]
-  const recoveryStatuses = [statuses[4], statuses[5]]
-  const trainingStatuses = [statuses[6], statuses[7]]
+  const bodyDataStatuses = [statuses[0], statuses[1], statuses[2], statuses[3]]
+  const stateDataStatuses = [statuses[4], statuses[5], statuses[6], statuses[7]]
 
   return (
     <div className="grid gap-3">
-      <DisclosurePanel className="bg-white dark:bg-slate-900" title="身体指标" contentClassName="grid gap-2">
-        {bodyStatuses.map((status) => <StatusCard key={status.label} status={status} />)}
+      <DisclosurePanel className="bg-white dark:bg-slate-900" title="身体数据" contentClassName="grid gap-2 sm:grid-cols-2">
+        {bodyDataStatuses.map((status) => <StatusCard key={status.label} status={status} />)}
       </DisclosurePanel>
 
-      <DisclosurePanel className="bg-white dark:bg-slate-900" title="营养摄入" contentClassName="grid gap-2 sm:grid-cols-3">
-        {nutritionStatuses.map((status) => <StatusCard key={status.label} status={status} />)}
-      </DisclosurePanel>
-
-      <DisclosurePanel className="bg-white dark:bg-slate-900" title="恢复状态" contentClassName="grid gap-2 sm:grid-cols-2">
-        {recoveryStatuses.map((status) => <StatusCard key={status.label} status={status} />)}
-      </DisclosurePanel>
-
-      <DisclosurePanel className="bg-white dark:bg-slate-900" title="训练执行" contentClassName="grid gap-2 sm:grid-cols-2">
-        {trainingStatuses.map((status) => <StatusCard key={status.label} status={status} />)}
+      <DisclosurePanel className="bg-white dark:bg-slate-900" title="状态数据" contentClassName="grid gap-2 sm:grid-cols-2">
+        {stateDataStatuses.map((status) => <StatusCard key={status.label} status={status} />)}
       </DisclosurePanel>
     </div>
   )

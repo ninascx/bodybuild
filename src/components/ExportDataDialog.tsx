@@ -412,12 +412,12 @@ export function ExportDataDialog({
           </section>
 
           <div className="flex flex-wrap gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
-            <Badge tone="neutral">{activeOutputLabel}</Badge>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{activeOutputLabel}</span>
             {countBadges.map((badge) => (
-              <Badge key={badge.label} tone={badge.active ? 'positive' : 'neutral'}>{badge.label}</Badge>
+              badge.active ? <Badge key={badge.label} tone="positive">{badge.label}</Badge> : <span key={badge.label} className="text-xs font-medium text-slate-500 dark:text-slate-400">{badge.label}</span>
             ))}
-            <Badge tone={options.slimMode ? 'positive' : 'neutral'}>{options.slimMode ? '精简' : '完整'}</Badge>
-            <Badge tone="neutral">约 {estimatedSize}</Badge>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{options.slimMode ? '精简' : '完整'}</span>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">约 {estimatedSize}</span>
           </div>
           {selectedContentLabels.length > 0 ? (
             <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">

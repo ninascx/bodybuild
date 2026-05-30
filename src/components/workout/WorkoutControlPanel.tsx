@@ -75,11 +75,9 @@ export function WorkoutControlPanel({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            {restDay ? <Badge tone="neutral">休息日</Badge> : <Badge tone={statusBadgeTone}>{statusBadgeLabel}</Badge>}
+            {restDay ? <span className="text-xs font-medium text-slate-500 dark:text-slate-400">休息日</span> : <Badge tone={statusBadgeTone}>{statusBadgeLabel}</Badge>}
             {!restDay && !hasWorkout ? (
-              <Badge tone={selectedTemplate?.source === 'custom' ? 'warning' : 'neutral'}>
-                {selectedTemplate?.source === 'custom' ? '自定义模板' : '内置计划'}
-              </Badge>
+              selectedTemplate?.source === 'custom' ? <Badge tone="warning">自定义模板</Badge> : <span className="text-xs font-medium text-slate-500 dark:text-slate-400">内置计划</span>
             ) : null}
           </div>
           <h2 className="mt-2 text-xl font-semibold text-slate-950 dark:text-slate-50 sm:text-2xl">

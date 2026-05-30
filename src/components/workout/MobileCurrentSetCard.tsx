@@ -81,12 +81,12 @@ export function MobileCurrentSetCard({
   }
 
   return (
-    <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-800">
+    <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
           第 {setIndex + 1} 组 {targetRange ? `· 目标 ${formatTargetRepRange(targetRange)}` : ''}
         </p>
-        <Badge tone={currentSetComplete ? 'positive' : 'neutral'}>{currentSetComplete ? '已填' : '待填'}</Badge>
+        {currentSetComplete ? <Badge tone="positive">已填</Badge> : <span className="text-xs font-medium text-slate-500 dark:text-slate-400">待填</span>}
       </div>
 
       {previousSameSetSummary ? (

@@ -62,9 +62,9 @@ export function AdminUserRow({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <p className="truncate font-semibold text-slate-950 dark:text-slate-50">{user.displayName}</p>
-            <Badge tone={user.role === 'admin' ? 'positive' : 'neutral'}>{user.role === 'admin' ? '管理员' : '普通用户'}</Badge>
+            {user.role === 'admin' ? <Badge tone="positive">管理员</Badge> : <span className="text-xs font-medium text-slate-500 dark:text-slate-400">普通用户</span>}
             <Badge tone={user.isActive ? 'positive' : 'danger'}>{user.isActive ? '启用' : '停用'}</Badge>
-            {isSelf ? <Badge tone="neutral">当前账号</Badge> : null}
+            {isSelf ? <span className="text-xs font-medium text-slate-500 dark:text-slate-400">当前账号</span> : null}
           </div>
           <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">@{user.username}</p>
           <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">创建于 {formatDateTime(user.createdAt)}</p>

@@ -193,7 +193,7 @@ function App() {
   const [userPreference, setUserPreference] = useState<UserPreference>(() => defaultUserPreference)
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(`builtin-${getDayKey(formatDateInput())}`)
   const [syncState, setSyncState] = useState<SyncState>('loading')
-  const [syncMessage, setSyncMessage] = useState('正在连接服务器数据文件...')
+  const [syncMessage, setSyncMessage] = useState('加载中...')
   const [savePending, setSavePending] = useState(false)
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null)
   const [autoRetryEnabled, setAutoRetryEnabled] = useState(false)
@@ -438,7 +438,7 @@ function App() {
       if (immediate) {
         flushPending()
       } else {
-        setSyncMessage('已记录，稍后同步')
+        setSyncMessage('已记录')
         debounceTimerRef.current = window.setTimeout(flushPending, 400)
       }
     },
@@ -527,7 +527,7 @@ function App() {
           setSyncState('offline')
           setLastSyncedAt(null)
           setAutoRetryEnabled(false)
-          setSyncMessage('请登录后同步数据')
+          setSyncMessage('请登录')
         }
       })
       .catch((error) => {
@@ -538,7 +538,7 @@ function App() {
         setSyncState('offline')
         setLastSyncedAt(null)
         setAutoRetryEnabled(false)
-        setSyncMessage('无法读取登录状态，请稍后重试。')
+        setSyncMessage('连接失败')
       })
 
     return () => {
@@ -583,16 +583,14 @@ function App() {
         // 本地已开始编辑，保留本地数据，避免服务器响应覆盖用户输入
         setSyncState((prev) => (prev === 'saving' ? prev : 'synced'))
         setSavePending(false)
-        setSyncMessage('已连接，保留本地编辑')
+        setSyncMessage('已连接')
         return
       }
       if (appResult.serverEmptyButLocalHasData) {
         setSyncState('offline')
         setSavePending(false)
         setAutoRetryEnabled(false)
-        setSyncMessage(
-          '检测到服务器数据为空，当前显示本地浏览器缓存。请先点击"导出"备份，再决定是否手动覆盖服务器。',
-        )
+        setSyncMessage('服务器数据为空，使用本地缓存')
         setDailyLogs(appResult.data.dailyLogs)
         setWorkoutLogs(appResult.data.workoutLogs)
         setWorkoutTemplates(appResult.data.workoutTemplates)
@@ -611,7 +609,7 @@ function App() {
         setSyncState('offline')
         setSavePending(false)
         setAutoRetryEnabled(true)
-        setSyncMessage('离线模式，使用缓存')
+        setSyncMessage('离线模式')
       }
     })
 
@@ -647,7 +645,7 @@ function App() {
     if (!currentUser) return
     setSyncState('saving')
     setSavePending(false)
-    setSyncMessage(mode === 'auto' ? '自动同步中...' : '重新同步中...')
+    setSyncMessage('同步中...')
     flushPending()
     try {
       const saved = await saveAppData(currentUser.id, { dailyLogs, workoutLogs, workoutTemplates })
@@ -656,7 +654,7 @@ function App() {
       setLastSyncedAt(new Date().toISOString())
       setSavePending(false)
       setAutoRetryEnabled(false)
-      setSyncMessage(mode === 'auto' ? '已自动同步' : '已同步')
+      setSyncMessage('已同步')
     } catch (error) {
       setSyncState('offline')
       setSavePending(false)

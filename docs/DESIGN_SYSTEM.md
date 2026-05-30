@@ -196,8 +196,8 @@
 ```css
 --radius-sm: 0.375rem;  /* 6px - 按钮、输入框 */
 --radius-md: 0.5rem;    /* 8px - 小卡片 */
---radius-lg: 0.75rem;   /* 12px - 主要卡片 */
---radius-xl: 1rem;      /* 16px - 大卡片（暂未使用）*/
+--radius-lg: 0.5rem;    /* 8px - 主要卡片 */
+--radius-xl: 0.75rem;   /* 12px - Hero 区块、EmptyState */
 --radius-full: 9999px;  /* 圆形 - Badge、头像 */
 ```
 

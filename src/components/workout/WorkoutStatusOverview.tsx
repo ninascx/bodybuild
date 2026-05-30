@@ -34,7 +34,7 @@ export function WorkoutStatusOverview({
         restDay ? null : (
           <div className="flex flex-wrap gap-2">
             {statusPrimaryLabel ? (
-              <Button className="min-h-12 px-6 text-base font-semibold shadow-md" onClick={onPrimaryAction}>
+              <Button className="min-h-12 px-6 text-base font-semibold" onClick={onPrimaryAction}>
                 {statusPrimaryLabel}
               </Button>
             ) : null}

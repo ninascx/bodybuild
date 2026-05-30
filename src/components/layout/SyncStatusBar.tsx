@@ -59,7 +59,7 @@ export function SyncStatusBar({
             {label}
           </span>
           {syncState === 'offline' ? (
-            <Button variant="secondary" className="min-h-10 px-3" onClick={onRetry}>
+            <Button variant="secondary" className="px-3" onClick={onRetry}>
               重试同步
             </Button>
           ) : null}

@@ -87,7 +87,7 @@ export function StatusHero({
   meta?: ReactNode
 }) {
   return (
-    <section className={cn('rounded-xl border p-4', toneAccentClasses[tone])}>
+    <section className={cn('rounded-lg border p-4', toneAccentClasses[tone])}>
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           {eyebrow ? <p className={cn('text-xs font-bold uppercase tracking-wide', toneSoftTextClasses[tone])}>{eyebrow}</p> : null}
@@ -170,7 +170,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'rounded-xl border border-dashed px-6 text-center',
+        'rounded-lg border border-dashed px-6 text-center',
         compact ? 'py-6' : 'py-10',
         toneAccentClasses[tone],
         className,
@@ -194,7 +194,7 @@ export function LoadingBlock({
 }) {
   return (
     <div
-      className={cn('rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900', className)}
+      className={cn('rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900', className)}
       aria-live="polite"
       aria-busy="true"
       role="status"

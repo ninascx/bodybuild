@@ -51,9 +51,7 @@ export function PlanAssociationList({
             <div className="min-w-0">
               <p className="font-semibold text-slate-950 dark:text-slate-50">{dayNames[day]}</p>
               <div className="mt-2">
-                <Badge tone={target.isTrainingDay ? 'positive' : 'neutral'}>
-                  {target.isTrainingDay ? '训练日' : '休息日'}
-                </Badge>
+                {target.isTrainingDay ? <Badge tone="positive">训练日</Badge> : <span className="text-xs font-medium text-slate-500 dark:text-slate-400">休息日</span>}
               </div>
             </div>
 

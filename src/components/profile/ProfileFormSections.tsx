@@ -113,7 +113,7 @@ export function PersonalizationSection({
   onToggleTrainingDay: (day: DayKey) => void
 }) {
   return (
-    <FormSection title="极简个性化配置" actions={<Badge tone="neutral">{trainingDayCount} 个训练日</Badge>}>
+    <FormSection title="极简个性化配置" actions={<span className="text-xs font-medium text-slate-500 dark:text-slate-400">{trainingDayCount} 个训练日</span>}>
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         <Field label="当前目标">
           <Select

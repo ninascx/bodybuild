@@ -15,7 +15,7 @@ export type DailyEssentialsFormProps = {
   onQuickAction: (patch: Partial<DailyLog>) => void
 }
 
-const quickFieldClass = 'h-12 text-base'
+const quickFieldClass = 'h-11 text-base'
 
 function getSaveLabel(syncState: SyncState, savePending: boolean, lastSyncedLabel: string) {
   if (savePending) return '待保存'

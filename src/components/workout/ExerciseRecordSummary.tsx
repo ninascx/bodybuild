@@ -67,7 +67,7 @@ export function ExerciseRecordHeader({
         ) : null}
       </div>
       <div className="flex flex-shrink-0 items-center gap-2 px-1 pb-1 sm:py-1">
-        <Badge tone={filledSets > 0 ? 'positive' : 'neutral'}>{filledSets}/{totalSets} 组</Badge>
+        {filledSets > 0 ? <Badge tone="positive">{filledSets}/{totalSets} 组</Badge> : <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{filledSets}/{totalSets} 组</span>}
         <span className="text-slate-400" aria-hidden="true">{collapsed ? '▾' : '▴'}</span>
       </div>
     </button>
