@@ -109,9 +109,7 @@ export function MobileCurrentExerciseView({
     bottomCompletionHint,
     currentSetStatus,
     keyboardHeight,
-    bottomBarExpanded,
     setCurrentSetIndex,
-    toggleBottomBarExpanded,
     updateCurrentSet,
     applyPatchToCurrentSet,
     handleCurrentSetAction,
@@ -224,7 +222,6 @@ export function MobileCurrentExerciseView({
         restActive={restActive}
         restSeconds={restSeconds}
         workoutSummary={workoutSummary}
-        expanded={bottomBarExpanded}
         keyboardHeight={keyboardHeight}
         bottomNextLabel={bottomNextLabel}
         bottomNextDisabled={bottomNextDisabled}
@@ -234,7 +231,6 @@ export function MobileCurrentExerciseView({
         canGoPrevious={currentExerciseIndex > 0}
         quickFillLabel={quickFillLabel}
         quickFillDisabled={!quickFillPatch || !currentSet}
-        onToggleExpanded={toggleBottomBarExpanded}
         onPreviousExercise={goToPreviousExercise}
         onNext={handleBottomNextAction}
         onPrimary={handleBottomPrimaryAction}

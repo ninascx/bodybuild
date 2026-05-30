@@ -25,7 +25,7 @@ export function DailySummaryStrip({ statuses }: { statuses: QuickStatus[] }) {
                   : 'text-slate-700 dark:text-slate-200'
             }`}
           >
-            <p className="truncate text-xs font-medium opacity-75">{status.label}</p>
+            <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">{status.label}</p>
             <p className="mt-1 truncate text-sm font-semibold tabular-nums">{status.value}</p>
           </div>
         ))}

@@ -90,7 +90,6 @@ export function useMobileExerciseSession({
   const [currentSetIndex, setCurrentSetIndex] = useState(() => firstIncompleteSetIndex(exercise))
   const [bulkFillCompleted, setBulkFillCompleted] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
-  const [bottomBarExpanded, setBottomBarExpanded] = useState(false)
 
   useEffect(() => {
     const handleResize = () => {
@@ -304,9 +303,7 @@ export function useMobileExerciseSession({
     bottomCompletionHint,
     currentSetStatus,
     keyboardHeight,
-    bottomBarExpanded,
     setCurrentSetIndex,
-    toggleBottomBarExpanded: () => setBottomBarExpanded((value) => !value),
     updateCurrentSet,
     applyPatchToCurrentSet,
     handleCurrentSetAction,

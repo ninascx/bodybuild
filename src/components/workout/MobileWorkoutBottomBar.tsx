@@ -10,7 +10,6 @@ export function MobileWorkoutBottomBar({
   restActive,
   restSeconds,
   workoutSummary,
-  expanded: _expanded,
   keyboardHeight,
   bottomNextLabel,
   bottomNextDisabled,
@@ -20,7 +19,6 @@ export function MobileWorkoutBottomBar({
   canGoPrevious,
   quickFillLabel,
   quickFillDisabled,
-  onToggleExpanded: _onToggleExpanded,
   onPreviousExercise,
   onNext,
   onPrimary,
@@ -36,7 +34,6 @@ export function MobileWorkoutBottomBar({
   restActive: boolean
   restSeconds: number
   workoutSummary: WorkoutSummary
-  expanded: boolean
   keyboardHeight: number
   bottomNextLabel: string
   bottomNextDisabled: boolean
@@ -46,7 +43,6 @@ export function MobileWorkoutBottomBar({
   canGoPrevious: boolean
   quickFillLabel: string | null
   quickFillDisabled: boolean
-  onToggleExpanded: () => void
   onPreviousExercise: () => void
   onNext: () => void
   onPrimary: () => void
