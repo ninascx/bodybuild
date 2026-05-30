@@ -277,12 +277,6 @@ export function DailyCheckInPanel(props: DailyCheckInPanelProps) {
 
   return (
     <div className="grid gap-3 sm:gap-4">
-      <TodayGapPanel
-        items={checkItems}
-        primaryActionLabel={primaryActionLabel}
-        canCompleteCommonRecord={props.canCompleteCommonRecord}
-        onCompleteCommonRecord={props.onCompleteCommonRecord}
-      />
       <DailyEssentialsForm {...props} />
       <DailySummaryStrip statuses={props.quickStatuses} />
       <DailyTrainingPanel {...props} />
