@@ -12,7 +12,7 @@ export function DailySummaryStrip({ statuses }: { statuses: QuickStatus[] }) {
   const summaryStatuses = sortSummaryStatuses(statuses)
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-800/70">
+    <section className="hidden rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-800/70 lg:block">
       <div className="grid grid-cols-3 gap-2">
         {summaryStatuses.map((status) => (
           <div
