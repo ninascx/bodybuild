@@ -179,12 +179,16 @@ function DailyStatusDetails({ statuses }: { statuses: QuickStatus[] }) {
 
 export function DailyCheckInPanel(props: DailyCheckInPanelProps) {
   return (
-    <div className="grid gap-3 sm:gap-4">
-      <DailyEssentialsForm {...props} />
-      <DailySummaryStrip statuses={props.quickStatuses} />
-      <DailyTrainingPanel {...props} />
-      <DailyUtilitiesPanel {...props} />
-      <DailyStatusDetails statuses={props.quickStatuses} />
+    <div className="grid gap-3 sm:gap-4 lg:grid-cols-[1fr_minmax(16rem,20rem)]">
+      <div className="grid gap-3 sm:gap-4">
+        <DailyEssentialsForm {...props} />
+        <DailyTrainingPanel {...props} />
+        <DailyStatusDetails statuses={props.quickStatuses} />
+      </div>
+      <div className="grid gap-3 sm:gap-4 lg:pt-0">
+        <DailySummaryStrip statuses={props.quickStatuses} />
+        <DailyUtilitiesPanel {...props} />
+      </div>
     </div>
   )
 }
