@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Button } from './ui'
 
 export interface ConfirmOptions {
@@ -13,11 +13,6 @@ interface ConfirmRequest extends ConfirmOptions {
   resolve: (value: boolean) => void
 }
 
-const dangerButtonClass =
-  'inline-flex min-h-11 min-w-0 items-center justify-center rounded-md bg-rose-600 px-4 py-2 text-center text-sm font-medium leading-5 text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-rose-500 dark:hover:bg-rose-400'
-const primaryButtonClass =
-  'inline-flex min-h-11 min-w-0 items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-center text-sm font-medium leading-5 text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-400'
-
 /**
  * Hook：返回 confirm(options) 函数和需要渲染的 dialog 节点。
  * 用法：const { confirm, dialog } = useConfirm()
@@ -26,11 +21,16 @@ const primaryButtonClass =
  */
 export function useConfirm() {
   const [request, setRequest] = useState<ConfirmRequest | null>(null)
+  const titleId = useId()
+  const descriptionId = useId()
   const dialogRef = useRef<HTMLDialogElement | null>(null)
   const confirmButtonRef = useRef<HTMLButtonElement | null>(null)
+  const cancelButtonRef = useRef<HTMLButtonElement | null>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
 
   const confirm = useCallback((options: ConfirmOptions) => {
     return new Promise<boolean>((resolve) => {
+      previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
       setRequest({ ...options, resolve })
     })
   }, [])
@@ -41,9 +41,13 @@ export function useConfirm() {
     if (!dialog) return
     if (request && !dialog.open) {
       dialog.showModal()
-      // 默认聚焦到 confirm 按钮：用 rAF 把焦点从 dialog 自身移走。
+      // 用 rAF 把焦点从 dialog 自身移走；危险操作优先聚焦取消，避免误触确认。
       window.requestAnimationFrame(() => {
-        confirmButtonRef.current?.focus()
+        if (request.tone === 'danger') {
+          cancelButtonRef.current?.focus()
+        } else {
+          confirmButtonRef.current?.focus()
+        }
       })
     } else if (!request && dialog.open) {
       dialog.close()
@@ -56,6 +60,10 @@ export function useConfirm() {
       if (!current) return
       setRequest(null)
       current.resolve(value)
+      window.requestAnimationFrame(() => {
+        previousFocusRef.current?.focus()
+        previousFocusRef.current = null
+      })
     },
     [request],
   )
@@ -81,28 +89,29 @@ export function useConfirm() {
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
+      aria-labelledby={request?.title ? titleId : undefined}
+      aria-describedby={descriptionId}
       className="m-auto w-[min(420px,calc(100vw-2rem))] rounded-lg border border-slate-200 bg-white p-0 text-slate-900 shadow-xl backdrop:bg-slate-900/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:backdrop:bg-black/60"
     >
       {request ? (
         <div className="p-5">
           {request.title ? (
-            <h2 className="text-base font-semibold text-slate-950 dark:text-slate-50">{request.title}</h2>
+            <h2 id={titleId} className="text-base font-semibold text-slate-950 dark:text-slate-50">{request.title}</h2>
           ) : null}
-          <p className={`text-sm leading-6 text-slate-700 dark:text-slate-300 ${request.title ? 'mt-2' : ''}`}>
+          <p id={descriptionId} className={`text-sm leading-6 text-slate-700 dark:text-slate-300 ${request.title ? 'mt-2' : ''}`}>
             {request.message}
           </p>
           <div className="mt-5 flex flex-wrap justify-end gap-2">
-            <Button variant="secondary" onClick={() => handleAnswer(false)}>
+            <Button ref={cancelButtonRef} variant="secondary" onClick={() => handleAnswer(false)}>
               {request.cancelLabel ?? '取消'}
             </Button>
-            <button
-              type="button"
+            <Button
               ref={confirmButtonRef}
+              variant={request.tone === 'danger' ? 'danger' : 'primary'}
               onClick={() => handleAnswer(true)}
-              className={request.tone === 'danger' ? dangerButtonClass : primaryButtonClass}
             >
               {request.confirmLabel ?? '确定'}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

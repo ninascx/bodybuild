@@ -94,7 +94,7 @@ export function NumberField({
       : '请输入有效数字'
 
   return (
-    <Field label={label}>
+    <Field label={label} error={outOfRange ? rangeHint : undefined}>
       <TextInput
         type="text"
         inputMode={inputMode}
@@ -108,7 +108,6 @@ export function NumberField({
         className={`${outOfRange ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-100 dark:border-rose-500 dark:focus:border-rose-400 dark:focus:ring-rose-900/40' : ''} ${className ?? ''}`}
         onChange={(event) => handleChange(event.target.value)}
       />
-      {outOfRange ? <p className="text-xs text-rose-600 dark:text-rose-400">{rangeHint}</p> : null}
     </Field>
   )
 }

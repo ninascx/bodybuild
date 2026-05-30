@@ -1,0 +1,480 @@
+# Frontend Refactor Tracker
+
+> Last updated: 2026-05-30
+
+This document is the persistent source of truth for the multi-turn frontend refactor. Before continuing future iterations, read this file together with `PRODUCT.md`.
+
+## Objective
+
+Refactor the current frontend into a more release-ready product interface while preserving existing business logic, API formats, data structures, routing behavior, and core workflows.
+
+## Non-negotiables
+
+- Preserve existing backend API contracts.
+- Preserve current tab/session behavior.
+- Preserve auth, daily records, workout, profile, plan, dashboard, weekly report, admin, export, and PWA flows.
+- Do not remove features to simplify the UI.
+- Do not introduce large unnecessary dependencies.
+- Keep TypeScript, lint, tests, and production build passing.
+- Verify meaningful UI changes in the local browser when possible.
+
+## UX Guardrails
+
+`ui-ux-pro-max` is part of the ongoing UI/UX quality bar for this refactor. Its local helper script was not available in this environment, so future iterations should apply the documented rules directly:
+
+- Preserve WCAG-minded contrast, visible focus states, semantic controls, and clear labels for interactive UI.
+- Keep primary touch targets at 44px or larger with enough spacing for mobile use.
+- Avoid horizontal overflow, fixed-width layouts that break small screens, and hover-only affordances.
+- Use shared design primitives for buttons, cards, forms, feedback, and status states instead of one-off styling.
+- Keep loading, empty, error, disabled, hover, active, and reduced-motion states explicit.
+- Match the product register in `PRODUCT.md`: calm, precise, structured, and not a generic fitness marketing template.
+
+## Acceptance Criteria
+
+- The UI looks intentionally redesigned, not merely recolored.
+- Visual system is consistent across layout, cards, buttons, forms, status messages, loading, empty, and error states.
+- Shared components replace repeated page-level UI patterns.
+- Page files are easier to scan and maintain.
+- Existing functionality is not regressed.
+- Mobile, tablet, and desktop layouts remain usable.
+- Build, lint, typecheck, and existing tests pass.
+- No obvious console errors beyond expected local backend-offline warnings.
+- No obvious layout overflow or incoherent overlap.
+- Final summary explains changed files, rationale, validation, and remaining opportunities.
+
+## Current Completed Work
+
+- Initial audit and refactor plan were produced before implementation.
+- App shell was extracted:
+  - `src/components/layout/LoginScreen.tsx`
+  - `src/components/layout/AppShell.tsx`
+  - `src/components/layout/MainNavigation.tsx`
+  - `src/components/layout/SyncStatusBar.tsx`
+- Shared UI primitives were expanded:
+  - `src/components/ui/Button.tsx`
+  - `src/components/ui/Card.tsx`
+  - `src/components/ui/Input.tsx`
+  - `src/components/ui/Select.tsx`
+  - `src/components/ui/Checkbox.tsx`
+  - `src/components/ui.tsx`
+  - `src/lib/cn.ts`
+- Toast and confirmation flows were unified:
+  - `src/components/Toast.tsx`
+  - `src/components/ToastContainer.tsx`
+  - `src/components/ConfirmDialog.tsx`
+- Daily record page was partially decomposed:
+  - `src/components/QuickRecordSection.tsx`
+  - `src/components/DailyRecordSkeleton.tsx`
+  - `src/components/daily/DailyRecordPanels.tsx`
+  - `src/tabs/DailyRecordTab.tsx`
+- Data safety fix was added:
+  - Daily measurement sync now fetches the full profile before saving merged measurement fields, avoiding partial profile PUT data loss.
+- Product context was added:
+  - `PRODUCT.md`
+- Reduced-motion fallback was added in `src/index.css`.
+- PWA prompts, toast styling, and training feedback controls were made more consistent.
+- Admin user management was partially decomposed:
+  - `src/components/admin/AdminUserPanels.tsx`
+  - `src/tabs/AdminUsersTab.tsx`
+  - Service health, create-user form, account list, and selected-user data summary now use focused components while the tab keeps data loading and mutation flows.
+- Workout date controls were standardized:
+  - `src/components/workout/WorkoutDateControls.tsx`
+  - `src/components/workout/WorkoutControlPanel.tsx`
+  - The raw date input and small previous/today/next buttons now use shared field/input/button primitives with 44px-friendly touch targets.
+- Workout set quick controls were extracted:
+  - `src/components/workout/WorkoutSetQuickControls.tsx`
+  - `src/components/workout/ExerciseRecordCard.tsx`
+  - Weight step buttons, target-rep shortcuts, and RIR selection now share focused workout components with 44px-friendly hit areas and consistent focus states.
+- Mobile workout mode now reuses workout quick controls:
+  - `src/components/workout/MobileCurrentExerciseView.tsx`
+  - `src/components/workout/WorkoutSetQuickControls.tsx`
+  - Mobile target-rep shortcuts, weight step controls, and RIR buttons now share the same touch-friendly primitives as desktop exercise cards while preserving mobile labels.
+- Mobile workout bottom bar was extracted:
+  - `src/components/workout/MobileWorkoutBottomBar.tsx`
+  - `src/components/workout/MobileCurrentExerciseView.tsx`
+  - Sticky bottom actions, rest timer controls, safe-area padding, and quick-fill/rest actions now live in a focused component with shared button primitives.
+- Mobile current-set recording was extracted:
+  - `src/components/workout/MobileCurrentSetCard.tsx`
+  - `src/components/workout/MobileCurrentExerciseView.tsx`
+  - Weight/reps inputs, target-rep shortcuts, RIR, quick-fill, more actions, bulk fill, and auto-rest controls now live in a focused component with shared 44px-friendly controls.
+- Mobile exercise progress display was extracted:
+  - `src/components/workout/MobileExerciseProgress.tsx`
+  - `src/components/workout/MobileCurrentExerciseView.tsx`
+  - Sticky training-mode header, current exercise summary, progress chips, previous-record disclosure, and set selector chips now live in focused mobile presentation components with 44px-friendly controls and visible focus states.
+- Mobile workout session state was extracted:
+  - `src/components/workout/useMobileExerciseSession.ts`
+  - `src/components/workout/MobileCurrentExerciseView.tsx`
+  - Current-set selection, visual viewport keyboard offset, quick-fill source selection, bulk-fill completion, next-set/next-exercise routing, finish actions, and bottom-bar labels now live in a focused hook while the view stays closer to rendering orchestration.
+- Workout control panel display sections were extracted:
+  - `src/components/workout/WorkoutPlanPreview.tsx`
+  - `src/components/workout/WorkoutMetrics.tsx`
+  - `src/components/workout/WorkoutControlPanel.tsx`
+  - Plan preview and workout metric display are now presentation components while the control panel keeps date/template actions and soft-controlled preview state.
+- Desktop exercise record editing was decomposed:
+  - `src/components/workout/ExerciseSetEditor.tsx`
+  - `src/components/workout/ExerciseRecordActions.tsx`
+  - `src/components/workout/ExerciseRecordCard.tsx`
+  - Per-set inputs, previous-record hints, RIR controls, bulk set actions, and exercise edit controls are now focused components with shared button primitives and clearer destructive styling.
+- Exercise record summary display was decomposed:
+  - `src/components/workout/ExerciseRecordSummary.tsx`
+  - `src/components/workout/workoutRecordFormat.ts`
+  - `src/components/workout/ExerciseRecordCard.tsx`
+  - Exercise card headers, PR/volume/previous-record summaries, collapse affordance, and previous-set details now live outside the main card orchestration with 44px-friendly focusable headers.
+- Workout page status and toolbar sections were extracted:
+  - `src/components/workout/WorkoutStatusOverview.tsx`
+  - `src/components/workout/WorkoutRecordToolbar.tsx`
+  - `src/tabs/WorkoutTab.tsx`
+  - Top-level training state, summary metrics, primary status action, training-mode toggle, unfinished filter, add-exercise action, and collapse-mode control now live in focused presentation components.
+- Workout session actions were extracted:
+  - `src/components/workout/WorkoutSessionActions.tsx`
+  - `src/tabs/WorkoutTab.tsx`
+  - Mobile training entry actions, unfinished/jump shortcuts, more-actions disclosure, workout name editing, export/save-template actions, and workout notes now use a focused component group with shared 44px-friendly buttons and form primitives.
+- Profile page form sections were decomposed:
+  - `src/components/profile/ProfileFormSections.tsx`
+  - `src/tabs/ProfileTab.tsx`
+  - Basic profile, body measurements, goals, personalization controls, training-day toggles, and save footer are now presentation components while `ProfileTab` keeps profile loading, dirty state, preference/plan draft state, and save orchestration.
+- Admin user rows were decomposed:
+  - `src/components/admin/AdminUserRow.tsx`
+  - `src/components/admin/AdminUserPanels.tsx`
+  - Account row identity, role/login controls, password reset, export/default-plan actions, and destructive clear-data action now live in a focused row component while the list component keeps loading/empty states and callback mapping.
+- Checkbox touch targets were aligned with the shared 44px control baseline:
+  - `src/components/ui/Checkbox.tsx`
+- Plan day association rows were extracted:
+  - `src/components/plan/PlanAssociationList.tsx`
+  - `src/tabs/PlanTab.tsx`
+  - Daily training/rest status, plan summary text, selected-plan matching, and the shared select control now live in a focused presentation component while `PlanTab` keeps save orchestration and plan-draft updates.
+- Profile draft state was extracted:
+  - `src/components/profile/useProfileDraft.ts`
+  - `src/tabs/ProfileTab.tsx`
+  - Profile/preference/plan draft state, average target calculations, goal defaults, weekend calorie range handling, training-day toggles, and save-reset behavior now live in a focused hook while `ProfileTab` keeps loading, save orchestration, and feedback rendering.
+- Admin user side-effect helpers were extracted:
+  - `src/components/admin/adminUserActions.ts`
+  - `src/tabs/AdminUsersTab.tsx`
+  - Clipboard fallback, login credential text, password generation, latest data date, SQLite backup result text, and scoped export/download/copy branching now live outside the tab component while `AdminUsersTab` keeps user selection, mutation orchestration, dialog state, and feedback rendering.
+- Workout session state was extracted:
+  - `src/components/workout/useWorkoutSessionState.ts`
+  - `src/tabs/WorkoutTab.tsx`
+  - Training-mode state, effective mode derivation, timer wrappers, rest controls, current/suggested exercise navigation, unfinished-filter sync, completion toast timing, and set-completion/rest-start behavior now live in a focused hook while `WorkoutTab` stays closer to page composition.
+- Shared state feedback components were refined:
+  - `src/components/ui.tsx`
+  - `src/components/workout/WorkoutTemplateManager.tsx`
+  - `src/tabs/WorkoutTab.tsx`
+  - `EmptyState` now supports tone, compact density, class names, and action slots; `LoadingBlock` now exposes `role="status"` and `aria-busy`; workout template import/export feedback now uses the shared form status stack and loading buttons; workout empty states now keep their recovery action inside the shared empty-state pattern.
+- Global fallback and install/update feedback were aligned:
+  - `src/components/ErrorBoundary.tsx`
+  - `src/components/PWAInstallPrompt.tsx`
+  - `src/components/PWAUpdatePrompt.tsx`
+  - `src/components/ThemeToggle.tsx`
+  - The crash fallback now uses shared `Card`, `Button`, and `StatusMessage` primitives with clearer recovery order and 44px-friendly actions; PWA install/update prompts now use shared buttons; structural emoji labels were removed from the PWA prompts and theme toggle while preserving accessible labels.
+- Export dialog controls were aligned with shared primitives:
+  - `src/components/ui.tsx`
+  - `src/components/ExportDataDialog.tsx`
+  - `SegmentedControl` now supports disabled options; export range and output-format selectors now use the shared segmented control instead of one-off button groups; export warnings now use `StatusMessage`; the final export action uses the shared button loading state.
+- Toast feedback was made more touch-friendly and accessible:
+  - `src/components/Toast.tsx`
+  - `src/components/ToastContainer.tsx`
+  - Toast close actions now use the shared `Button` primitive with a 44px-friendly target and visible text; toast messages now expose `status`/`alert` roles with appropriate live-region priority; the toast stack now has a labelled region for assistive technology.
+- Daily quick-record controls were aligned with shared interaction primitives:
+  - `src/components/QuickRecordSection.tsx`
+  - Quick value shortcuts now use the shared `Button` primitive; trained/completion/fatigue selectors now use the shared `SegmentedControl`; the high-frequency daily check-in controls keep their existing patch behavior while moving closer to the 44px-friendly shared control baseline.
+- Training-mode floating controls and exercise jump navigation were standardized:
+  - `src/components/workout/TrainingHeader.tsx`
+  - `src/components/workout/ExerciseQuickJumpStrip.tsx`
+  - Training timer collapse/expand, rest controls, finish/exit actions, auto-rest toggle, and exercise jump chips now use shared `Button`/`Checkbox` primitives with consistent focus, disabled, hover, and 44px-friendly touch behavior.
+- Workout set quick controls now use shared button primitives:
+  - `src/components/workout/WorkoutSetQuickControls.tsx`
+  - Weight step controls, target-rep shortcuts, and RIR selectors now share the same `Button` base while preserving existing selected/unselected tone logic across desktop set editing and mobile current-set recording.
+- Mini calendar date controls were aligned with shared interaction primitives:
+  - `src/components/MiniCalendar.tsx`
+  - Recent-day date cells now use the shared `Button` primitive with 44px-friendly touch height, visible focus behavior, disabled future-date semantics, and preserved daily/workout status indicators.
+- Workout record toolbar filtering was aligned with shared segmented controls:
+  - `src/components/workout/WorkoutRecordToolbar.tsx`
+  - The all-actions vs. unfinished-only filter now uses the shared `SegmentedControl` primitive with preserved disabled logic, selected state, and 44px-friendly interaction behavior.
+- Custom workout template exercise deletion now uses shared button primitives:
+  - `src/components/workout/CustomTemplateCard.tsx`
+  - Per-exercise delete actions now use the shared `Button` ghost variant, keep existing aria labels and disabled behavior, and reserve a 44px-friendly action column in the template exercise grid.
+- Profile and global utility controls were further aligned with shared button primitives:
+  - `src/components/profile/ProfileFormSections.tsx`
+  - `src/tabs/DashboardTab.tsx`
+  - `src/components/ThemeToggle.tsx`
+  - Profile training-day toggles, dashboard performance-line switching, and the global theme toggle now reuse the shared `Button` baseline with preserved pressed/label behavior and 44px-friendly targets.
+- Chart and weekly feedback states were aligned with shared status primitives:
+  - `src/components/ChartCard.tsx`
+  - `src/tabs/WeeklyTab.tsx`
+  - Empty chart panels now use the shared `EmptyState` pattern, and weekly suggestion rows now use `StatusMessage` tones instead of page-local status color assembly.
+- Admin user orchestration was extracted into a focused hook:
+  - `src/components/admin/useAdminUsers.ts`
+  - `src/tabs/AdminUsersTab.tsx`
+  - User loading, service health, create-user form state, account mutations, password reset, backup, export-dialog state, selected-user data loading, default-plan cloning, and destructive clear-data confirmation now live in `useAdminUsers`; `AdminUsersTab` now focuses on page composition and component wiring.
+- Workout status derivation was extracted into a focused model helper:
+  - `src/components/workout/workoutStatusModel.ts`
+  - `src/tabs/WorkoutTab.tsx`
+  - `src/components/workout/WorkoutStatusOverview.tsx`
+  - `src/components/workout/WorkoutSessionActions.tsx`
+  - Top-level workout status, record badge text/tone, completion hint, desktop primary action label, and mobile primary action label now live outside `WorkoutTab`, removing duplicate label logic while preserving existing workout behavior.
+- Workout control panel template selection and sync badge styling were tightened:
+  - `src/components/workout/WorkoutPlanPicker.tsx`
+  - `src/components/workout/WorkoutControlPanel.tsx`
+  - `src/components/ui/Badge.tsx`
+  - The template picker now lives in a focused component reused for start and change-plan flows; `Badge` now supports class names so sync status can use the shared tone primitive instead of custom status class assembly.
+- Shared disclosure panels were introduced for workout progressive-disclosure surfaces:
+  - `src/components/ui/DisclosurePanel.tsx`
+  - `src/components/ui.tsx`
+  - `src/components/ui/index.ts`
+  - `src/components/workout/WorkoutPlanPreview.tsx`
+  - `src/components/workout/WorkoutControlPanel.tsx`
+  - `src/components/workout/WorkoutSessionActions.tsx`
+  - Plan preview, change-plan, and more-actions sections now share a native details/summary wrapper with consistent 44px summary height, focus ring, border treatment, and expand chevron.
+- Additional workout disclosure surfaces were aligned with the shared panel pattern:
+  - `src/components/workout/ExerciseRecordActions.tsx`
+  - `src/components/workout/ExerciseRecordSummary.tsx`
+  - `src/components/workout/MobileCurrentSetCard.tsx`
+  - `src/components/workout/MobileExerciseProgress.tsx`
+  - Desktop exercise editing, previous-set details, mobile current-set more actions, and mobile previous-record details now reuse `DisclosurePanel`; the mobile auto-rest toggle now uses the shared `Checkbox` primitive.
+- Remaining content disclosure panels were consolidated around `DisclosurePanel`:
+  - `src/components/daily/DailyRecordPanels.tsx`
+  - `src/components/DailyRecordSkeleton.tsx`
+  - `src/components/ExportDataDialog.tsx`
+  - `src/components/TipsDetails.tsx`
+  - `src/components/workout/CustomTemplateCard.tsx`
+  - `src/components/workout/WorkoutTemplateManager.tsx`
+  - Daily secondary panels, loading skeleton calendar placeholder, export advanced/preview panels, generic tips, custom template editors, and template import/export tools now share the same 44px-friendly summary, focus ring, border rhythm, and expand chevron. `AppShell` keeps its native details usage because it behaves as a compact account/menu dropdown rather than a content panel.
+- App shell menu behavior was extracted into a dedicated shared dropdown primitive:
+  - `src/components/ui/DropdownMenu.tsx`
+  - `src/components/ui/index.ts`
+  - `src/components/ui.tsx`
+  - `src/components/layout/AppShell.tsx`
+  - The header "more" menu now uses a button-triggered dropdown with `aria-expanded`, `aria-haspopup="menu"`, Escape close, outside-click close, shared button states, and a danger tone for logout. Page-level raw `details/summary` usage has been removed; native `details` now only lives inside `DisclosurePanel`.
+- Form page card/header/status scaffolding was consolidated:
+  - `src/components/FormPanel.tsx`
+  - `src/tabs/ProfileTab.tsx`
+  - `src/tabs/PlanTab.tsx`
+  - `src/tabs/AdminUsersTab.tsx`
+  - Profile, plan, and admin top-level cards now use the shared `FormPanel` wrapper for card surface, header, badges, actions, status stack, and content spacing while preserving their existing save/load/admin workflows.
+- Mobile workout empty-state handling was aligned:
+  - `src/components/workout/MobileCurrentExerciseView.tsx`
+  - The no-exercise state in mobile training mode now uses the shared `EmptyState` component with preserved add-exercise and return actions, keeping empty-state density, borders, text hierarchy, and action layout consistent with the rest of the app.
+- Mobile workout set selector chips were aligned with shared button behavior:
+  - `src/components/workout/MobileExerciseProgress.tsx`
+  - The mobile training set selector now uses the shared `Button` primitive with preserved pill styling and adds `aria-pressed` for the current set, reducing one-off button code while keeping the horizontal set navigation behavior.
+- Main navigation tabs were aligned with shared button behavior:
+  - `src/components/layout/MainNavigation.tsx`
+  - The sticky top tab navigation now uses the shared `Button` primitive while preserving horizontal scrolling and active/inactive styling; the active tab exposes `aria-current="page"` for clearer assistive-state semantics.
+- Specialized workout expand/collapse triggers were made more explicit:
+  - `src/components/workout/ExerciseRecordSummary.tsx`
+  - `src/components/workout/MobileWorkoutBottomBar.tsx`
+  - The desktop exercise-card header toggle and mobile training bottom-bar handle remain custom trigger buttons because of their layout roles, but now expose explicit `aria-label` text for expanding/collapsing the relevant workout surface.
+- Dropdown keyboard recovery was tightened:
+  - `src/components/ui/DropdownMenu.tsx`
+  - Escape now closes the menu and returns focus to the trigger, preserving keyboard users' navigation position after dismissing the account menu. Opening the menu also moves focus to the first enabled menu item, Arrow Up/Down and Home/End navigate enabled items, and the menu closes when keyboard focus leaves the menu container.
+- Dynamic status feedback semantics were strengthened:
+  - `src/components/ui.tsx`
+  - `src/components/FormPanel.tsx`
+  - `src/components/layout/LoginScreen.tsx`
+  - `src/components/layout/SyncStatusBar.tsx`
+  - `src/components/ErrorBoundary.tsx`
+  - `StatusMessage` now supports opt-in live-region semantics. Login errors, form success/error/warning messages, sync/offline/copy feedback, and error-boundary recovery messages can now be announced to assistive technology while static recommendation/status content stays quiet.
+- Field helper and error semantics were standardized:
+  - `src/components/ui/Field.tsx`
+  - `src/components/NumberField.tsx`
+  - `src/components/layout/LoginScreen.tsx`
+  - `src/components/plan/PlanAssociationList.tsx`
+  - `src/components/workout/WorkoutTemplateManager.tsx`
+  - `Field` now supports helper/error text and automatically connects single child controls with `aria-describedby`; field-level errors set `aria-invalid` and expose alert semantics. Number range errors, login hints, plan association guidance, and workout template token validation now use the shared field pattern.
+- Modal focus and labelling behavior was tightened:
+  - `src/components/ConfirmDialog.tsx`
+  - `src/components/ExportDataDialog.tsx`
+  - Native dialogs now expose explicit title/description relationships, restore focus to the invoking element after close, and set predictable initial focus. Dangerous confirmations now focus the cancel action first, reducing accidental destructive confirmation.
+- App shell keyboard bypass navigation was added:
+  - `src/components/layout/AppShell.tsx`
+  - Keyboard users can now reveal a "skip to main content" link on focus and jump past the brand header, sync controls, and tab navigation to the active page content.
+- Dashboard chart screen-reader summaries were added:
+  - `src/components/ChartCard.tsx`
+  - `src/tabs/DashboardTab.tsx`
+  - Non-empty dashboard charts now expose concise `role="img"` summaries for body weight, waist, calories, protein target completion, and training performance, so trend information is not conveyed only through visual lines, bars, areas, or color.
+
+## In Progress
+
+- Form-like pages are being aligned around shared form panel patterns:
+  - `src/components/FormPanel.tsx`
+  - `src/tabs/ProfileTab.tsx`
+  - `src/tabs/PlanTab.tsx`
+  - `src/tabs/AdminUsersTab.tsx`
+- Workout page decomposition is continuing around state orchestration vs. focused presentation components:
+  - `src/tabs/WorkoutTab.tsx`
+  - `src/components/workout/*`
+
+## Remaining High-priority Work
+
+- Continue reviewing smaller profile/plan/admin section-level polish now that their top-level form card/header/status scaffolding uses `FormPanel`.
+- Continue reducing large tab files, especially:
+  - `src/tabs/ProfileTab.tsx` (form sections and draft-state hook extracted; save/load orchestration can still be reviewed later if it grows)
+  - `src/tabs/AdminUsersTab.tsx` (panels, rows, side-effect helpers, and account mutation orchestration hook extracted; remaining opportunities are smaller UI polish and authenticated workflow verification)
+  - `src/tabs/WorkoutTab.tsx` (status, toolbar, mobile entry, more actions, notes, timer/training-state orchestration, and derived status labels/messages extracted; remaining opportunity is authenticated mobile workflow verification and smaller workout-control polish)
+- Standardize remaining dense workout controls:
+  - `src/components/workout/WorkoutControlPanel.tsx` (date controls, plan preview, metrics, template picker, sync badge styling, and disclosure treatment extracted/aligned; remaining opportunity is authenticated workflow verification)
+  - `src/components/workout/ExerciseRecordCard.tsx` (set quick controls, per-set editor, bulk actions, edit panel, header summary, and previous-detail display extracted; remaining opportunity is moving per-set hint assembly into a helper/hook)
+  - `src/components/workout/MobileCurrentExerciseView.tsx` (quick controls, sticky bottom bar, current-set card, training header, exercise progress card, and current-set session hook extracted; remaining opportunity is authenticated mobile workflow verification with real data)
+- Continue auditing empty, loading, error, and offline states across all tabs.
+- Continue removing remaining one-off button/status styling where shared primitives already cover the interaction.
+- Continue auditing other one-off menu/popover needs and reuse `DropdownMenu` when a compact action menu is more appropriate than content disclosure.
+- Do a responsive pass on authenticated views once backend data is available.
+- Consider adding a backend `PATCH /api/profile` later so frontend measurement sync does not need GET-then-PUT.
+
+## Validation Log
+
+Use this section to append evidence after each iteration.
+
+- 2026-05-29: `npm run lint` passed.
+- 2026-05-29: `npm run typecheck` passed.
+- 2026-05-29: `npm run build` passed.
+- 2026-05-29: `npm run test` passed.
+- 2026-05-29: Browser opened `http://127.0.0.1:5173/`; login page rendered with no horizontal overflow at the checked desktop viewport. Expected warning: backend `127.0.0.1:8787` not running, so `/api/auth/me` proxy fails locally.
+- 2026-05-29: `ui-ux-pro-max` was explicitly loaded for ongoing UI/UX criteria. Its local `scripts/search.py` helper was not present, so the iteration used the skill's documented high-priority rules directly.
+- 2026-05-29: After admin panel decomposition, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-29: Browser checked `http://127.0.0.1:5173/` at 1280px and 375px widths. Login page rendered without horizontal overflow in both. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-29: After extracting workout date controls, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-29: Browser rechecked `http://127.0.0.1:5173/` at 1280px. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-29: After extracting workout set quick controls, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-29: Browser rechecked `http://127.0.0.1:5173/` at 1280px. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-29: After reusing workout quick controls in mobile workout mode, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-29: Browser rechecked `http://127.0.0.1:5173/` at 1280px and 375px. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-29: After extracting mobile workout bottom bar, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-29: Browser rechecked `http://127.0.0.1:5173/` at 1280px and 375px. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-29: After extracting `MobileCurrentSetCard`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-29: Browser rechecked `http://127.0.0.1:5173/` at 1280px. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings. The in-app browser surface available in this run did not expose viewport resizing, so authenticated mobile workflow verification remains a later pass.
+- 2026-05-29: After extracting `WorkoutPlanPreview` and `WorkoutMetrics`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-29: Browser rechecked `http://127.0.0.1:5173/` at 1280px. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-29: After extracting `ExerciseSetEditor` and `ExerciseRecordActions`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-29: Browser rechecked `http://127.0.0.1:5173/` at 1280px. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-29: After extracting profile form sections into `ProfileFormSections`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-29: Browser rechecked `http://127.0.0.1:5173/` at 1280px. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-29: After extracting `AdminUserRow` and aligning checkbox touch target height, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-29: Browser rechecked `http://127.0.0.1:5173/` at 1280px. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-29: Browser smoke check after extracting `WorkoutStatusOverview` and `WorkoutRecordToolbar` showed the local login page rendered at 1280px with no horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-29: After extracting `WorkoutMobileActionPanel` and `WorkoutMoreActionsPanel` into `WorkoutSessionActions`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-29: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the session-actions extraction. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-29: After extracting `ExerciseRecordHeader`, `ExercisePreviousDetails`, and `workoutRecordFormat`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed. A Fast Refresh lint issue from exporting a helper in a component file was fixed by moving formatting helpers into `workoutRecordFormat.ts`.
+- 2026-05-29: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the exercise-card summary extraction. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-29: After extracting `MobileTrainingModeHeader` and `MobileExerciseProgressCard`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-29: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the mobile exercise progress extraction. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-29: After extracting `useMobileExerciseSession`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed. A synchronous state update effect was removed during lint cleanup because the existing keyed mobile view already remounts on exercise changes.
+- 2026-05-29: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the mobile session hook extraction. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After extracting `PlanAssociationList`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the plan association extraction. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After extracting `useProfileDraft`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the profile draft hook extraction. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After extracting `adminUserActions`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the admin helper extraction. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After extracting `useWorkoutSessionState`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the workout session hook extraction. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After refining shared empty/loading feedback and applying it to workout template/empty states, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the state-feedback refinement. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After aligning `ErrorBoundary`, PWA prompts, and `ThemeToggle` around shared primitives and removing structural emoji labels, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the fallback/PWA/theme refinement. Login page rendered without horizontal overflow; theme toggle rendered as text labels instead of emoji. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After aligning `ExportDataDialog` range/output controls with shared `SegmentedControl` and `StatusMessage`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the export-dialog refinement. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After aligning toast close actions with shared buttons and adding toast live-region semantics, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the toast feedback refinement. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After aligning `QuickRecordSection`, `TrainingHeader`, and `ExerciseQuickJumpStrip` around shared button/segmented/checkbox primitives, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the daily quick-record and training-control refinement. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After aligning `WorkoutSetQuickControls` around the shared `Button` primitive, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the workout quick-control refinement. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After aligning `MiniCalendar` date cells around the shared `Button` primitive, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the mini-calendar refinement. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After aligning `WorkoutRecordToolbar` filtering around the shared `SegmentedControl` primitive, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the workout toolbar refinement. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After aligning `CustomTemplateCard` exercise delete actions around the shared `Button` primitive, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the custom-template action refinement. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After aligning profile training-day toggles, dashboard performance-line switching, and the global theme toggle around the shared `Button` primitive, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the profile/dashboard/theme button refinement. Login page rendered without horizontal overflow; theme toggle remained visible with text labels. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After aligning chart empty states and weekly suggestion feedback around shared `EmptyState`/`StatusMessage` primitives, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the chart/weekly feedback refinement. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After extracting `useAdminUsers`, `AdminUsersTab` moved from 381 lines to 112 lines while preserving admin service health, user creation, account mutation, export, backup, selected-data loading, default-plan cloning, and destructive clear-data flows. `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the admin orchestration extraction. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After extracting `workoutStatusModel`, workout status titles/messages, record badges, completion hints, and primary action labels moved out of `WorkoutTab`; mobile and desktop workout actions now share the same label source where appropriate. `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the workout status-model extraction. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After extracting `WorkoutPlanPicker` and extending `Badge` with `className`, workout plan selection is reusable across start/change-plan flows and sync status now uses shared badge tones. `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the workout picker/sync-badge refinement. Login page rendered without horizontal overflow. Only app logs were expected local backend-offline `/api/auth/me` login-state warnings; the browser tool also reported an unrelated external Statsig request timeout outside the app.
+- 2026-05-30: After adding `DisclosurePanel`, workout plan preview, change-plan, and more-actions disclosures now share a native details/summary primitive with consistent focus and 44px-friendly summary styling. `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Browser rechecked `http://127.0.0.1:5173/` at 1280px after the shared disclosure refinement. Login page rendered without horizontal overflow. Only observed warnings were expected local backend-offline `/api/auth/me` login-state warnings.
+- 2026-05-30: After extending shared disclosure usage across exercise editing, previous-record details, and mobile current-set actions, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` with the app HTML. A callable Browser automation tool was not exposed in this continuation, so visual viewport verification remains a later browser pass.
+- 2026-05-30: After consolidating daily, export, tips, and workout template content disclosures around `DisclosurePanel`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the content disclosure consolidation. `rg "<details|<summary" src/components src/tabs -g "*.tsx"` now only reports `DisclosurePanel` itself and the `AppShell` menu dropdown.
+- 2026-05-30: After extracting `DropdownMenu` and replacing the `AppShell` header menu, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the dropdown extraction. `rg "<details|<summary" src/components src/tabs -g "*.tsx"` now only reports `DisclosurePanel` itself.
+- 2026-05-30: After adding the `FormPanel` wrapper and applying it to profile, plan, and admin top-level panels, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the form-panel consolidation. `rg "FormPanelHeader|FormStatusStack" src/tabs src/components -g "*.tsx"` shows tab pages no longer directly assemble the repeated header/status pair.
+- 2026-05-30: After aligning the mobile workout no-exercise state around shared `EmptyState`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the mobile empty-state refinement.
+- 2026-05-30: After aligning mobile workout set selector chips around the shared `Button` primitive and adding `aria-pressed`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the mobile set-selector refinement. Remaining raw `<button>` occurrences are specialized navigation, trigger, or shared primitive internals.
+- 2026-05-30: After aligning the main navigation tabs around the shared `Button` primitive and adding `aria-current`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the main-navigation refinement. Remaining raw `<button>` occurrences are shared primitive internals or specialized trigger surfaces.
+- 2026-05-30: After adding explicit expand/collapse `aria-label` text to the desktop exercise-card header trigger and mobile workout bottom-bar trigger, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the specialized trigger accessibility refinement.
+- 2026-05-30: After refining `DropdownMenu` Escape behavior to return focus to the trigger, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the dropdown focus-return refinement.
+- 2026-05-30: After extending `DropdownMenu` keyboard support with open-focus behavior plus Arrow Up/Down and Home/End item navigation, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the dropdown keyboard-navigation refinement.
+- 2026-05-30: After adding focus-leave close behavior to `DropdownMenu`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the dropdown focus-leave refinement.
+- 2026-05-30: After adding opt-in live-region semantics to `StatusMessage` and applying them to login, form, sync, and error-boundary feedback, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the dynamic feedback accessibility refinement.
+- 2026-05-30: After extending `Field` with helper/error semantics and applying it to number range validation, login hints, plan association guidance, and workout template token validation, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the field helper/error accessibility refinement.
+- 2026-05-30: After tightening modal title/description labelling, initial focus, focus restoration, and dangerous-confirm default focus behavior in `ConfirmDialog` and `ExportDataDialog`, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the modal accessibility refinement.
+- 2026-05-30: After adding an app-shell skip link and focusable main-content anchor, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the app-shell skip-link refinement.
+- 2026-05-30: After adding screen-reader summaries to dashboard chart cards, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the chart accessibility refinement.
+- 2026-05-30: After adding visible dashboard chart legends, chart series are no longer identified only by color. Weight, waist, calories, protein target, and training performance charts now expose reusable `ChartLegend` labels with solid, dashed, bar, and area marker shapes.
+- 2026-05-30: After the visible chart-legend refinement, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the visible chart-legend refinement.
+- 2026-05-30: After extracting `TodayOverview` and `TodayDetailsPanels`, the Today tab now keeps page orchestration while first-screen status/action cards and weekly signals live in a focused overview component. Detailed plan, budget panels, macro tiles, exercise list, and recommendation disclosures live in a separate details component.
+- 2026-05-30: After the Today tab decomposition, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the Today tab decomposition.
+- 2026-05-30: After tightening `BudgetTile` and `MacroTile` dark-mode text classes, weekly budget and macro remaining tiles keep readable foreground contrast in both light and dark themes without changing calculation logic.
+- 2026-05-30: After the budget/macro contrast refinement, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the budget/macro contrast refinement.
+- 2026-05-30: After removing the duplicated Today overview plan card introduced during decomposition, the first screen keeps a clearer decision flow while the complete workout plan remains available in the detailed disclosure. `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed, and local HTTP smoke returned `200`.
+- 2026-05-30: After tightening `CopyPreviewDialog`, the copy-preview modal now has title/description labelling, focuses and selects the preview text on open, handles Escape through the existing close path, and restores focus to the opener on close.
+- 2026-05-30: After the copy-preview dialog accessibility refinement, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the copy-preview dialog accessibility refinement.
+- 2026-05-30: After tightening PWA install/update prompts, delayed install-prompt timers are cleared on unmount and install/update/offline floating notices expose polite status live regions.
+- 2026-05-30: After the PWA prompt reliability/accessibility refinement, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed.
+- 2026-05-30: Local HTTP smoke check for `http://127.0.0.1:5173/` returned `200` after the PWA prompt refinement.
+- 2026-05-30: Authenticated API smoke passed against the local dev server with the existing `adm` account. `/api/auth/login`, `/api/auth/me`, `/api/daily-logs/:date`, `/api/workout-logs/:date`, and `/api/app-data` all returned success, and the written daily/workout records were read back for the current date.
+- 2026-05-30: `npm run prod:check` passed. The production smoke covered build output startup, five-user login/write flows, per-user data isolation, SQLite backup checkpointing, forwarded-IP login limiting, JSON body limit handling, cookie Secure behavior, and Service Worker API cache exclusion.
+- 2026-05-30: Mobile workout training mode was tightened after code-level mobile review. `MobileCurrentExerciseView` now reserves bottom scroll space for the fixed training action bar, and `MobileWorkoutBottomBar` rest controls wrap into a safer small-screen layout before switching to the denser desktop-like control row on larger widths.
+- 2026-05-30: After the mobile workout bottom-bar refinement, `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` passed. Local HTTP smoke returned `200` for both `http://127.0.0.1:5173/` and `http://127.0.0.1:8787/api/health`.
+- 2026-05-30: Final code-level UI/UX sweep applied the `ui-ux-pro-max` critical checks to raw controls, fixed/sticky surfaces, mobile overflow risks, focus/ARIA semantics, state feedback, and contrast-sensitive text. Remaining raw controls are limited to shared primitives (`Button`, `Input`, `Select`, `Checkbox`, `DisclosurePanel`, `SegmentedControl`) plus explicit specialized triggers (`ExerciseRecordSummary`, `MobileWorkoutBottomBar`) and the copy-preview textarea.
+- 2026-05-30: Final touch-target pass tightened the shared `SegmentedControl`, `DateNavigator` arrow buttons, and `MiniCalendar` date cells to keep ordinary clickable controls at the 44px baseline. Native checkbox boxes remain visually 16px, but their labelled checkbox rows provide the 44px interaction target.
+- 2026-05-30: Desktop training mode now reserves bottom scroll space for the fixed training timer panel (`WorkoutTab` uses `md:pb-56` while training mode is active), reducing the risk that final exercise-card controls are hidden behind the floating timer/rest controls.
+- 2026-05-30: Final verification passed: `npm run typecheck`, `npm run lint`, `npm run build`, `npm run test`, and `npm run prod:check`. Production smoke covered startup, five-user login/write flows, per-user isolation, SQLite backup checkpointing, forwarded-IP login limiting, JSON body limit handling, secure-cookie behavior, and Service Worker API cache exclusion. HTTP smoke returned `200` for both `http://127.0.0.1:5173/` and `http://127.0.0.1:8787/api/health`.
+- 2026-05-30: A dependency-free headless Chrome/CDP viewport smoke succeeded against the local app with the existing `adm` account. It logged in successfully (`200`), visited all 8 main tabs at mobile width `390x844` and desktop width `1280x900` (17 checks total), and found no console errors, no horizontal overflow, and no visible ordinary controls below the 44px touch baseline.
+- 2026-05-30: Visual/product UX review found that the shell still felt like a generic dashboard wrapper because the brand header and sync panel consumed too much first-screen space, especially on mobile. `AppShell` was compressed into a task-first toolbar with the active tab as the page title, user/theme metadata as inline utility text, and global copy as a secondary action. `SyncStatusBar` was reduced from a large nested panel to a lightweight status row, so the first actionable content appears earlier on mobile and desktop. After this shell hierarchy refinement, `npm run typecheck`, `npm run lint`, and `npm run build` passed.
+- 2026-05-30: Continued product-level polish after user feedback that the UI/UX still felt off. `ui-ux-pro-max` and `impeccable` product rules were applied directly: reduce all-green visual fatigue, put the task before the shell, avoid generic dashboard/card-wall rhythm, and preserve mobile one-handed check-ins. Mobile navigation now uses a bottom task nav for non-workout screens, with lower-frequency tabs in a compact "More" menu; workout keeps the top nav so its fixed training controls can own the bottom edge. `AppShell` now reserves bottom space only below the mobile breakpoint.
+- 2026-05-30: The Today overview was rebalanced from stacked generic cards into a clearer task flow: compact status hero, amber-only missing-record block, then a task-first two-column action/trend region. Positive `InsightCard`/`ActionCard` surfaces now use neutral white/slate containers with emerald reserved for borders/text/state, reducing the previous saturated mint surface spread.
+- 2026-05-30: Daily quick record was changed from a large emerald panel into a neutral high-frequency input workspace, with only badges/status indicators retaining semantic color. The loading skeleton was updated to match the new neutral quick-record surface, reducing loading-to-content visual jump. Validation passed after this UX iteration: `npm run typecheck`, `npm run lint`, and `npm run build`; local HTTP smoke returned `200` for both `http://127.0.0.1:5173/` and `http://127.0.0.1:8787/api/health`. Browser screenshot verification was not completed in this continuation because the Chrome/CDP launch failed and no callable Browser screenshot tool was exposed.
+- 2026-05-30: Continued UI/UX polish on the training and review surfaces. Training mode was visually quieted: desktop and mobile training headers, current-exercise progress cards, previous-set disclosures, finish prompts, and rest panels now use neutral training-log surfaces while emerald is reserved for completion badges, primary actions, timers, and target-hit indicators. This reduces the previous "all-green workout panel" effect without changing workout logic.
+- 2026-05-30: Dashboard and weekly review hierarchy were tightened. Dashboard now opens with a dedicated "current judgement" panel plus three supporting signals instead of a homogeneous metric-card row, and the duplicate weekend recommendation block was removed. Weekly now uses the shared `PageHeader` cadence with week navigation/export actions attached to the page title, while suggestion rows use shared `StatusMessage` states. Validation passed after this iteration: `npm run typecheck`, `npm run lint`, and `npm run build`; local HTTP smoke returned `200` for both `http://127.0.0.1:5173/` and `http://127.0.0.1:8787/api/health`.
+- 2026-05-30: User reported the top area was still too full. `AppShell` was flattened from a bordered header card into a thin toolbar: long product copy was removed, global copy/export/theme/logout actions moved into the `DropdownMenu`, and the mobile header now shows only brand, active page title, and "More". `SyncStatusBar` now hides the ordinary synced state on mobile and expands only for saving/offline/notice/copy states. In-app browser measurement at `345x631` showed mobile header height reduced from `77px` to `53px`, with main content top moving from `97px` to `73px`; no horizontal overflow was detected. Validation passed: `npm run typecheck`, `npm run lint`, `npm run build`; local HTTP smoke returned `200` for both frontend and backend health.
+- 2026-05-30: User requested screenshot verification of the Record page. In-app browser screenshot at `345x631` confirmed the top toolbar was compact, but also exposed a mobile bottom-navigation defect: Chinese labels were wrapping vertically, making the nav look crowded. `MainNavigation` was tightened so mobile nav labels use `whitespace-nowrap`, the nav grid gap was reduced, and the "More" trigger no longer stacks its chevron below the text. Post-fix DOM measurement showed bottom nav height reduced from `107px` to `81px`, each visible nav button measuring about `58x64`, no horizontal overflow, and content still starting at `73px`. `npm run typecheck`, `npm run lint`, and `npm run build` passed. A second screenshot capture timed out in the in-app browser after the fix, but DOM metrics confirmed the wrapping issue was resolved.
+- 2026-05-30: User reported the bottom navigation gray dots looked bad and the Record page still could not complete entry quickly enough. `MainNavigation` no longer renders decorative mobile nav dots. `QuickRecordSection` now keeps the single primary quick-complete action near the top, hides explanatory helper copy on mobile, moves secondary quick actions below the common numeric inputs, and keeps those secondary actions in a contained "快捷操作" area. `DailyRecordTab` now folds mobile-only copy/export into a compact "操作" dropdown beside the title while preserving desktop buttons, reducing the mobile first-screen path to date selection, quick-complete, then inputs. In-app browser measurement at `399x631` showed no horizontal overflow, no nav dots, the mobile operation trigger at `44px` high, the primary quick action at `303px`, and the first daily input moved from the previous `609px` to `385px`. Validation passed: `npm run typecheck`, `npm run lint`, and `npm run build`.
+
+- 2026-05-30: Implemented the mobile-first Record page task skeleton from the renewed audit. `QuickRecordSection` now delegates to `DailyCheckInPanel`, with focused `DailyEssentialsForm` and `DailySummaryStrip` components. The Record page is organized as "今日缺口", "常用录入", a 3-item summary strip, "训练状态", compact tools/status disclosures, and "补充详情" for calendar/body/measurement panels. Mobile no longer repeats the page title inside the content card, completed-state chips collapse to one "已补齐" chip, copy/export stay in the compact operation menu, and the loading skeleton mirrors the new task flow. Existing daily-log patch/save/export/date behavior and API shapes are unchanged. Validation passed: `npm run typecheck`, `npm run lint`, and `npm run build`. In-app browser at `399x631` on the Record page showed no horizontal overflow, required sections present, no rendered filled chips on mobile, primary action at `341px`, first daily input at `485-533px`, bottom nav starting at `550px`, and no console warnings/errors.
+
+## Continuation Protocol
+
+At the start of each future iteration:
+
+1. Read `PRODUCT.md`.
+2. Read this tracker.
+3. Inspect `git status --short`.
+4. Pick the next highest-impact remaining item.
+5. Make scoped changes.
+6. Run relevant checks.
+7. Append validation evidence here if the iteration changes behavior or structure.

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import type { DailyLog, WorkoutLog, WorkoutTemplate } from '../types'
 import { buildExportContentStats, buildExportCsvText, buildExportSummaryText, compactWorkoutLog, filterDatedItems, hasDailyContent, resolveExportDateRange, type ExportFormat, type ExportOptions, type ExportRangePreset, type ScopedExportPayload } from '../lib/exportPayload'
-import { Badge, Button, Field, TextInput } from './ui'
+import { Badge, Button, Checkbox, DisclosurePanel, Field, SegmentedControl, StatusMessage, TextInput } from './ui'
 
 const presets: Array<{ value: ExportRangePreset; label: string }> = [
   { value: 'last30', label: '近 30 天' },
@@ -107,8 +107,12 @@ export function ExportDataDialog({
   onClose: () => void
   onExport: (options: ExportOptions, format: ExportFormat) => void
 }) {
+  const titleId = useId()
+  const descriptionId = useId()
   const dialogRef = useRef<HTMLDialogElement | null>(null)
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null)
   const closeRef = useRef(onClose)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
   const initialSlimOptions = useMemo<ExportOptions>(
     () => ({
       ...defaultOptions(today, initialRangePreset),
@@ -131,7 +135,13 @@ export function ExportDataDialog({
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
-    if (!dialog.open) dialog.showModal()
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    if (!dialog.open) {
+      dialog.showModal()
+      window.requestAnimationFrame(() => {
+        closeButtonRef.current?.focus()
+      })
+    }
     const onCancel = (event: Event) => {
       event.preventDefault()
       closeRef.current()
@@ -140,6 +150,8 @@ export function ExportDataDialog({
     return () => {
       dialog.removeEventListener('cancel', onCancel)
       if (dialog.open) dialog.close()
+      previousFocusRef.current?.focus()
+      previousFocusRef.current = null
     }
   }, [])
 
@@ -308,13 +320,15 @@ export function ExportDataDialog({
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
       className="m-auto max-h-[calc(100vh-2rem)] w-[min(640px,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-slate-200 bg-white p-0 text-slate-900 shadow-xl backdrop:bg-slate-900/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:backdrop:bg-black/60"
     >
       <div className="p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-base font-semibold text-slate-950 dark:text-slate-50">{title}</h2>
-            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{description}</p>
+            <h2 id={titleId} className="text-base font-semibold text-slate-950 dark:text-slate-50">{title}</h2>
+            <p id={descriptionId} className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{description}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" className="min-h-9 px-3 text-xs" onClick={setDefaultSlimExport}>
@@ -335,20 +349,7 @@ export function ExportDataDialog({
               </p>
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
-              {presets.map((preset) => (
-                <button
-                  key={preset.value}
-                  type="button"
-                  onClick={() => setPreset(preset.value)}
-                  className={`min-h-9 rounded-md border px-3 text-sm font-medium transition ${
-                    options.rangePreset === preset.value
-                      ? 'border-slate-950 bg-slate-950 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-950'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              ))}
+              <SegmentedControl value={options.rangePreset} options={presets} onChange={setPreset} />
             </div>
             {options.rangePreset === 'custom' ? (
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -370,58 +371,44 @@ export function ExportDataDialog({
                 ['includeWorkoutLogs', '训练记录'],
                 ['includeWorkoutTemplates', '训练模板'],
               ] as const).map(([key, label]) => (
-                <label
+                <Checkbox
                   key={key}
-                  className="flex min-h-10 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                >
-                  <input
-                    type="checkbox"
-                    checked={options[key]}
-                    onChange={(event) => patchOptions({ [key]: event.target.checked })}
-                    className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                  />
-                  {label}
-                </label>
+                  label={label}
+                  checked={options[key]}
+                  onChange={(event) => patchOptions({ [key]: event.target.checked })}
+                />
               ))}
             </div>
-            <details
+            <DisclosurePanel
               open={advancedContentOpen || advancedContentExpanded}
-              onToggle={(event) => setAdvancedContentExpanded(event.currentTarget.open)}
-              className="mt-2 rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"
+              onOpenChange={setAdvancedContentExpanded}
+              className="mt-2 rounded-md bg-white dark:bg-slate-900"
+              title={`更多内容${selectedNonRecordSections > 0 ? `（已选 ${selectedNonRecordSections}）` : ''}`}
+              summaryClassName="text-sm font-medium"
+              contentClassName="py-3"
             >
-              <summary className="cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200">
-                更多内容{selectedNonRecordSections > 0 ? `（已选 ${selectedNonRecordSections}）` : ''}
-              </summary>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-2">
                 {([
                   ['includeProfile', '个人资料'],
                   ['includePlanData', '个人计划'],
                   ['includePreference', '规则配置'],
                 ] as const).map(([key, label]) => (
-                  <label
-                    key={key}
-                    className="flex min-h-10 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                  >
-                    <input
-                      type="checkbox"
+                    <Checkbox
+                      key={key}
+                      label={label}
                       checked={options[key]}
                       onChange={(event) => patchOptions({ [key]: event.target.checked })}
-                      className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                     />
-                    {label}
-                  </label>
-                ))}
+                  ))}
               </div>
-            </details>
-            <label className="mt-3 flex min-h-10 items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 text-sm text-emerald-900 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-100">
-              <input
-                type="checkbox"
+            </DisclosurePanel>
+            <div className="mt-3">
+              <Checkbox
+                label="精简记录，去掉空日期、空动作和空组"
                 checked={options.slimMode}
                 onChange={(event) => patchOptions({ slimMode: event.target.checked })}
-                className="h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
               />
-              精简记录，去掉空日期、空动作和空组
-            </label>
+            </div>
           </section>
 
           <div className="flex flex-wrap gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
@@ -438,46 +425,34 @@ export function ExportDataDialog({
             </p>
           ) : null}
           {selectedSections > 0 && selectedRecordCount === 0 && selectedNonRecordSections === 0 ? (
-            <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/30 dark:text-amber-100">
+            <StatusMessage tone="warning">
               当前范围内没有记录。可以换范围，或勾选个人资料、计划等非记录内容。
-            </p>
+            </StatusMessage>
           ) : null}
           {customRangeIncomplete ? (
-            <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/30 dark:text-amber-100">
+            <StatusMessage tone="warning">
               自定义范围需要填写开始日期和结束日期。
-            </p>
+            </StatusMessage>
           ) : null}
 
           <section>
             <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">输出</p>
             <div className="mt-2 flex flex-wrap gap-2">
-              {exportFormats.map((format) => {
-                const disabled =
-                  (format.value === 'csv' && !exportStats.csvAvailable) ||
-                  ((format.value === 'summary' || format.value === 'copySummary') && !exportStats.summaryAvailable)
-                return (
-                  <button
-                    key={format.value}
-                    type="button"
-                    onClick={() => setOutputFormat(format.value)}
-                    disabled={disabled}
-                    className={`min-h-9 rounded-md border px-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                      activeOutputFormat === format.value
-                        ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-400 dark:bg-emerald-400 dark:text-slate-950'
-                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {format.label}
-                  </button>
-                )
-              })}
+              <SegmentedControl
+                value={activeOutputFormat}
+                options={exportFormats.map((format) => ({
+                  ...format,
+                  disabled:
+                    (format.value === 'csv' && !exportStats.csvAvailable) ||
+                    ((format.value === 'summary' || format.value === 'copySummary') && !exportStats.summaryAvailable),
+                }))}
+                onChange={setOutputFormat}
+              />
             </div>
           </section>
 
           {selectedRecordCount > 0 || selectedNonRecordSections > 0 ? (
-            <details className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-              <summary className="cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">预览导出内容</summary>
-              <div className="mt-3 grid gap-3 text-sm">
+            <DisclosurePanel className="bg-white dark:bg-slate-900" title="预览导出内容" contentClassName="grid gap-3 text-sm">
                 {previewDailyLogs.length > 0 ? (
                   <div>
                     <p className="text-xs font-medium text-slate-500 dark:text-slate-400">每日记录</p>
@@ -517,17 +492,16 @@ export function ExportDataDialog({
                 {previewDailySource.length + previewWorkoutSource.length > previewDailyLogs.length + previewWorkoutLogs.length ? (
                   <p className="text-xs text-slate-500 dark:text-slate-400">这里只显示前 5 条每日记录和前 5 条训练记录。</p>
                 ) : null}
-              </div>
-            </details>
+            </DisclosurePanel>
           ) : null}
         </div>
 
         <div className="mt-5 flex flex-wrap justify-end gap-2">
-          <Button variant="secondary" onClick={onClose} disabled={pending}>
+          <Button ref={closeButtonRef} variant="secondary" onClick={onClose} disabled={pending}>
             取消
           </Button>
-          <Button onClick={() => onExport(options, activeOutputFormat)} disabled={exportDisabled}>
-            {pending ? '处理中...' : exportActionLabel}
+          <Button onClick={() => onExport(options, activeOutputFormat)} disabled={exportDisabled} loading={pending}>
+            {exportActionLabel}
           </Button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import type { ColorSchemePreference } from '../hooks/useColorScheme'
+import { Button } from './ui'
 
 export function ThemeToggle({
   preference,
@@ -15,17 +16,19 @@ export function ThemeToggle({
       : preference === 'dark'
         ? '深色'
         : '浅色'
-  const icon = preference === 'system' ? '🖥️' : preference === 'dark' ? '🌙' : '☀️'
+  const shortLabel = preference === 'system' ? '系统' : preference === 'dark' ? '深色' : '浅色'
   return (
-    <button
-      type="button"
+    <Button
+      variant="secondary"
       onClick={onCycle}
       title={`主题：${label}（点击切换）`}
       aria-label={`主题：${label}`}
-      className="inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+      className="min-w-11 gap-1.5 px-3 shadow-none"
     >
-      <span aria-hidden="true">{icon}</span>
+      <span aria-hidden="true" className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
+        {shortLabel}
+      </span>
       <span className="hidden sm:inline">主题</span>
-    </button>
+    </Button>
   )
 }

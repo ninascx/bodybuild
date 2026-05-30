@@ -44,6 +44,7 @@ import {
   exportCurrentUserData,
   exportWorkoutTemplateToken,
   fetchCurrentUser,
+  fetchUserProfile,
   fetchUserPreference,
   fetchUserPlanData,
   importWorkoutTemplateToken,
@@ -53,17 +54,19 @@ import {
   saveAppData,
   saveUserPreference,
   saveUserPlanData,
+  saveUserProfile,
 } from './lib/storage'
 import { defaultUserPreference, mergeUserPreference } from './lib/userPreferences'
 import { buildExportCsvText, buildExportResultSummary, buildExportSummaryText, buildScopedExportPayload, type ExportFormat, type ExportOptions, type ExportRangePreset } from './lib/exportPayload'
 import { createId } from './lib/ids'
-import type { AdjustmentRecommendation, DailyLog, ExerciseLog, ExercisePlan, ExerciseSetLog, UserPlanData, UserPreference, WeeklySummary, WorkoutLog, WorkoutTemplate } from './types'
-import { Button, LoadingBlock, StatusMessage } from './components/ui'
+import type { AdjustmentRecommendation, DailyLog, ExerciseLog, ExercisePlan, ExerciseSetLog, UserPlanData, UserPreference, UserProfile, WeeklySummary, WorkoutLog, WorkoutTemplate } from './types'
+import { LoadingBlock } from './components/ui'
 import { useColorScheme } from './hooks/useColorScheme'
 import { useConfirm } from './components/ConfirmDialog'
-import { ThemeToggle } from './components/ThemeToggle'
 import { CopyPreviewDialog } from './components/CopyPreviewDialog'
 import { ExportDataDialog } from './components/ExportDataDialog'
+import { AppShell } from './components/layout/AppShell'
+import { LoginScreen } from './components/layout/LoginScreen'
 import { TodayTab } from './tabs/TodayTab'
 import { ProfileTab } from './tabs/ProfileTab'
 import { PlanTab } from './tabs/PlanTab'
@@ -72,16 +75,17 @@ import { WorkoutTab } from './tabs/WorkoutTab'
 const DashboardTab = lazy(() => import('./tabs/DashboardTab').then((mod) => ({ default: mod.DashboardTab })))
 import { WeeklyTab } from './tabs/WeeklyTab'
 import { AdminUsersTab } from './tabs/AdminUsersTab'
+import { DailyRecordSkeleton } from './components/DailyRecordSkeleton'
 
 type TabKey = 'today' | 'profile' | 'plan' | 'daily' | 'workout' | 'dashboard' | 'weekly' | 'admin'
 
 const baseTabs: Array<{ key: TabKey; label: string }> = [
-  { key: 'today', label: '今日' },
-  { key: 'profile', label: '个人' },
+  { key: 'today', label: '概览' },
+  { key: 'profile', label: '设置' },
   { key: 'plan', label: '计划' },
-  { key: 'daily', label: '记录' },
+  { key: 'daily', label: '日志' },
   { key: 'workout', label: '训练' },
-  { key: 'dashboard', label: '仪表盘' },
+  { key: 'dashboard', label: '趋势' },
   { key: 'weekly', label: '周报' },
 ]
 const adminTab: { key: TabKey; label: string } = { key: 'admin', label: '用户管理' }
@@ -380,7 +384,7 @@ function App() {
       applyData(nextData)
       setSavePending(false)
       setSyncState('saving')
-      setSyncMessage('正在保存到服务器数据文件...')
+      setSyncMessage('保存中...')
       const saveTask = saveQueueRef.current.then(() => saveAppData(currentUser.id, nextData))
       saveQueueRef.current = saveTask.then(
         () => undefined,
@@ -395,7 +399,7 @@ function App() {
           setSyncState('synced')
           setLastSyncedAt(new Date().toISOString())
           setAutoRetryEnabled(false)
-          setSyncMessage('已同步到服务器数据文件。')
+          setSyncMessage('已同步')
         }
       } catch (error) {
         if (saveVersion === saveVersionRef.current) {
@@ -438,7 +442,7 @@ function App() {
       if (immediate) {
         flushPending()
       } else {
-        setSyncMessage('已在页面记录，稍后保存到服务器数据文件。')
+        setSyncMessage('已记录，稍后同步')
         debounceTimerRef.current = window.setTimeout(flushPending, 400)
       }
     },
@@ -527,7 +531,7 @@ function App() {
           setSyncState('offline')
           setLastSyncedAt(null)
           setAutoRetryEnabled(false)
-          setSyncMessage('请登录后同步个人数据。')
+          setSyncMessage('请登录后同步数据')
         }
       })
       .catch((error) => {
@@ -558,7 +562,7 @@ function App() {
         setInitialLoaded(false)
         setSyncState('loading')
         setSavePending(false)
-        setSyncMessage('正在加载当前用户数据...')
+        setSyncMessage('加载中...')
         return Promise.all([
           loadAppData(currentUser.id),
           fetchUserPreference().catch((error) => {
@@ -583,7 +587,7 @@ function App() {
         // 本地已开始编辑，保留本地数据，避免服务器响应覆盖用户输入
         setSyncState((prev) => (prev === 'saving' ? prev : 'synced'))
         setSavePending(false)
-        setSyncMessage('服务器已连接，但加载期间检测到本地编辑，已保留本地数据。')
+        setSyncMessage('已连接，保留本地编辑')
         return
       }
       if (appResult.serverEmptyButLocalHasData) {
@@ -606,12 +610,12 @@ function App() {
         setLastSyncedAt(new Date().toISOString())
         setSavePending(false)
         setAutoRetryEnabled(false)
-        setSyncMessage('已同步到当前用户数据。')
+        setSyncMessage('已同步')
       } else {
         setSyncState('offline')
         setSavePending(false)
         setAutoRetryEnabled(true)
-        setSyncMessage('服务器连接失败，当前使用浏览器缓存；恢复连接后请再次保存。')
+        setSyncMessage('离线模式，使用缓存')
       }
     })
 
@@ -647,7 +651,7 @@ function App() {
     if (!currentUser) return
     setSyncState('saving')
     setSavePending(false)
-    setSyncMessage(mode === 'auto' ? '检测到连接恢复，正在自动同步...' : '正在重新同步...')
+    setSyncMessage(mode === 'auto' ? '自动同步中...' : '重新同步中...')
     flushPending()
     try {
       const saved = await saveAppData(currentUser.id, { dailyLogs, workoutLogs, workoutTemplates })
@@ -656,7 +660,7 @@ function App() {
       setLastSyncedAt(new Date().toISOString())
       setSavePending(false)
       setAutoRetryEnabled(false)
-      setSyncMessage(mode === 'auto' ? '连接已恢复，已自动同步到服务器。' : '已同步到服务器数据文件。')
+      setSyncMessage(mode === 'auto' ? '已自动同步' : '已同步')
     } catch (error) {
       setSyncState('offline')
       setSavePending(false)
@@ -703,14 +707,39 @@ function App() {
     [],
   )
 
+  function syncDailyMeasurementsToProfile(patch: Partial<DailyLog>) {
+    const profilePatch: Partial<UserProfile> = {}
+    if (patch.morningWeightKg !== undefined) profilePatch.currentWeightKg = patch.morningWeightKg
+    if (patch.waistCm !== undefined) profilePatch.waistCm = patch.waistCm
+    if (patch.chestCm !== undefined) profilePatch.chestCm = patch.chestCm
+    if (patch.upperArmCm !== undefined) profilePatch.upperArmCm = patch.upperArmCm
+    if (patch.thighCm !== undefined) profilePatch.thighCm = patch.thighCm
+
+    if (!currentUser || Object.keys(profilePatch).length === 0) return
+
+    void fetchUserProfile()
+      .then((profile) =>
+        saveUserProfile({
+          ...profile,
+          ...profilePatch,
+          trainingDays: profile.trainingDays ?? [],
+        }),
+      )
+      .catch((error) => {
+        console.warn('Failed to sync daily measurements to profile:', error)
+      })
+  }
+
   function updateDailyLog(patch: Partial<DailyLog>) {
     const nextLogs = upsertByDate(dailyLogs, selectedDate, patch)
     schedulePersist({ dailyLogs: nextLogs, workoutLogs, workoutTemplates })
+    syncDailyMeasurementsToProfile(patch)
   }
 
   function quickDailyAction(patch: Partial<DailyLog>) {
     const nextLogs = upsertByDate(dailyLogs, selectedDate, patch)
     schedulePersist({ dailyLogs: nextLogs, workoutLogs, workoutTemplates }, true)
+    syncDailyMeasurementsToProfile(patch)
   }
 
   function finishSelectedWorkout() {
@@ -1038,7 +1067,7 @@ function App() {
   async function exportData(options: ExportOptions, format: ExportFormat = 'json') {
     if (!currentUser) return
     setExportPending(true)
-    setSyncMessage('正在生成导出文件...')
+    setSyncMessage('生成导出文件中...')
     try {
       const payload = await exportCurrentUserData()
       const scopedPayload = buildScopedExportPayload(payload, options, exportAnchorDate)
@@ -1086,27 +1115,27 @@ function App() {
   async function savePlanData(nextPlanData: UserPlanData): Promise<UserPlanData> {
     if (!currentUser) throw new Error('请先登录')
     setSyncState('saving')
-    setSyncMessage('正在保存个人计划...')
+    setSyncMessage('保存计划中...')
     const saved = await saveUserPlanData(nextPlanData)
     setDailyTargetsByDay(saved.dailyTargets)
     setWorkoutPlansByDay(saved.workoutPlans)
     setSyncState('synced')
     setLastSyncedAt(new Date().toISOString())
     setAutoRetryEnabled(false)
-    setSyncMessage('个人计划已保存。')
+    setSyncMessage('计划已保存')
     return saved
   }
 
   async function savePreferenceData(nextPreference: UserPreference): Promise<UserPreference> {
     if (!currentUser) throw new Error('请先登录')
     setSyncState('saving')
-    setSyncMessage('正在保存个人配置...')
+    setSyncMessage('保存配置中...')
     const saved = mergeUserPreference(await saveUserPreference(nextPreference))
     setUserPreference(saved)
     setSyncState('synced')
     setLastSyncedAt(new Date().toISOString())
     setAutoRetryEnabled(false)
-    setSyncMessage('个人配置已保存。')
+    setSyncMessage('配置已保存')
     return saved
   }
 
@@ -1222,191 +1251,77 @@ function App() {
     setSyncState('offline')
     setLastSyncedAt(null)
     setAutoRetryEnabled(false)
-    setSyncMessage('已退出登录。')
+    setSyncMessage('已退出登录')
   }
 
   if (authState === 'checking') {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-        <LoadingBlock className="w-full max-w-sm" title="正在检查登录状态..." />
-      </main>
+      <LoginScreen
+        mode="checking"
+        username={loginUsername}
+        password={loginPassword}
+        error={loginError}
+        pending={loginPending}
+        colorPreference={colorPreference}
+        resolvedColorScheme={resolvedColorScheme}
+        onCycleColorScheme={cycleColorScheme}
+        onUsernameChange={setLoginUsername}
+        onPasswordChange={setLoginPassword}
+        onSubmit={(event) => void handleLogin(event)}
+      />
     )
   }
 
   if (authState === 'anonymous') {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-        <form
-          className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"
-          onSubmit={(event) => void handleLogin(event)}
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-950 dark:text-slate-50">减脂增肌追踪</h1>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">登录后查看你的训练和饮食记录。</p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">邀请制使用；没有自助注册，请使用管理员发来的昵称和密码。</p>
-            </div>
-            <ThemeToggle preference={colorPreference} resolved={resolvedColorScheme} onCycle={cycleColorScheme} />
-          </div>
-          <label className="mt-6 block text-sm font-medium text-slate-700 dark:text-slate-300">
-            昵称
-            <input
-              className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-              type="text"
-              value={loginUsername}
-              onChange={(event) => setLoginUsername(event.target.value)}
-              autoComplete="username"
-              required
-            />
-          </label>
-          <label className="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-300">
-            密码
-            <input
-              className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-              type="password"
-              value={loginPassword}
-              onChange={(event) => setLoginPassword(event.target.value)}
-              autoComplete="current-password"
-              required
-            />
-          </label>
-          {loginError ? <StatusMessage className="mt-3" tone="danger">{loginError}</StatusMessage> : null}
-          <Button className="mt-6 w-full" type="submit" disabled={loginPending}>
-            {loginPending ? '登录中...' : '登录'}
-          </Button>
-        </form>
-      </main>
+      <LoginScreen
+        mode="anonymous"
+        username={loginUsername}
+        password={loginPassword}
+        error={loginError}
+        pending={loginPending}
+        colorPreference={colorPreference}
+        resolvedColorScheme={resolvedColorScheme}
+        onCycleColorScheme={cycleColorScheme}
+        onUsernameChange={setLoginUsername}
+        onPasswordChange={setLoginPassword}
+        onSubmit={(event) => void handleLogin(event)}
+      />
     )
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-4 sm:px-6 lg:px-8">
-        <header className="mb-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-none">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-950 dark:text-slate-50 sm:text-3xl">减脂增肌追踪</h1>
-              <div
-                className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                  syncState === 'synced'
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200'
-                    : syncState === 'saving' || syncState === 'loading'
-                      ? 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/30 dark:text-amber-100'
-                      : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-600/40 dark:bg-rose-900/30 dark:text-rose-100'
-                }`}
-              >
-                {syncState === 'synced'
-                  ? lastSyncedLabel
-                    ? `已同步 ${lastSyncedLabel}`
-                    : '已同步'
-                  : syncState === 'saving'
-                    ? '保存中'
-                    : syncState === 'loading'
-                      ? '连接中'
-                      : '服务器连接失败'}
-              </div>
-            </div>
-            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-start">
-              <ThemeToggle preference={colorPreference} resolved={resolvedColorScheme} onCycle={cycleColorScheme} />
-              {currentUser ? (
-                <div className="col-span-2 flex min-h-11 items-center justify-center rounded-md border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 sm:col-span-1">
-                  {currentUser.displayName}
-                  {currentUser.role === 'admin' ? <span className="ml-2 text-xs text-emerald-700 dark:text-emerald-300">管理员</span> : null}
-                </div>
-              ) : null}
-              <Button
-                className={`col-span-2 sm:col-span-1 transition ${
-                  copyStatus === 'success'
-                    ? 'bg-emerald-700 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-600'
-                    : copyStatus === 'error'
-                      ? 'bg-rose-600 hover:bg-rose-600 dark:bg-rose-500 dark:hover:bg-rose-500'
-                      : ''
-                }`}
-                onClick={() => void copyTodayData()}
-                aria-live="polite"
-              >
-                {copyStatus === 'success' ? '✓ 已复制' : copyStatus === 'error' ? '✗ 复制失败' : '复制今天'}
-              </Button>
-              <details className="relative col-span-2 sm:col-span-1">
-                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">
-                  更多
-                </summary>
-                <div className="absolute right-0 z-30 mt-2 grid w-44 gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-                  <Button
-                    className="w-full justify-start px-3"
-                    variant="ghost"
-                    onClick={(event) => {
-                      event.currentTarget.closest('details')?.removeAttribute('open')
-                      previewTodayData()
-                    }}
-                  >
-                    预览复制
-                  </Button>
-                  <Button
-                    className="w-full justify-start px-3"
-                    variant="ghost"
-                    onClick={(event) => {
-                      event.currentTarget.closest('details')?.removeAttribute('open')
-                      openExportDialog()
-                    }}
-                  >
-                    导出
-                  </Button>
-                  <Button
-                    className="w-full justify-start px-3"
-                    variant="ghost"
-                    onClick={(event) => {
-                      event.currentTarget.closest('details')?.removeAttribute('open')
-                      void handleLogout()
-                    }}
-                  >
-                    退出
-                  </Button>
-                </div>
-              </details>
-            </div>
-          </div>
-          <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{syncMessage}</p>
-          {slowSave ? <StatusMessage className="mt-2" tone="warning">网络较慢，仍在尝试...本地缓存已先保存。</StatusMessage> : null}
-          {syncState === 'offline' ? (
-            <div className="mt-2">
-              {autoRetryEnabled ? (
-                <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
-                  已先保存在本机；恢复连接或回到页面时会自动重试。
-                </p>
-              ) : null}
-              <Button variant="secondary" className="px-3" onClick={() => void retrySync()}>
-                重试同步
-              </Button>
-            </div>
-          ) : null}
-          {noticeMessage ? <StatusMessage className="mt-3" tone="neutral">{noticeMessage}</StatusMessage> : null}
-          {copyMessage ? <StatusMessage className="mt-2" tone="positive">{copyMessage}</StatusMessage> : null}
-        </header>
-
-        <nav className="sticky top-0 z-10 mb-4 overflow-x-auto border-y border-slate-200 bg-slate-50 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-950/95">
-          <div className="flex min-w-max gap-2">
-            {visibleTabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => changeTab(tab.key)}
-                className={`h-10 rounded-md px-4 text-sm font-medium transition ${
-                  contentTab === tab.key
-                    ? 'bg-slate-950 text-white dark:bg-slate-100 dark:text-slate-950'
-                    : 'bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </nav>
+    <AppShell
+      tabs={visibleTabs}
+      activeTab={contentTab}
+      currentUser={currentUser}
+      colorPreference={colorPreference}
+      resolvedColorScheme={resolvedColorScheme}
+      syncState={syncState}
+      syncMessage={syncMessage}
+      lastSyncedLabel={lastSyncedLabel}
+      slowSave={slowSave}
+      autoRetryEnabled={autoRetryEnabled}
+      noticeMessage={noticeMessage}
+      copyMessage={copyMessage}
+      copyStatus={copyStatus}
+      onTabChange={changeTab}
+      onCycleColorScheme={cycleColorScheme}
+      onCopyToday={() => void copyTodayData()}
+      onPreviewToday={previewTodayData}
+      onOpenExport={() => openExportDialog()}
+      onLogout={() => void handleLogout()}
+      onRetrySync={() => void retrySync()}
+    >
 
         {syncState === 'loading' && dailyLogs.length === 0 && workoutLogs.length === 0 && !initialLoaded ? (
-          <div className="grid gap-4">
-            <LoadingBlock title="正在连接服务器数据文件..." lines={4} />
-          </div>
+          contentTab === 'daily' ? (
+            <DailyRecordSkeleton />
+          ) : (
+            <div className="grid gap-4">
+              <LoadingBlock title="正在连接服务器数据文件..." lines={4} />
+            </div>
+          )
         ) : (
           <>
         {contentTab === 'today' ? (
@@ -1416,7 +1331,6 @@ function App() {
             target={target}
             plan={plan}
             todayLog={todayLog}
-            todayWorkout={todayWorkout}
             dashboardStats={dashboardStats}
             todaySnapshot={todaySnapshot}
             trendAlerts={trendAlerts}
@@ -1568,7 +1482,6 @@ function App() {
         ) : null}
       </>
       )}
-      </div>
       {confirmDialog}
       {copyPreviewText !== null ? (
         <CopyPreviewDialog
@@ -1595,7 +1508,7 @@ function App() {
           onExport={(options, format) => void exportData(options, format)}
         />
       ) : null}
-    </main>
+    </AppShell>
   )
 }
 

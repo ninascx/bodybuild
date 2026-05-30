@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from 'react'
 import { ResponsiveContainer } from 'recharts'
-import { Card } from './ui'
+import { Card, EmptyState } from './ui'
 import type { TrendPoint } from '../lib/metrics'
 
 export function ChartCard({
@@ -10,6 +10,8 @@ export function ChartCard({
   isEmpty = false,
   emptyMessage = '连续记录两天以上后，这里会显示趋势。',
   action,
+  chartSummary,
+  legend,
 }: {
   title: string
   description?: ReactNode
@@ -17,7 +19,11 @@ export function ChartCard({
   isEmpty?: boolean
   emptyMessage?: ReactNode
   action?: ReactNode
+  chartSummary?: string
+  legend?: ReactNode
 }) {
+  const accessibleSummary = chartSummary ?? [title, typeof description === 'string' ? description : undefined].filter(Boolean).join('。')
+
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -29,16 +35,68 @@ export function ChartCard({
       </div>
       <div className="mt-4 h-56 sm:h-64">
         {isEmpty ? (
-          <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 text-center text-sm leading-6 text-slate-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400">
-            {emptyMessage}
-          </div>
+          <EmptyState
+            compact
+            className="flex h-full flex-col items-center justify-center"
+            title="暂无趋势数据"
+            message={emptyMessage}
+          />
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            {children}
-          </ResponsiveContainer>
+          <div className="h-full" role="img" aria-label={accessibleSummary}>
+            <ResponsiveContainer width="100%" height="100%">
+              {children}
+            </ResponsiveContainer>
+          </div>
         )}
       </div>
+      {!isEmpty && legend ? <div className="mt-3">{legend}</div> : null}
     </Card>
+  )
+}
+
+type ChartLegendItem = { label: string; color?: string; pattern?: 'solid' | 'dashed' | 'bar' | 'area' }
+
+function ChartLegendMarker({ item }: { item: ChartLegendItem }) {
+  if (!item.color) return null
+
+  if (item.pattern === 'dashed') {
+    return <span className="block w-6 border-t-2 border-dashed" style={{ borderColor: item.color }} aria-hidden="true" />
+  }
+
+  if (item.pattern === 'bar') {
+    return <span className="block h-3.5 w-3 rounded-sm" style={{ backgroundColor: item.color }} aria-hidden="true" />
+  }
+
+  if (item.pattern === 'area') {
+    return (
+      <span
+        className="block h-3 w-6 rounded-sm border"
+        style={{ backgroundColor: `${item.color}33`, borderColor: item.color }}
+        aria-hidden="true"
+      />
+    )
+  }
+
+  return <span className="block w-6 rounded-full border-t-[3px]" style={{ borderColor: item.color }} aria-hidden="true" />
+}
+
+export function ChartLegend({
+  items,
+  note,
+}: {
+  items: ChartLegendItem[]
+  note?: ReactNode
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
+      {items.map((item) => (
+        <span key={item.label} className="inline-flex min-h-6 items-center gap-2">
+          <ChartLegendMarker item={item} />
+          <span>{item.label}</span>
+        </span>
+      ))}
+      {note ? <span className="text-slate-500 dark:text-slate-400">{note}</span> : null}
+    </div>
   )
 }
 

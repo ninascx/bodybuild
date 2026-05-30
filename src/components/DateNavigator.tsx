@@ -20,7 +20,7 @@ export function DateNavigator({
       <div className="flex gap-1">
         <Button
           variant="secondary"
-          className="px-2"
+          className="min-w-11 px-2"
           onClick={() => onChange(addDays(selectedDate, -1))}
           aria-label="前一天"
         >
@@ -36,7 +36,7 @@ export function DateNavigator({
         </Button>
         <Button
           variant="secondary"
-          className="px-2"
+          className="min-w-11 px-2"
           onClick={() => onChange(addDays(selectedDate, 1))}
           disabled={isFuture}
           aria-label="后一天"

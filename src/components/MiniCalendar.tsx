@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { addDays, parseDateInput } from '../lib/dates'
 import type { DailyLog, WorkoutLog } from '../types'
+import { Button } from './ui'
 
 const weekHeaders = ['日', '一', '二', '三', '四', '五', '六'] as const
 
@@ -112,24 +113,24 @@ export function MiniCalendar({
           const dailyHit = hasDailyContent(dailyByDate.get(cell.date))
           const workoutHit = hasWorkoutContent(workoutByDate.get(cell.date))
           const baseClass =
-            'relative flex h-9 min-w-0 flex-col items-center justify-center rounded-md text-xs transition focus:outline-none'
+            'relative min-h-11 min-w-11 w-full flex-col gap-0.5 rounded-md px-1 py-1 text-xs font-medium shadow-none'
           let stateClass: string
           if (isSelected) {
-            stateClass = 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500'
+            stateClass = 'border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500'
           } else if (cell.isFuture) {
-            stateClass = 'cursor-not-allowed bg-slate-50 text-slate-300 dark:bg-slate-800/50 dark:text-slate-600'
+            stateClass = 'border-slate-100 bg-slate-50 text-slate-300 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-600'
           } else if (isToday) {
             stateClass =
-              'border border-emerald-500 bg-white text-emerald-700 hover:bg-emerald-50 dark:border-emerald-400 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-slate-800'
+              'border-emerald-500 bg-white text-emerald-700 hover:bg-emerald-50 dark:border-emerald-400 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-slate-800'
           } else {
             stateClass =
-              'bg-slate-50 text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+              'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
           }
           const ariaLabel = `${cell.date}${dailyHit ? '（已记录）' : ''}${workoutHit ? '（已训练）' : ''}`
           return (
-            <button
+            <Button
               key={cell.date}
-              type="button"
+              variant="secondary"
               onClick={() => {
                 if (cell.isFuture) return
                 onSelectDate(cell.date)
@@ -153,7 +154,7 @@ export function MiniCalendar({
                   }`}
                 />
               </span>
-            </button>
+            </Button>
           )
         })}
       </div>
