@@ -218,26 +218,48 @@ function DailyUtilitiesPanel({
   )
 }
 
-function DailyStatusDetails({ statuses }: { statuses: QuickStatus[] }) {
+function StatusCard({ status }: { status: QuickStatus }) {
   return (
-    <DisclosurePanel className="bg-white dark:bg-slate-900" title="全部状态摘要" contentClassName="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-      {statuses.map((status) => (
-        <div
-          key={status.label}
-          className={`rounded-lg border p-2.5 ${
-            status.tone === 'positive'
-              ? 'border-emerald-200 bg-emerald-50/60 text-emerald-900 dark:border-emerald-700/40 dark:bg-emerald-900/20 dark:text-emerald-100'
-              : status.tone === 'warning'
-                ? 'border-amber-200 bg-amber-50/80 text-amber-950 dark:border-amber-600/40 dark:bg-amber-900/20 dark:text-amber-100'
-                : 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
-          }`}
-        >
-          <p className="text-xs font-medium opacity-75">{status.label}</p>
-          <p className="mt-1 truncate text-base font-semibold">{status.value}</p>
-          <p className="mt-1 truncate text-xs opacity-70">{status.helper}</p>
-        </div>
-      ))}
-    </DisclosurePanel>
+    <div
+      className={`min-h-[4.5rem] rounded-lg border p-3 ${
+        status.tone === 'positive'
+          ? 'border-emerald-200 bg-emerald-50/60 text-emerald-900 dark:border-emerald-700/40 dark:bg-emerald-900/20 dark:text-emerald-100'
+          : status.tone === 'warning'
+            ? 'border-amber-200 bg-amber-50/80 text-amber-950 dark:border-amber-600/40 dark:bg-amber-900/20 dark:text-amber-100'
+            : 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+      }`}
+    >
+      <p className="text-xs font-medium opacity-75">{status.label}</p>
+      <p className="mt-1 truncate text-base font-semibold">{status.value}</p>
+      <p className="mt-1 truncate text-xs opacity-70">{status.helper}</p>
+    </div>
+  )
+}
+
+function DailyStatusDetails({ statuses }: { statuses: QuickStatus[] }) {
+  const bodyStatuses = [statuses[0]]
+  const nutritionStatuses = [statuses[1], statuses[2], statuses[3]]
+  const recoveryStatuses = [statuses[4], statuses[5]]
+  const trainingStatuses = [statuses[6], statuses[7]]
+
+  return (
+    <div className="grid gap-3">
+      <DisclosurePanel className="bg-white dark:bg-slate-900" title="身体指标" contentClassName="grid gap-2">
+        {bodyStatuses.map((status) => <StatusCard key={status.label} status={status} />)}
+      </DisclosurePanel>
+
+      <DisclosurePanel className="bg-white dark:bg-slate-900" title="营养摄入" contentClassName="grid gap-2 sm:grid-cols-3">
+        {nutritionStatuses.map((status) => <StatusCard key={status.label} status={status} />)}
+      </DisclosurePanel>
+
+      <DisclosurePanel className="bg-white dark:bg-slate-900" title="恢复状态" contentClassName="grid gap-2 sm:grid-cols-2">
+        {recoveryStatuses.map((status) => <StatusCard key={status.label} status={status} />)}
+      </DisclosurePanel>
+
+      <DisclosurePanel className="bg-white dark:bg-slate-900" title="训练执行" contentClassName="grid gap-2 sm:grid-cols-2">
+        {trainingStatuses.map((status) => <StatusCard key={status.label} status={status} />)}
+      </DisclosurePanel>
+    </div>
   )
 }
 
