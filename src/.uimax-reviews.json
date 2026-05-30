@@ -1,0 +1,208 @@
+{
+  "version": 1,
+  "reviews": [
+    {
+      "id": "83e362b7-e35d-4d60-8d5d-a25680c20b15",
+      "timestamp": "2026-05-30T11:17:18.314Z",
+      "url": "http://localhost:5179",
+      "codeDir": "C:\\Users\\www20\\OneDrive\\文档\\bodybuild\\src",
+      "duration": 23537,
+      "scores": {
+        "lighthouse": {
+          "performance": null,
+          "accessibility": null,
+          "bestPractices": null,
+          "seo": null
+        },
+        "accessibilityViolations": 1,
+        "codeIssues": {
+          "total": 372,
+          "bySeverity": {
+            "critical": 0,
+            "high": 155,
+            "medium": 146,
+            "low": 71
+          }
+        },
+        "performanceMetrics": {
+          "fcp": 728,
+          "lcp": 728,
+          "cls": 0,
+          "tbt": 0
+        }
+      },
+      "findings": {
+        "total": 373,
+        "bySeverity": {
+          "critical": 0,
+          "high": 156,
+          "medium": 146,
+          "low": 71
+        },
+        "byCategory": {
+          "code-quality": 130,
+          "accessibility": 133,
+          "ux": 96,
+          "design": 14
+        },
+        "topFindings": [
+          {
+            "rule": "large-file",
+            "severity": "high",
+            "message": "File has 1495 lines (recommended max: 400)",
+            "file": "App.tsx"
+          },
+          {
+            "rule": "click-no-keyboard",
+            "severity": "high",
+            "message": "onClick handler without keyboard event handler (onKeyDown/onKeyUp)",
+            "file": "tabs\\WorkoutTab.tsx",
+            "line": 316
+          },
+          {
+            "rule": "click-no-keyboard",
+            "severity": "high",
+            "message": "onClick handler without keyboard event handler (onKeyDown/onKeyUp)",
+            "file": "tabs\\WorkoutTab.tsx",
+            "line": 332
+          },
+          {
+            "rule": "deep-nesting",
+            "severity": "high",
+            "message": "Deep nesting detected (10 levels)",
+            "file": "tabs\\WorkoutTab.tsx",
+            "line": 276
+          },
+          {
+            "rule": "click-no-keyboard",
+            "severity": "high",
+            "message": "onClick handler without keyboard event handler (onKeyDown/onKeyUp)",
+            "file": "tabs\\WeeklyTab.tsx",
+            "line": 48
+          },
+          {
+            "rule": "click-no-keyboard",
+            "severity": "high",
+            "message": "onClick handler without keyboard event handler (onKeyDown/onKeyUp)",
+            "file": "tabs\\WeeklyTab.tsx",
+            "line": 56
+          },
+          {
+            "rule": "click-no-keyboard",
+            "severity": "high",
+            "message": "onClick handler without keyboard event handler (onKeyDown/onKeyUp)",
+            "file": "tabs\\WeeklyTab.tsx",
+            "line": 64
+          },
+          {
+            "rule": "click-no-keyboard",
+            "severity": "high",
+            "message": "onClick handler without keyboard event handler (onKeyDown/onKeyUp)",
+            "file": "tabs\\WeeklyTab.tsx",
+            "line": 70
+          },
+          {
+            "rule": "deep-nesting",
+            "severity": "high",
+            "message": "Deep nesting detected (10 levels)",
+            "file": "tabs\\WeeklyTab.tsx",
+            "line": 132
+          },
+          {
+            "rule": "click-no-keyboard",
+            "severity": "high",
+            "message": "onClick handler without keyboard event handler (onKeyDown/onKeyUp)",
+            "file": "tabs\\ProfileTab.tsx",
+            "line": 117
+          }
+        ]
+      },
+      "filesAnalyzed": 102,
+      "filesWithIssues": [
+        "App.tsx",
+        "components\\BudgetTile.tsx",
+        "components\\ChartCard.tsx",
+        "components\\ConfirmDialog.tsx",
+        "components\\CopyPreviewDialog.tsx",
+        "components\\DailyRecordSkeleton.tsx",
+        "components\\DateNavigator.tsx",
+        "components\\ErrorBoundary.tsx",
+        "components\\ExportDataDialog.tsx",
+        "components\\FormPanel.tsx",
+        "components\\MiniCalendar.tsx",
+        "components\\NumberField.tsx",
+        "components\\PWAInstallPrompt.tsx",
+        "components\\PWAUpdatePrompt.tsx",
+        "components\\QuickRecordSection.tsx",
+        "components\\SummaryRow.tsx",
+        "components\\ThemeToggle.tsx",
+        "components\\TipsDetails.tsx",
+        "components\\Toast.tsx",
+        "components\\ToastContainer.tsx",
+        "components\\admin\\AdminUserPanels.tsx",
+        "components\\admin\\AdminUserRow.tsx",
+        "components\\daily\\DailyCheckInPanel.tsx",
+        "components\\daily\\DailyEssentialsForm.tsx",
+        "components\\daily\\DailyRecordPanels.tsx",
+        "components\\daily\\DailySummaryStrip.tsx",
+        "components\\layout\\AppShell.tsx",
+        "components\\layout\\LoginScreen.tsx",
+        "components\\layout\\MainNavigation.tsx",
+        "components\\layout\\SyncStatusBar.tsx",
+        "components\\plan\\PlanAssociationList.tsx",
+        "components\\profile\\ProfileFormSections.tsx",
+        "components\\profile\\useProfileDraft.ts",
+        "components\\today\\TodayDetailsPanels.tsx",
+        "components\\today\\TodayOverview.tsx",
+        "components\\ui.tsx",
+        "components\\ui\\Badge.tsx",
+        "components\\ui\\Card.tsx",
+        "components\\ui\\Checkbox.tsx",
+        "components\\ui\\DisclosurePanel.tsx",
+        "components\\ui\\DropdownMenu.tsx",
+        "components\\ui\\Field.tsx",
+        "components\\ui\\Input.tsx",
+        "components\\ui\\Select.tsx",
+        "components\\workout\\CustomTemplateCard.tsx",
+        "components\\workout\\ExerciseQuickJumpStrip.tsx",
+        "components\\workout\\ExerciseRecordActions.tsx",
+        "components\\workout\\ExerciseRecordCard.tsx",
+        "components\\workout\\ExerciseRecordSummary.tsx",
+        "components\\workout\\ExerciseSetEditor.tsx",
+        "components\\workout\\MobileCurrentExerciseView.tsx",
+        "components\\workout\\MobileCurrentSetCard.tsx",
+        "components\\workout\\MobileExerciseProgress.tsx",
+        "components\\workout\\MobileWorkoutBottomBar.tsx",
+        "components\\workout\\TrainingHeader.tsx",
+        "components\\workout\\WorkoutControlPanel.tsx",
+        "components\\workout\\WorkoutDateControls.tsx",
+        "components\\workout\\WorkoutMetrics.tsx",
+        "components\\workout\\WorkoutPlanPicker.tsx",
+        "components\\workout\\WorkoutPlanPreview.tsx",
+        "components\\workout\\WorkoutRecordToolbar.tsx",
+        "components\\workout\\WorkoutSessionActions.tsx",
+        "components\\workout\\WorkoutSetQuickControls.tsx",
+        "components\\workout\\WorkoutStatusOverview.tsx",
+        "components\\workout\\WorkoutTemplateManager.tsx",
+        "hooks\\useTrainingTimer.ts",
+        "index.css",
+        "lib\\exportPayload.ts",
+        "lib\\statusInsights.ts",
+        "lib\\workout.ts",
+        "main.tsx",
+        "tabs\\AdminUsersTab.tsx",
+        "tabs\\AnalyticsTab.tsx",
+        "tabs\\DailyRecordTab.tsx",
+        "tabs\\DashboardTab.tsx",
+        "tabs\\PlanTab.tsx",
+        "tabs\\ProfileTab.tsx",
+        "tabs\\SettingsTab.tsx",
+        "tabs\\TodayTab.tsx",
+        "tabs\\WeeklyTab.tsx",
+        "tabs\\WorkoutTab.tsx"
+      ],
+      "status": "completed",
+      "summary": "Found 373 issues (156 high, 146 medium, 71 low)"
+    }
+  ]
+}

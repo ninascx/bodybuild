@@ -65,7 +65,7 @@ export function MobileWorkoutBottomBar({
         aria-expanded={expanded}
         aria-label={expanded ? '收起训练操作面板' : '展开训练操作面板'}
         onClick={onToggleExpanded}
-        className="w-full px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 dark:focus-visible:ring-orange-600"
+        className="w-full px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 dark:focus-visible:ring-orange-600"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">

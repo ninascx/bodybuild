@@ -2,7 +2,10 @@
   "mcpServers": {
     "uimax": {
       "command": "npx",
-      "args": ["-y", "uimax-mcp"]
+      "args": ["-y", "uimax-mcp"],
+      "env": {
+        "CHROME_PATH": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+      }
     }
   }
 }

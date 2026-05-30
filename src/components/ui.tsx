@@ -42,7 +42,7 @@ export function PageHeader({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
-        {eyebrow ? <p className="text-xs font-semibold uppercase tracking-wide text-orange-600 dark:text-orange-400">{eyebrow}</p> : null}
+        {eyebrow ? <p className="text-xs font-semibold uppercase tracking-wide text-orange-700 dark:text-orange-400">{eyebrow}</p> : null}
         <h2 className="mt-2 text-2xl font-bold text-slate-950 dark:text-slate-50 sm:text-3xl">{title}</h2>
         {description ? <p className="mt-3 max-w-3xl text-base leading-relaxed text-slate-600 dark:text-slate-400">{description}</p> : null}
       </div>
@@ -265,7 +265,7 @@ export function SegmentedControl<T extends string>({
             disabled={option.disabled}
             onClick={() => onChange(option.value)}
             className={cn(
-              'min-h-11 min-w-11 cursor-pointer rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 disabled:cursor-not-allowed disabled:opacity-45 dark:focus-visible:ring-orange-600',
+              'min-h-11 min-w-11 cursor-pointer rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 disabled:cursor-not-allowed disabled:opacity-45 dark:focus-visible:ring-orange-600',
               selected
                 ? 'bg-slate-950 text-white dark:bg-slate-100 dark:text-slate-950'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50',
