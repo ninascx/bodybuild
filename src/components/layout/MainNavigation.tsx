@@ -8,11 +8,6 @@ type MainNavigationProps<T extends string> = {
 }
 
 export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: MainNavigationProps<T>) {
-  const primaryMobileTabs = tabs.filter((tab) =>
-    ['today', 'daily', 'workout', 'dashboard'].includes(String(tab.key)),
-  )
-  const secondaryMobileTabs = tabs.filter((tab) => !primaryMobileTabs.includes(tab))
-  const activeSecondaryTab = secondaryMobileTabs.find((tab) => tab.key === activeTab)
   const useBottomMobileNavigation = String(activeTab) !== 'workout'
 
   return (
@@ -52,7 +47,7 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
         aria-label="主要导航"
       >
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
-          {primaryMobileTabs.map((tab) => {
+          {tabs.map((tab) => {
             const active = activeTab === tab.key
             return (
               <Button
@@ -71,20 +66,6 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
               </Button>
             )
           })}
-          <DropdownMenu
-            label={activeSecondaryTab?.label ?? '更多'}
-            triggerClassName={cn(
-              'min-h-12 w-full gap-1 rounded-lg border-0 px-1 py-1 text-xs font-semibold shadow-none [&>svg]:h-3.5 [&>svg]:w-3.5',
-              activeSecondaryTab
-                ? 'bg-slate-950 text-white hover:bg-slate-950 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-100'
-                : 'bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:bg-transparent dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-50',
-            )}
-            menuClassName="bottom-full right-0 mb-2 mt-0 w-40"
-            items={secondaryMobileTabs.map((tab) => ({
-              label: tab.label,
-              onSelect: () => onChange(tab.key),
-            }))}
-          />
         </div>
       </nav>
     </>
