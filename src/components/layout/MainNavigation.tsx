@@ -8,14 +8,9 @@ type MainNavigationProps<T extends string> = {
 }
 
 export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: MainNavigationProps<T>) {
-  const isWorkoutPage = String(activeTab) === 'workout'
-
   return (
     <>
-      <nav className={cn(
-        'sticky top-0 z-20 mb-5 overflow-x-auto border-y border-slate-200/80 bg-slate-100/90 py-2 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90',
-        isWorkoutPage ? 'hidden md:block' : 'hidden md:block',
-      )}>
+      <nav className="sticky top-0 z-20 mb-5 hidden overflow-x-auto border-y border-slate-200/80 bg-slate-100/90 py-2 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90 md:block">
         <div className="flex min-w-max gap-1.5">
           {tabs.map((tab) => {
             const active = activeTab === tab.key
@@ -40,10 +35,7 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
       </nav>
 
       <nav
-        className={cn(
-          'fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_rgb(15_23_42_/_0.08)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden',
-          isWorkoutPage && 'hidden',
-        )}
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_rgb(15_23_42_/_0.08)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden"
         aria-label="主要导航"
       >
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
