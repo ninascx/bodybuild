@@ -57,7 +57,7 @@ export function MobileWorkoutBottomBar({
 }) {
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 shadow-2xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 shadow-2xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
       style={{ transform: keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : undefined }}
     >
       <button
