@@ -1,7 +1,7 @@
 import type { DailyTarget, DayKey, UserPreference, UserProfile } from '../../types'
 import { dayNames } from '../../data/plans'
 import { NumberField } from '../NumberField'
-import { Badge, Button, Field, Select, TextArea, TextInput } from '../ui'
+import { Button, Field, Select, TextArea, TextInput } from '../ui'
 import { FormSection } from '../FormPanel'
 
 type GoalType = NonNullable<UserPreference['goalType']>

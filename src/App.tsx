@@ -289,15 +289,15 @@ function App() {
     [dailyLogs, today, dailyTargetsByDay, userWeeklyCalorieTarget],
   )
   const trendData = useMemo(
-    () => (contentTab === 'dashboard' ? buildTrendData(dailyLogs, today, trendDays, dailyTargetsByDay) : ([] as TrendPoint[])),
+    () => (contentTab === 'analytics' ? buildTrendData(dailyLogs, today, trendDays, dailyTargetsByDay) : ([] as TrendPoint[])),
     [dailyLogs, today, trendDays, dailyTargetsByDay, contentTab],
   )
   const trainingPerformanceData = useMemo(
-    () => (contentTab === 'dashboard' ? buildTrainingPerformanceData(workoutLogs, today, Math.max(60, trendDays)) : ([] as TrainingPerformancePoint[])),
+    () => (contentTab === 'analytics' ? buildTrainingPerformanceData(workoutLogs, today, Math.max(60, trendDays)) : ([] as TrainingPerformancePoint[])),
     [workoutLogs, today, trendDays, contentTab],
   )
   const weeklySummary = useMemo(
-    () => (contentTab === 'weekly' ? createWeeklySummary(dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userWeeklyCalorieTarget, userPreference) : ({} as WeeklySummary)),
+    () => (contentTab === 'analytics' ? createWeeklySummary(dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userWeeklyCalorieTarget, userPreference) : ({} as WeeklySummary)),
     [dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userWeeklyCalorieTarget, userPreference, contentTab],
   )
   const dailyRecommendations = useMemo(
@@ -323,7 +323,7 @@ function App() {
     [contentTab, today, todayLog, todayWorkout, target, dailyLogs, dashboardStats, dailyTargetsByDay, userPreference],
   )
   const trendAlerts = useMemo(
-    () => (contentTab === 'today' || contentTab === 'weekly' ? buildTrendAlerts(dailyLogs, today, dailyTargetsByDay, userPreference) : ([] as AdjustmentRecommendation[])),
+    () => (contentTab === 'today' || contentTab === 'analytics' ? buildTrendAlerts(dailyLogs, today, dailyTargetsByDay, userPreference) : ([] as AdjustmentRecommendation[])),
     [contentTab, dailyLogs, today, dailyTargetsByDay, userPreference],
   )
   const todayCalorieTarget = target.calories ?? target.calorieRange?.[1]
@@ -338,7 +338,7 @@ function App() {
   )
   const weeklyActionRecommendations = useMemo(
     () =>
-      contentTab === 'weekly'
+      contentTab === 'analytics'
         ? buildWeeklyActionRecommendations(weeklySummary, dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userPreference)
         : ([] as AdjustmentRecommendation[]),
     [contentTab, weeklySummary, dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userPreference],
@@ -641,7 +641,7 @@ function App() {
     changeTab('workout')
   }
 
-  const retrySync = useCallback(async (mode: 'manual' | 'auto' = 'manual') => {
+  const retrySync = useCallback(async () => {
     if (!currentUser) return
     setSyncState('saving')
     setSavePending(false)
@@ -674,7 +674,7 @@ function App() {
       const now = Date.now()
       if (now - autoRetryAtRef.current < 15_000) return
       autoRetryAtRef.current = now
-      void retrySync('auto')
+      void retrySync()
     }
     window.addEventListener('online', maybeRetry)
     document.addEventListener('visibilitychange', maybeRetry)

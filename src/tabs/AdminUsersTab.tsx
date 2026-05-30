@@ -1,4 +1,4 @@
-import { Badge, Button, Card } from '../components/ui'
+import { Button, Card } from '../components/ui'
 import { FormPanel } from '../components/FormPanel'
 import {
   AdminServiceStatus,
