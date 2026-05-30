@@ -50,7 +50,7 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
         </span>
       </div>
 
-      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-3 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
         <div className="grid gap-1">
           <NumberField className={quickFieldClass} label="体重 kg" value={props.selectedLog.morningWeightKg} step="0.1" kind="decimal" range={{ min: 20, max: 300 }} onChange={(value) => props.onUpdateDailyLog({ morningWeightKg: value })} />
           <div className="flex flex-wrap gap-1.5">
