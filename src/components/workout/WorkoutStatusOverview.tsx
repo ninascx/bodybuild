@@ -33,7 +33,11 @@ export function WorkoutStatusOverview({
       actions={
         restDay ? null : (
           <div className="flex flex-wrap gap-2">
-            {statusPrimaryLabel ? <Button onClick={onPrimaryAction}>{statusPrimaryLabel}</Button> : null}
+            {statusPrimaryLabel ? (
+              <Button className="min-h-12 px-6 text-base font-semibold shadow-md" onClick={onPrimaryAction}>
+                {statusPrimaryLabel}
+              </Button>
+            ) : null}
             {selectedWorkout && hasIncompleteExercise ? (
               <Button variant="secondary" onClick={onJumpToIncomplete}>
                 跳到未完成

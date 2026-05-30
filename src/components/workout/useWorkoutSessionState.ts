@@ -95,6 +95,13 @@ export function useWorkoutSessionState({
   }, [adjustRestDuration])
 
   useEffect(() => {
+    const isMobile = window.innerWidth < 768
+    if (isMobile && selectedWorkout && !restDay && !workoutMarkedComplete && !trainingMode) {
+      setTrainingMode(true)
+    }
+  }, [selectedWorkout, restDay, workoutMarkedComplete, trainingMode])
+
+  useEffect(() => {
     if (!completionToast) return
     const timer = window.setTimeout(() => setCompletionToast(null), 3200)
     return () => window.clearTimeout(timer)
