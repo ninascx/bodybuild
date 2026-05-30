@@ -65,7 +65,7 @@ export function AppShell<T extends string>({
     <main className="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <a
         href="#app-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-slate-950 focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:focus:bg-slate-100 dark:focus:text-slate-950"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-slate-950 focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 dark:focus:bg-slate-100 dark:focus:text-slate-950"
       >
         跳到主要内容
       </a>
@@ -73,7 +73,7 @@ export function AppShell<T extends string>({
         <header className="mb-2 border-b border-slate-200/80 pb-2 dark:border-slate-800">
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-baseline gap-2">
-              <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">BodyBuild</span>
+              <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-orange-600 dark:text-orange-400">BodyBuild</span>
               <span className="text-slate-300 dark:text-slate-700">/</span>
               <h1 className="truncate text-2xl font-bold tracking-tight text-slate-950 dark:text-slate-50">{activeLabel}</h1>
             </div>
@@ -81,7 +81,7 @@ export function AppShell<T extends string>({
             <div className="flex shrink-0 items-center gap-2">
               <p className="hidden max-w-40 truncate text-sm text-slate-500 dark:text-slate-400 sm:block">
                 {currentUser?.displayName ?? '未登录'}
-                {currentUser?.role === 'admin' ? <span className="ml-1 font-semibold text-emerald-700 dark:text-emerald-300">管理员</span> : null}
+                {currentUser?.role === 'admin' ? <span className="ml-1 font-semibold text-orange-600 dark:text-orange-400">管理员</span> : null}
               </p>
               <DropdownMenu
                 label="更多"

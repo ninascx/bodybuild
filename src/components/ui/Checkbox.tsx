@@ -11,7 +11,7 @@ export function Checkbox({ label, className, ...props }: CheckboxProps) {
       {...props}
       type="checkbox"
       className={cn(
-        'h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800',
+        'h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-2 focus:ring-orange-500 dark:border-slate-600 dark:bg-slate-800',
         className,
       )}
     />
