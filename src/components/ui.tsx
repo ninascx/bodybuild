@@ -120,7 +120,7 @@ export function InsightCard({
   tone?: RecommendationTone
 }) {
   return (
-    <div className={cn('min-w-0 rounded-lg border p-3 transition-colors sm:p-4', toneAccentClasses[tone])}>
+    <div className={cn('min-w-0 rounded-lg border p-3 transition-all duration-200 hover:shadow-md hover:-translate-y-px sm:p-4', toneAccentClasses[tone])}>
       <p className={cn('text-xs font-semibold', toneSoftTextClasses[tone])}>{title}</p>
       {value ? <p className="mt-2 text-xl font-bold leading-tight tabular-nums sm:text-2xl">{value}</p> : null}
       {message ? <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{message}</p> : null}
@@ -140,7 +140,7 @@ export function ActionCard({
   action?: ReactNode
 }) {
   return (
-    <div className={cn('rounded-lg border p-3 transition-colors sm:p-4', toneAccentClasses[tone])}>
+    <div className={cn('rounded-lg border p-3 transition-all duration-200 hover:shadow-md sm:p-4', toneAccentClasses[tone])}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-base font-bold text-slate-950 dark:text-slate-50">{title}</p>
@@ -316,9 +316,9 @@ export function StatCard({
   const indicator = delta?.direction === 'up' ? '+' : delta?.direction === 'down' ? '-' : '='
   const isLarge = size === 'large'
   return (
-    <Card className={isLarge ? 'min-h-36' : 'min-h-28'}>
+    <Card className={cn(isLarge ? 'min-h-36' : 'min-h-28', 'transition-shadow duration-200 hover:shadow-md')}>
       <p className={cn(isLarge ? 'text-sm' : 'text-xs', 'font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400')}>{label}</p>
-      <p className={cn('mt-3 font-bold text-slate-950 dark:text-slate-50', isLarge ? 'text-3xl sm:text-4xl' : 'text-2xl')}>{value}</p>
+      <p className={cn('mt-3 font-bold tabular-nums text-slate-950 dark:text-slate-50', isLarge ? 'text-3xl sm:text-4xl' : 'text-2xl')}>{value}</p>
       {delta ? (
         <p className={cn('mt-2 text-sm font-semibold', deltaClasses[deltaTone])}>
           {indicator} {delta.text}
