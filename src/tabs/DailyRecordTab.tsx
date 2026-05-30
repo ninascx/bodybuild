@@ -234,16 +234,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
     if (Object.keys(patch).length === 0) return
     props.onQuickAction(patch)
   }
-  const markPlannedRestDay = () => {
-    if (props.selectedTarget.isTrainingDay) return
-    props.onQuickAction({ trained: false, workoutCompletion: 0 })
-  }
-  const markTrainingStarted = () => {
-    props.onQuickAction({
-      trained: true,
-      workoutCompletion: props.selectedLog.workoutCompletion ?? 0,
-    })
-  }
   const hasFillableTargetQuickFields =
     (props.selectedLog.calories === undefined && calorieTarget !== undefined) ||
     props.selectedLog.protein === undefined ||
@@ -308,8 +298,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         onQuickAction={props.onQuickAction}
         onCopyYesterday={copyYesterdayQuickFields}
         onFillTarget={fillTargetQuickFields}
-        onMarkRestDay={markPlannedRestDay}
-        onMarkTrainingStarted={markTrainingStarted}
         onSyncWorkoutCompletion={syncWorkoutCompletion}
         onCompleteCommonRecord={completeCommonRecord}
         hasFillableTargetFields={hasFillableTargetQuickFields}

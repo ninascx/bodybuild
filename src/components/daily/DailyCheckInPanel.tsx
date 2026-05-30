@@ -20,8 +20,6 @@ export type DailyCheckInPanelProps = {
   onQuickAction: (patch: Partial<DailyLog>) => void
   onCopyYesterday: () => void
   onFillTarget: () => void
-  onMarkRestDay: () => void
-  onMarkTrainingStarted: () => void
   onSyncWorkoutCompletion: () => void
   onCompleteCommonRecord: () => void
   hasFillableTargetFields: boolean
@@ -38,8 +36,6 @@ function DailyTrainingPanel({
   workoutCompletionFromLog,
   fatigueThreshold,
   onQuickAction,
-  onMarkRestDay,
-  onMarkTrainingStarted,
   onSyncWorkoutCompletion,
 }: DailyCheckInPanelProps) {
   return (
@@ -72,7 +68,7 @@ function DailyTrainingPanel({
         />
       </div>
 
-      {/* Row 2: fatigue + quick actions */}
+      {/* Row 2: fatigue + optional sync */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">疲劳 ≤{fatigueThreshold}</span>
         <SegmentedControl
@@ -80,12 +76,6 @@ function DailyTrainingPanel({
           options={[0, 3, 5, 7, 9].map((value) => ({ value: String(value), label: String(value) }))}
           onChange={(value) => onQuickAction({ fatigueScore: Number(value) })}
         />
-        {!selectedTarget.isTrainingDay && selectedLog.trained !== false ? (
-          <Button variant="secondary" className="text-[11px] shadow-none" onClick={onMarkRestDay}>按计划休息</Button>
-        ) : null}
-        {(selectedLog.trained === false || (!selectedTarget.isTrainingDay && selectedLog.trained !== true)) ? (
-          <Button variant="secondary" className="text-[11px] shadow-none" onClick={onMarkTrainingStarted}>记录加练</Button>
-        ) : null}
         {canSyncWorkoutCompletion ? (
           <Button variant="secondary" className="text-[11px] shadow-none" onClick={onSyncWorkoutCompletion}>同步训练 {workoutCompletionFromLog}%</Button>
         ) : null}

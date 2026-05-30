@@ -1,7 +1,6 @@
-import { Button } from '../ui'
-import { NumberField } from '../NumberField'
 import type { DailyLog, DailyTarget } from '../../types'
 import type { SyncState } from '../../lib/storage'
+import { NumberField } from '../NumberField'
 
 export type DailyEssentialsFormProps = {
   selectedLog: Partial<DailyLog> & { date: string }
@@ -24,19 +23,6 @@ function getSaveLabel(syncState: SyncState, savePending: boolean, lastSyncedLabe
   return '离线缓存'
 }
 
-function QuickValueButton({ label, onClick, disabled = false }: { label: string; onClick: () => void; disabled?: boolean }) {
-  return (
-    <Button
-      variant="secondary"
-      onClick={onClick}
-      disabled={disabled}
-      className="min-h-8 rounded-md px-2 py-0.5 text-xs shadow-none"
-    >
-      {label}
-    </Button>
-  )
-}
-
 export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900 sm:p-4">
@@ -51,68 +37,11 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
       </div>
 
       <div className="mt-3 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-        <div className="grid gap-1">
-          <NumberField className={quickFieldClass} label="体重 kg" value={props.selectedLog.morningWeightKg} step="0.1" kind="decimal" range={{ min: 20, max: 300 }} onChange={(value) => props.onUpdateDailyLog({ morningWeightKg: value })} />
-          <div className="flex flex-wrap gap-1.5">
-            {props.yesterdayLog?.morningWeightKg !== undefined ? (
-              <QuickValueButton label={`昨日 ${props.yesterdayLog.morningWeightKg}kg`} onClick={() => props.onQuickAction({ morningWeightKg: props.yesterdayLog!.morningWeightKg })} />
-            ) : null}
-            {props.selectedLog.morningWeightKg !== undefined ? (
-              <>
-                <QuickValueButton label="-0.2" onClick={() => props.onQuickAction({ morningWeightKg: Math.round((props.selectedLog.morningWeightKg! - 0.2) * 10) / 10 })} />
-                <QuickValueButton label="+0.2" onClick={() => props.onQuickAction({ morningWeightKg: Math.round((props.selectedLog.morningWeightKg! + 0.2) * 10) / 10 })} />
-              </>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="grid gap-1">
-          <NumberField className={quickFieldClass} label="热量 kcal" value={props.selectedLog.calories} range={{ min: 0, max: 10000, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ calories: value })} />
-          <div className="flex flex-wrap gap-1.5">
-            {props.calorieTarget !== undefined ? (
-              <QuickValueButton label={`目标 ${props.calorieTarget}`} onClick={() => props.onQuickAction({ calories: props.calorieTarget })} />
-            ) : null}
-            {props.selectedLog.calories !== undefined ? (
-              <>
-                <QuickValueButton label="-200" onClick={() => props.onQuickAction({ calories: Math.max(0, props.selectedLog.calories! - 200) })} />
-                <QuickValueButton label="+200" onClick={() => props.onQuickAction({ calories: props.selectedLog.calories! + 200 })} />
-              </>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="grid gap-1">
-          <NumberField className={quickFieldClass} label="蛋白质 g" value={props.selectedLog.protein} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ protein: value })} />
-          <div className="flex flex-wrap gap-1.5">
-            {props.selectedTarget.protein !== undefined ? (
-              <QuickValueButton label={`目标 ${props.selectedTarget.protein}g`} onClick={() => props.onQuickAction({ protein: props.selectedTarget.protein })} />
-            ) : null}
-            {props.yesterdayLog?.protein !== undefined ? (
-              <QuickValueButton label={`昨日 ${props.yesterdayLog.protein}g`} onClick={() => props.onQuickAction({ protein: props.yesterdayLog!.protein })} />
-            ) : null}
-          </div>
-        </div>
-
-        <div className="grid gap-1">
-          <NumberField className={quickFieldClass} label="步数" value={props.selectedLog.steps} range={{ min: 0, max: 100000, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ steps: value })} />
-          <div className="flex flex-wrap gap-1.5">
-            {props.selectedTarget.stepTarget !== undefined ? (
-              <QuickValueButton label={`目标 ${props.selectedTarget.stepTarget}`} onClick={() => props.onQuickAction({ steps: props.selectedTarget.stepTarget })} />
-            ) : null}
-            {props.yesterdayLog?.steps !== undefined ? (
-              <QuickValueButton label={`昨日 ${props.yesterdayLog.steps}步`} onClick={() => props.onQuickAction({ steps: props.yesterdayLog!.steps })} />
-            ) : null}
-          </div>
-        </div>
-
-        <div className="grid gap-1">
-          <NumberField className={quickFieldClass} label="睡眠 h" value={props.selectedLog.sleepHours} step="0.1" kind="decimal" range={{ min: 0, max: 24, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ sleepHours: value })} />
-          <div className="flex flex-wrap gap-1.5">
-            {props.yesterdayLog?.sleepHours !== undefined ? (
-              <QuickValueButton label={`昨日 ${props.yesterdayLog.sleepHours}h`} onClick={() => props.onQuickAction({ sleepHours: props.yesterdayLog!.sleepHours })} />
-            ) : null}
-          </div>
-        </div>
+        <NumberField className={quickFieldClass} label="体重 kg" value={props.selectedLog.morningWeightKg} step="0.1" kind="decimal" range={{ min: 20, max: 300 }} onChange={(value) => props.onUpdateDailyLog({ morningWeightKg: value })} />
+        <NumberField className={quickFieldClass} label="热量 kcal" value={props.selectedLog.calories} range={{ min: 0, max: 10000, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ calories: value })} />
+        <NumberField className={quickFieldClass} label="蛋白质 g" value={props.selectedLog.protein} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ protein: value })} />
+        <NumberField className={quickFieldClass} label="步数" value={props.selectedLog.steps} range={{ min: 0, max: 100000, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ steps: value })} />
+        <NumberField className={quickFieldClass} label="睡眠 h" value={props.selectedLog.sleepHours} step="0.1" kind="decimal" range={{ min: 0, max: 24, allowZero: true }} onChange={(value) => props.onUpdateDailyLog({ sleepHours: value })} />
       </div>
     </section>
   )
