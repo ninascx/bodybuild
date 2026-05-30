@@ -35,7 +35,7 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
       </nav>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_rgb(15_23_42_/_0.08)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_rgb(15_23_42_/_0.08)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden"
         aria-label="主要导航"
       >
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
