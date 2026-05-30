@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
+import { Button } from './ui'
 
 /**
  * PWA 更新提示
@@ -44,32 +45,27 @@ export function PWAUpdatePrompt() {
   if (!needRefresh && !showOffline) return null
 
   return (
-    <div className="fixed inset-x-0 bottom-4 z-50 mx-auto flex max-w-md justify-center px-4">
+    <div
+      className="fixed inset-x-0 bottom-4 z-50 mx-auto flex max-w-md justify-center px-4"
+      role="status"
+      aria-live="polite"
+    >
       {needRefresh ? (
-        <div className="flex w-full items-center gap-3 rounded-lg border border-emerald-200 bg-white p-3 shadow-lg dark:border-emerald-700/40 dark:bg-slate-900">
+        <div className="flex w-full items-center gap-3 rounded-lg border border-emerald-200 bg-white p-3 dark:border-emerald-700/40 dark:bg-slate-900">
           <div className="flex-1 text-sm">
             <p className="font-semibold text-slate-950 dark:text-slate-50">新版本已就绪</p>
             <p className="text-slate-600 dark:text-slate-400">点击重新加载使用最新功能。</p>
           </div>
-          <button
-            type="button"
-            onClick={() => updateServiceWorker(true)}
-            className="inline-flex h-9 items-center justify-center rounded-md bg-emerald-600 px-3 text-sm font-medium text-white hover:bg-emerald-700"
-          >
+          <Button className="shrink-0 px-3" onClick={() => updateServiceWorker(true)}>
             重新加载
-          </button>
-          <button
-            type="button"
-            onClick={() => setNeedRefresh(false)}
-            className="inline-flex h-9 items-center justify-center rounded-md px-2 text-sm text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-            aria-label="忽略"
-          >
-            ✕
-          </button>
+          </Button>
+          <Button variant="ghost" className="min-h-11 shrink-0 px-3" onClick={() => setNeedRefresh(false)} aria-label="忽略新版本提示">
+            关闭
+          </Button>
         </div>
       ) : showOffline ? (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-900 shadow-lg dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-100">
-          已缓存到本地，可离线使用 🥊
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-900 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-100">
+          已缓存到本地，可离线使用
         </div>
       ) : null}
     </div>

@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { createBackup, downloadBackup, loadAllCachedData } from '../lib/storage'
+import { Button, Card, StatusMessage } from './ui'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -85,61 +86,57 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     const { error, exportMessage, copyStatus } = this.state
     if (!error) return this.props.children
     if (this.props.fallback) return this.props.fallback(error, this.reset)
-    const copyLabel = copyStatus === 'success' ? '✓ 已复制' : copyStatus === 'error' ? '✗ 复制失败' : '复制错误信息'
+    const copyLabel = copyStatus === 'success' ? '已复制' : copyStatus === 'error' ? '复制失败' : '复制错误信息'
     return (
-      <div className="mx-auto mt-10 max-w-xl rounded-lg border border-rose-200 bg-rose-50 p-6 text-rose-900 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-100">
-        <h2 className="text-lg font-semibold">出现错误</h2>
-        <p className="mt-2 text-sm leading-6">
-          页面渲染时遇到异常。可以先把本地缓存导出做备份，再尝试恢复。
-        </p>
-        <ul className="mt-2 list-disc pl-5 text-sm leading-6">
-          <li>检查"记录"或"训练"页面的日期是否为空</li>
-          <li>点击"导出本地缓存"先备份，避免数据丢失</li>
-          <li>点击"复制错误信息"再贴给开发者，便于排查</li>
-          <li>再点击"重试"或"清除标签缓存并刷新"</li>
-        </ul>
-        <pre className="mt-3 max-h-40 overflow-auto rounded bg-rose-100 p-2 text-xs dark:bg-rose-900/50">
-          {error.message}
-          {error.stack ? `\n\n${error.stack}` : ''}
-        </pre>
-        {exportMessage ? <p className="mt-2 text-xs text-rose-800 dark:text-rose-200">{exportMessage}</p> : null}
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={this.exportCache}
-            className="inline-flex h-10 items-center justify-center rounded-md border border-rose-300 bg-white px-4 text-sm font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-700/40 dark:bg-rose-900/40 dark:text-rose-100 dark:hover:bg-rose-900/60"
-          >
-            导出本地缓存
-          </button>
-          <button
-            type="button"
-            onClick={() => void this.copyError()}
-            aria-live="polite"
-            className={`inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition ${
-              copyStatus === 'success'
-                ? 'border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/40 dark:text-emerald-100'
-                : copyStatus === 'error'
-                  ? 'border-rose-400 bg-rose-200 text-rose-900 dark:border-rose-700/40 dark:bg-rose-900/60 dark:text-rose-100'
-                  : 'border-rose-300 bg-white text-rose-700 hover:bg-rose-100 dark:border-rose-700/40 dark:bg-rose-900/40 dark:text-rose-100 dark:hover:bg-rose-900/60'
-            }`}
-          >
-            {copyLabel}
-          </button>
-          <button
-            type="button"
-            onClick={this.reset}
-            className="inline-flex h-10 items-center justify-center rounded-md bg-rose-600 px-4 text-sm font-medium text-white hover:bg-rose-700"
-          >
-            重试
-          </button>
-          <button
-            type="button"
-            onClick={this.clearTabAndReload}
-            className="inline-flex h-10 items-center justify-center rounded-md border border-rose-300 bg-white px-4 text-sm font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-700/40 dark:bg-rose-900/40 dark:text-rose-100 dark:hover:bg-rose-900/60"
-          >
-            清除标签缓存并刷新
-          </button>
-        </div>
+      <div className="min-h-dvh bg-slate-50 px-4 py-8 text-slate-950 dark:bg-slate-950 dark:text-slate-50 sm:py-12">
+        <Card className="mx-auto max-w-2xl border-rose-200 dark:border-rose-700/40">
+          <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-rose-950 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-50">
+            <p className="text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-300">应用异常</p>
+            <h2 className="mt-2 text-xl font-semibold">页面渲染时遇到问题</h2>
+            <p className="mt-2 text-sm leading-6 text-rose-800 dark:text-rose-100">
+              本地记录仍可先导出备份。建议复制错误信息后再重试，方便后续排查。
+            </p>
+          </div>
+
+          <div className="mt-5 grid gap-3 text-sm text-slate-600 dark:text-slate-300">
+            <p>可以按下面顺序恢复：</p>
+            <ol className="list-decimal space-y-1 pl-5 leading-6">
+              <li>先导出本地缓存，避免数据丢失。</li>
+              <li>复制错误信息并保留给排查。</li>
+              <li>尝试重试；如果仍失败，再清除标签缓存并刷新。</li>
+            </ol>
+          </div>
+
+          <pre className="mt-4 max-h-48 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+            {error.message}
+            {error.stack ? `\n\n${error.stack}` : ''}
+          </pre>
+
+          {exportMessage ? (
+            <StatusMessage className="mt-4" tone={exportMessage.includes('失败') ? 'danger' : 'positive'} announce>
+              {exportMessage}
+            </StatusMessage>
+          ) : null}
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button variant="secondary" onClick={this.exportCache}>
+              导出本地缓存
+            </Button>
+            <Button
+              variant={copyStatus === 'error' ? 'danger' : copyStatus === 'success' ? 'secondary' : 'secondary'}
+              onClick={() => void this.copyError()}
+              aria-live="polite"
+            >
+              {copyLabel}
+            </Button>
+            <Button variant="danger" onClick={this.reset}>
+              重试
+            </Button>
+            <Button variant="secondary" onClick={this.clearTabAndReload}>
+              清除标签缓存并刷新
+            </Button>
+          </div>
+        </Card>
       </div>
     )
   }

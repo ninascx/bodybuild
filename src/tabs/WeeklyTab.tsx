@@ -1,4 +1,4 @@
-import { Badge, Button, Card, EmptyState, RecommendationBox } from '../components/ui'
+import { Badge, Button, Card, EmptyState, PageHeader, RecommendationBox, StatusMessage } from '../components/ui'
 import { SummaryRow } from '../components/SummaryRow'
 import { addDays, getDayKey, startOfWeekSunday } from '../lib/dates'
 import { roundMetric } from '../lib/metrics'
@@ -35,38 +35,44 @@ export function WeeklyTab(props: WeeklyTabProps) {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-      <div className="lg:col-span-2 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-3 shadow-sm">
-        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">查看周次</p>
-        <div className="flex flex-wrap gap-1">
-          <Button
-            variant="secondary"
-            className="px-3"
-            onClick={() => props.onAnchorChange(addDays(props.weeklyAnchorDate, -7))}
-            aria-label="上一周"
-          >
-            ‹ 上一周
-          </Button>
-          <Button
-            variant="secondary"
-            className="px-3"
-            onClick={() => props.onAnchorChange(props.today)}
-            disabled={startOfWeekSunday(props.weeklyAnchorDate) === startOfWeekSunday(props.today)}
-          >
-            本周
-          </Button>
-          <Button
-            variant="secondary"
-            className="px-3"
-            onClick={() => props.onAnchorChange(addDays(props.weeklyAnchorDate, 7))}
-            disabled={addDays(props.weeklyAnchorDate, 7) > props.today}
-            aria-label="下一周"
-          >
-            下一周 ›
-          </Button>
-          <Button variant="secondary" className="px-3" onClick={props.onExportWeek}>
-            导出本周
-          </Button>
-        </div>
+      <div className="lg:col-span-2">
+        <PageHeader
+          eyebrow="周报"
+          title="本周复盘"
+          description={`${props.weeklySummary.weekStart} 至 ${props.weeklySummary.weekEnd}，先判断是否需要调整，再看明细。`}
+          actions={
+            <div className="flex flex-wrap gap-1">
+              <Button
+                variant="secondary"
+                className="px-3"
+                onClick={() => props.onAnchorChange(addDays(props.weeklyAnchorDate, -7))}
+                aria-label="上一周"
+              >
+                ‹ 上一周
+              </Button>
+              <Button
+                variant="secondary"
+                className="px-3"
+                onClick={() => props.onAnchorChange(props.today)}
+                disabled={startOfWeekSunday(props.weeklyAnchorDate) === startOfWeekSunday(props.today)}
+              >
+                本周
+              </Button>
+              <Button
+                variant="secondary"
+                className="px-3"
+                onClick={() => props.onAnchorChange(addDays(props.weeklyAnchorDate, 7))}
+                disabled={addDays(props.weeklyAnchorDate, 7) > props.today}
+                aria-label="下一周"
+              >
+                下一周 ›
+              </Button>
+              <Button variant="secondary" className="px-3" onClick={props.onExportWeek}>
+                导出本周
+              </Button>
+            </div>
+          }
+        />
       </div>
       <div className="lg:col-span-2">
         <RecommendationBox title={props.weeklyConclusionCard.title} message={props.weeklyConclusionCard.message} tone={props.weeklyConclusionCard.tone} />
@@ -106,16 +112,13 @@ export function WeeklyTab(props: WeeklyTabProps) {
           <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">下一周建议</h2>
           <div className="mt-3 grid gap-2">
             {props.weeklySummary.suggestions.map((suggestion) => (
-              <div
+              <StatusMessage
                 key={suggestion}
-                className={`rounded-lg border p-3 text-sm leading-6 ${
-                  props.weeklySummary.weekendOverLimit && suggestion.includes('周末')
-                    ? 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-600/40 dark:bg-rose-900/30 dark:text-rose-100'
-                    : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 text-slate-700 dark:text-slate-300'
-                }`}
+                tone={props.weeklySummary.weekendOverLimit && suggestion.includes('周末') ? 'danger' : 'neutral'}
+                className="leading-6"
               >
                 {suggestion}
-              </div>
+              </StatusMessage>
             ))}
           </div>
         </Card>

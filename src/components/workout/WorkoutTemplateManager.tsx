@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ExercisePlan, WorkoutLog, WorkoutTemplate } from '../../types'
-import { Button, Field, TextInput } from '../ui'
+import { Button, DisclosurePanel, EmptyState, Field, TextInput } from '../ui'
+import { FormStatusStack } from '../FormPanel'
 import { CustomTemplateCard } from './CustomTemplateCard'
 
 function normalizeTemplateTokenInput(value: string): string {
@@ -43,6 +44,12 @@ export function WorkoutTemplateManager({
   const normalizedImportToken = normalizeTemplateTokenInput(importToken)
   const importTokenHasInvalidChars = /[^a-f0-9]/.test(normalizedImportToken)
   const importTokenReady = normalizedImportToken.length === 64 && !importTokenHasInvalidChars
+  const importTokenHelper = importToken
+    ? importTokenReady
+      ? 'token 已就绪'
+      : `已识别 ${normalizedImportToken.length}/64 位`
+    : '粘贴其他设备导出的 64 位模板 token。'
+  const importTokenError = importToken && importTokenHasInvalidChars ? 'token 只能包含 0-9 和 a-f' : undefined
 
   async function handleExportToken() {
     setSharePending('export')
@@ -91,9 +98,11 @@ export function WorkoutTemplateManager({
   }
 
   return (
-    <details className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-4 shadow-sm">
-      <summary className="cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">模板管理 · {customTemplates.length} 个自定义模板</summary>
-      <div className="mt-4 grid gap-4">
+    <DisclosurePanel
+      className="bg-white shadow-sm dark:bg-slate-900"
+      title={`模板管理 · ${customTemplates.length} 个自定义模板`}
+      contentClassName="grid gap-4 p-4"
+    >
         <div className="grid gap-2 sm:grid-cols-[auto_auto] sm:justify-start">
           <Button onClick={onCreateTemplate}>新建模板</Button>
           <Button variant="secondary" onClick={onSaveCurrent} disabled={!selectedWorkout || selectedWorkout.exercises.length === 0}>
@@ -101,22 +110,33 @@ export function WorkoutTemplateManager({
           </Button>
         </div>
 
-        <details className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/70">
-          <summary className="cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">导入 / 导出模板 token</summary>
-          <div className="mt-3 grid gap-3">
+        <DisclosurePanel
+          className="bg-slate-50 dark:bg-slate-800/70"
+          title="导入 / 导出模板 token"
+          contentClassName="grid gap-3"
+        >
             <div className="grid gap-2 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-end">
-              <Button onClick={() => void handleExportToken()} disabled={customTemplates.length === 0 || sharePending !== null}>
-                {sharePending === 'export' ? '导出中...' : '导出 token'}
+              <Button
+                onClick={() => void handleExportToken()}
+                disabled={customTemplates.length === 0 || sharePending !== null}
+                loading={sharePending === 'export'}
+              >
+                导出 token
               </Button>
-              <Field label="导出的 64 位 token">
+              <Field label="导出的 64 位 token" helper="复制后可在另一台设备导入，不会包含训练记录或个人资料。">
                 <TextInput className="font-mono text-xs" value={exportToken} readOnly />
               </Field>
-              <Button variant="secondary" onClick={() => void copyExportToken()} disabled={!exportToken || sharePending !== null}>
+              <Button
+                variant="secondary"
+                onClick={() => void copyExportToken()}
+                disabled={!exportToken || sharePending !== null}
+                loading={sharePending === 'copy'}
+              >
                 复制
               </Button>
             </div>
             <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-              <Field label="导入 64 位 token">
+              <Field label="导入 64 位 token" helper={importTokenError ? undefined : importTokenHelper} error={importTokenError}>
                 <TextInput
                   value={importToken}
                   onChange={(event) => setImportToken(event.target.value)}
@@ -129,26 +149,21 @@ export function WorkoutTemplateManager({
                 variant="secondary"
                 onClick={() => void handleImportToken()}
                 disabled={!importTokenReady || sharePending !== null}
+                loading={sharePending === 'import'}
               >
-                {sharePending === 'import' ? '导入中...' : '导入模板'}
+                导入模板
               </Button>
             </div>
-            {importToken ? (
-              <p className={`text-xs ${importTokenReady ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'}`}>
-                {importTokenReady
-                  ? 'token 已就绪'
-                  : importTokenHasInvalidChars
-                    ? 'token 只能包含 0-9 和 a-f'
-                    : `已识别 ${normalizedImportToken.length}/64 位`}
-              </p>
-            ) : null}
-            {shareMessage ? <p className="text-sm text-emerald-700 dark:text-emerald-300">{shareMessage}</p> : null}
-            {shareError ? <p className="text-sm text-rose-600 dark:text-rose-300">{shareError}</p> : null}
-          </div>
-        </details>
+            <FormStatusStack success={shareMessage} error={shareError} />
+        </DisclosurePanel>
 
         {customTemplates.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400">还没有自定义模板。</p>
+          <EmptyState
+            compact
+            title="还没有自定义模板"
+            message="可以从当前训练保存为模板，或先新建一个空模板。"
+            actions={<Button variant="secondary" onClick={onCreateTemplate}>新建模板</Button>}
+          />
         ) : null}
 
         {customTemplates.map((template) => (
@@ -163,7 +178,6 @@ export function WorkoutTemplateManager({
             onDeleteTemplate={onDeleteTemplate}
           />
         ))}
-      </div>
-    </details>
+    </DisclosurePanel>
   )
 }

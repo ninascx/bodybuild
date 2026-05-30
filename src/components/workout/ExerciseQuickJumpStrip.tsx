@@ -1,5 +1,6 @@
 import type { ExerciseLog } from '../../types'
 import { isSetComplete } from '../../lib/workout'
+import { Button } from '../ui'
 
 function getStickyOffset(): number {
   const stickyNav = document.querySelector<HTMLElement>('nav.sticky')
@@ -40,19 +41,19 @@ export function ExerciseQuickJumpStrip({
             : filled
               ? 'bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-900/30 dark:text-amber-100 dark:border-amber-600/40'
               : 'bg-white text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
-          const dim = !isVisible ? 'cursor-not-allowed opacity-45' : ''
+          const dim = !isVisible ? 'opacity-45' : ''
           return (
-            <button
+            <Button
               key={`jump-${exercise.exerciseId}-${index}`}
-              type="button"
+              variant="secondary"
               onClick={() => scrollToExercise(index)}
               disabled={!isVisible}
               title={exercise.name}
               aria-label={`跳转到 ${exercise.name}`}
-              className={`min-h-8 shrink-0 rounded-full border px-2.5 text-xs font-medium transition ${tone} ${dim}`}
+              className={`shrink-0 rounded-full px-2.5 text-xs font-medium shadow-none ${tone} ${dim}`}
             >
               {index + 1}. {exercise.name.length > 10 ? exercise.name.slice(0, 10) + '…' : exercise.name}
-            </button>
+            </Button>
           )
         })}
       </div>
