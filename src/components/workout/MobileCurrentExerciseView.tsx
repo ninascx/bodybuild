@@ -104,6 +104,9 @@ export function MobileCurrentExerciseView({
     currentSetActionLabel,
     bottomPrimaryLabel,
     bottomPrimaryTitle,
+    bottomPrimaryDisabled,
+    bottomFinishLabel,
+    bottomFinishTitle,
     bottomNextLabel,
     bottomNextDisabled,
     bottomCompletionHint,
@@ -114,6 +117,7 @@ export function MobileCurrentExerciseView({
     applyPatchToCurrentSet,
     handleCurrentSetAction,
     handleBottomPrimaryAction,
+    handleBottomFinishAction,
     handleBottomNextAction,
     applyPreviousRecordToEmptySets,
     applyCurrentSetToEmptySets,
@@ -227,6 +231,9 @@ export function MobileCurrentExerciseView({
         bottomNextDisabled={bottomNextDisabled}
         bottomPrimaryLabel={bottomPrimaryLabel}
         bottomPrimaryTitle={bottomPrimaryTitle}
+        bottomPrimaryDisabled={bottomPrimaryDisabled}
+        bottomFinishLabel={bottomFinishLabel}
+        bottomFinishTitle={bottomFinishTitle}
         bottomCompletionHint={bottomCompletionHint}
         canGoPrevious={currentExerciseIndex > 0}
         quickFillLabel={quickFillLabel}
@@ -234,6 +241,7 @@ export function MobileCurrentExerciseView({
         onPreviousExercise={goToPreviousExercise}
         onNext={handleBottomNextAction}
         onPrimary={handleBottomPrimaryAction}
+        onFinish={handleBottomFinishAction}
         onQuickFill={() => applyPatchToCurrentSet(quickFillPatch)}
         onStartRest={onStartRest}
         onAdjustRestDuration={onAdjustRestDuration}

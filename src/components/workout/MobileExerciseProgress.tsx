@@ -118,7 +118,7 @@ export function MobileExerciseProgressCard({
               className={cn(
                 'min-h-11 min-w-[4rem] shrink-0 flex-col gap-0 rounded-full border px-2 text-center text-xs font-medium',
                 isCurrent
-                  ? 'border-slate-950 bg-slate-950 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-950'
+                  ? 'border-teal-700 bg-teal-700 text-white dark:border-cyan-500 dark:bg-cyan-600 dark:text-white'
                   : setDone
                     ? 'border-emerald-200 bg-white text-slate-700 hover:border-emerald-300 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-slate-200'
                     : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400',

@@ -87,7 +87,7 @@ export function CustomTemplateCard({
                 disabled={template.exercises.length <= 1}
                 aria-label={`删除动作 ${exercise.name || exerciseIndex + 1}`}
                 title="删除动作"
-                className="min-w-11 px-3 text-lg leading-none text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/30 dark:hover:text-rose-300"
+                className="min-w-11 px-3 text-lg leading-none text-rose-700/70 hover:bg-rose-50 hover:text-rose-800 dark:text-rose-200/80 dark:hover:bg-rose-900/30 dark:hover:text-rose-100"
               >
                 ×
               </Button>

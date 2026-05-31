@@ -39,7 +39,7 @@ export function ExerciseRecordHeader({
     <button
       type="button"
       onClick={onToggle}
-      className="flex min-h-11 w-full flex-col gap-2 rounded-md text-left transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 dark:hover:bg-slate-800/70 dark:focus-visible:ring-orange-600 sm:flex-row sm:items-start sm:justify-between"
+      className="flex min-h-11 w-full flex-col gap-2 rounded-md text-left transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 dark:hover:bg-slate-800/70 dark:focus-visible:ring-cyan-500 sm:flex-row sm:items-start sm:justify-between"
       aria-expanded={!collapsed}
       aria-label={`${collapsed ? '展开' : '收起'}动作 ${exercise.name}`}
     >

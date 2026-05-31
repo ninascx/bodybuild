@@ -28,7 +28,7 @@ export function DisclosurePanel({
     >
       <summary
         className={cn(
-          'flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 dark:text-slate-200 dark:hover:bg-slate-900 dark:focus-visible:ring-orange-600',
+          'flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 dark:text-slate-200 dark:hover:bg-slate-900 dark:focus-visible:ring-cyan-500',
           summaryClassName,
         )}
       >

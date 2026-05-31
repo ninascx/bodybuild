@@ -16,7 +16,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ...props
 }, ref) {
   const variantClasses: Record<ButtonVariant, string> = {
-    primary: 'bg-orange-700 text-white shadow-sm hover:bg-orange-800 active:bg-orange-900 dark:bg-orange-600 dark:text-white dark:hover:bg-orange-500',
+    primary: 'bg-teal-700 text-white shadow-sm hover:bg-teal-800 active:bg-teal-900 dark:bg-cyan-600 dark:text-white dark:hover:bg-cyan-500',
     secondary: 'border border-slate-200 bg-white text-slate-800 shadow-sm hover:bg-slate-50 active:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800',
     ghost: 'text-slate-600 hover:bg-slate-100 active:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800',
     danger: 'bg-rose-600 text-white shadow-sm hover:bg-rose-700 active:bg-rose-800 dark:bg-rose-500 dark:text-white dark:hover:bg-rose-400',
@@ -29,7 +29,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       type={props.type ?? 'button'}
       disabled={props.disabled || loading}
       className={cn(
-        'inline-flex min-h-11 min-w-0 cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-orange-600',
+        'inline-flex min-h-11 min-w-0 cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-cyan-500',
         variantClasses[variant],
         className,
       )}

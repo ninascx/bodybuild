@@ -23,7 +23,7 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
                 className={cn(
                   'rounded-md px-4 text-sm font-semibold shadow-none',
                   active
-                    ? 'bg-slate-950 text-white shadow-sm dark:bg-slate-100 dark:text-slate-950'
+                    ? 'bg-teal-700 text-white shadow-sm hover:bg-teal-800 dark:bg-cyan-600 dark:text-white dark:hover:bg-cyan-500'
                     : 'text-slate-600 hover:bg-white hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-50',
                 )}
               >
@@ -50,7 +50,7 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
                 className={cn(
                   'min-h-12 rounded-lg px-1 py-1 text-xs font-semibold shadow-none',
                   active
-                    ? 'bg-slate-950 text-white dark:bg-slate-100 dark:text-slate-950'
+                    ? 'bg-teal-700 text-white hover:bg-teal-800 dark:bg-cyan-600 dark:text-white dark:hover:bg-cyan-500'
                     : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-50',
                 )}
               >

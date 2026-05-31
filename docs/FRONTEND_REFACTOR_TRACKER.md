@@ -44,6 +44,12 @@ Refactor the current frontend into a more release-ready product interface while 
 
 ## Current Completed Work
 
+- Product logic skeleton refactor started on 2026-05-31:
+  - Added a task-first front-end derivation model in `src/lib/productFlow.ts`.
+  - The app now keeps existing tab keys while relabeling the main product paths as Today, Record, Train, and Review.
+  - Today is now the action center: one primary next action, direct record-focus actions, training entry state, and review signals.
+  - Record now accepts a focused daily field so Today can jump directly to weight, calories, protein, steps, sleep, fatigue, training, or notes without changing stored data.
+  - Training entry now prioritizes the start/continue path on mobile; template management and record editing remain available but are less prominent before a workout exists.
 - Initial audit and refactor plan were produced before implementation.
 - App shell was extracted:
   - `src/components/layout/LoginScreen.tsx`

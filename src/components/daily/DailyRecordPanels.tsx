@@ -62,33 +62,6 @@ export function DailyCalendarPanel({
   )
 }
 
-export function BodyStatusPanel({
-  selectedLog,
-  onUpdateDailyLog,
-}: {
-  selectedLog: Partial<DailyLog>
-  onUpdateDailyLog: (patch: Partial<DailyLog>) => void
-}) {
-  return (
-    <DetailPanel title="身体状态" tone="warning">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <NumberField
-          label="训练完成度 %"
-          value={selectedLog.workoutCompletion}
-          range={{ min: 0, max: 100, allowZero: true }}
-          onChange={(value) => onUpdateDailyLog({ workoutCompletion: value ?? 0 })}
-        />
-        <NumberField
-          label="疲劳评分 0-10（可选）"
-          value={selectedLog.fatigueScore}
-          range={{ min: 0, max: 10, allowZero: true }}
-          onChange={(value) => onUpdateDailyLog({ fatigueScore: value })}
-        />
-      </div>
-    </DetailPanel>
-  )
-}
-
 const dimensionFields: Array<[string, DimensionKey]> = [
   ['腰围', 'waistCm'],
   ['胸围', 'chestCm'],

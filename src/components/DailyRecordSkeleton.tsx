@@ -41,8 +41,8 @@ export function DailyRecordSkeleton() {
           </div>
           <SkeletonBlock className="h-3 w-20 bg-slate-100 dark:bg-slate-800" />
         </div>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5].map((item) => (
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((item) => (
             <div key={item} className="space-y-2">
               <SkeletonBlock className="h-4 w-20 bg-slate-100 dark:bg-slate-800" />
               <SkeletonBlock className="h-12 w-full bg-slate-100 dark:bg-slate-800" />
@@ -71,8 +71,8 @@ export function DailyRecordSkeleton() {
         <DisclosurePanel className="mt-3 bg-white dark:bg-slate-900" title="最近 6 周日历">
           <span className="sr-only">正在加载日历</span>
         </DisclosurePanel>
-        <DisclosurePanel className="mt-3 bg-white dark:bg-slate-900" title="身体状态">
-          <span className="sr-only">正在加载身体状态</span>
+        <DisclosurePanel className="mt-3 bg-white dark:bg-slate-900" title="围度 / 更多记录">
+          <span className="sr-only">正在加载围度记录</span>
         </DisclosurePanel>
       </section>
     </Card>

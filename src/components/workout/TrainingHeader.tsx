@@ -97,7 +97,7 @@ export function TrainingTimerFloat({
       <Button
         variant="secondary"
         onClick={() => setCollapsed(false)}
-        className="fixed bottom-4 right-4 z-40 flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 dark:focus-visible:ring-orange-600"
+        className="fixed bottom-4 right-4 z-40 flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 dark:focus-visible:ring-cyan-500"
       >
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
@@ -213,7 +213,7 @@ export function TrainingTimerFloat({
           <Button
             variant="secondary"
             onClick={onStartRest}
-            className="border-orange-400 text-orange-700 shadow-none hover:bg-orange-50 dark:border-orange-600/40 dark:text-orange-300 dark:hover:bg-orange-900/30"
+            className="border-teal-500 text-teal-700 shadow-none hover:bg-cyan-50 dark:border-cyan-600/40 dark:text-cyan-300 dark:hover:bg-cyan-950/30"
           >
             开始组间休息 ({restDefaultDuration}s)
           </Button>

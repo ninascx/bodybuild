@@ -156,12 +156,19 @@ export function useMobileExerciseSession({
     ? '返回记录'
     : canConfirmWorkout
       ? '确认完成'
-      : '结束训练'
+      : '完成本组'
   const bottomPrimaryTitle = workoutMarkedComplete
     ? '已同步到今日记录'
     : canConfirmWorkout
       ? '所有组已填完，确认后同步到今日记录'
-      : '现在结束本次训练，已记录的组会保留，今日记录会标记训练完成'
+      : currentSetComplete
+        ? currentSetActionLabel
+        : '先填写重量和次数'
+  const bottomPrimaryDisabled = !workoutMarkedComplete && !canConfirmWorkout && currentSetActionDisabled
+  const bottomFinishLabel = workoutMarkedComplete ? '返回' : '结束'
+  const bottomFinishTitle = workoutMarkedComplete
+    ? '返回记录'
+    : '现在结束本次训练，已记录的组会保留，今日记录不会丢失'
   const bottomNextLabel = hasAnotherIncompleteSet
     ? '下一组'
     : shouldSuggestNextExercise
@@ -217,6 +224,18 @@ export function useMobileExerciseSession({
   }
 
   function handleBottomPrimaryAction() {
+    if (workoutMarkedComplete) {
+      onExitTrainingMode()
+      return
+    }
+    if (canConfirmWorkout) {
+      onFinishWorkout()
+      return
+    }
+    handleCurrentSetAction()
+  }
+
+  function handleBottomFinishAction() {
     if (workoutMarkedComplete) {
       onExitTrainingMode()
       return
@@ -298,6 +317,9 @@ export function useMobileExerciseSession({
     currentSetActionLabel,
     bottomPrimaryLabel,
     bottomPrimaryTitle,
+    bottomPrimaryDisabled,
+    bottomFinishLabel,
+    bottomFinishTitle,
     bottomNextLabel,
     bottomNextDisabled,
     bottomCompletionHint,
@@ -308,6 +330,7 @@ export function useMobileExerciseSession({
     applyPatchToCurrentSet,
     handleCurrentSetAction,
     handleBottomPrimaryAction,
+    handleBottomFinishAction,
     handleBottomNextAction,
     applyPreviousRecordToEmptySets,
     applyCurrentSetToEmptySets,

@@ -15,6 +15,9 @@ export function MobileWorkoutBottomBar({
   bottomNextDisabled,
   bottomPrimaryLabel,
   bottomPrimaryTitle,
+  bottomPrimaryDisabled,
+  bottomFinishLabel,
+  bottomFinishTitle,
   bottomCompletionHint,
   canGoPrevious,
   quickFillLabel,
@@ -22,6 +25,7 @@ export function MobileWorkoutBottomBar({
   onPreviousExercise,
   onNext,
   onPrimary,
+  onFinish,
   onQuickFill,
   onStartRest,
   onAdjustRestDuration,
@@ -39,6 +43,9 @@ export function MobileWorkoutBottomBar({
   bottomNextDisabled: boolean
   bottomPrimaryLabel: string
   bottomPrimaryTitle: string
+  bottomPrimaryDisabled: boolean
+  bottomFinishLabel: string
+  bottomFinishTitle: string
   bottomCompletionHint: string
   canGoPrevious: boolean
   quickFillLabel: string | null
@@ -46,6 +53,7 @@ export function MobileWorkoutBottomBar({
   onPreviousExercise: () => void
   onNext: () => void
   onPrimary: () => void
+  onFinish: () => void
   onQuickFill: () => void
   onStartRest: () => void
   onAdjustRestDuration: (delta: number) => void
@@ -81,28 +89,33 @@ export function MobileWorkoutBottomBar({
             第 {setIndex + 1} 组 · {currentSetStatus} · {workoutSummary.completionPercent}%
           </p>
         </div>
-        {!restActive ? (
-          <Button variant="secondary" className="min-h-9 px-2.5 py-1 text-xs" onClick={onStartRest}>
-            休息 {restDefaultDuration}s
+        <div className="flex items-center gap-1.5">
+          {!restActive ? (
+            <Button variant="secondary" className="min-h-9 px-2.5 py-1 text-xs" onClick={onStartRest}>
+              休息 {restDefaultDuration}s
+            </Button>
+          ) : null}
+          <Button variant="ghost" className="min-h-9 px-2.5 py-1 text-xs text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-slate-50" onClick={onFinish} title={bottomFinishTitle}>
+            {bottomFinishLabel}
           </Button>
-        ) : null}
+        </div>
       </div>
 
       {/* Main action buttons */}
-      <div className="grid grid-cols-[1fr_1.2fr_1.2fr] gap-2 px-3 pt-1.5 pb-1.5">
-        <Button variant="secondary" className="min-h-12 px-2 text-xs" onClick={onPreviousExercise} disabled={!canGoPrevious}>
+      <div className="grid grid-cols-[0.82fr_1.28fr_0.9fr] gap-2 px-3 pt-1.5 pb-1.5">
+        <Button variant="secondary" className="min-h-11 whitespace-nowrap px-2 text-xs" onClick={onPreviousExercise} disabled={!canGoPrevious}>
           上一动作
         </Button>
-        <Button className="min-h-12 px-2 text-sm font-semibold" onClick={onNext} disabled={bottomNextDisabled}>
-          {bottomNextLabel}
-        </Button>
-        <Button variant="secondary" className="min-h-12 px-2 text-xs" onClick={onPrimary} title={bottomPrimaryTitle}>
+        <Button className="min-h-11 whitespace-nowrap px-2 text-sm font-semibold" onClick={onPrimary} disabled={bottomPrimaryDisabled} title={bottomPrimaryTitle}>
           {bottomPrimaryLabel}
+        </Button>
+        <Button variant="secondary" className="min-h-11 whitespace-nowrap px-2 text-xs" onClick={onNext} disabled={bottomNextDisabled}>
+          {bottomNextLabel}
         </Button>
       </div>
 
       {/* Quick actions row */}
-      <div className="flex items-center gap-2 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+      <div className="flex items-center gap-2 px-3 pb-[calc(0.375rem+env(safe-area-inset-bottom))]">
         <Button variant="secondary" className="flex-1 px-2 py-1.5 text-xs" onClick={onQuickFill} disabled={quickFillDisabled}>
           {quickFillLabel ?? '快速套用'}
         </Button>

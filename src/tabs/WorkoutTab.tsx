@@ -2,7 +2,7 @@ import {
   Button,
   EmptyState,
 } from '../components/ui'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ExerciseRecordCard } from '../components/workout/ExerciseRecordCard'
 import { ExerciseQuickJumpStrip } from '../components/workout/ExerciseQuickJumpStrip'
 import { MobileCurrentExerciseView } from '../components/workout/MobileCurrentExerciseView'
@@ -78,10 +78,12 @@ type WorkoutTabProps = {
   onImportTemplateToken: (token: string) => Promise<{ importedCount: number }>
   onExportSelectedWorkout: () => void
   onFinishWorkout: () => void
+  onImmersiveModeChange?: (enabled: boolean) => void
 }
 
 export function WorkoutTab(props: WorkoutTabProps) {
   const [collapseMode, setCollapseMode] = useState<'auto' | 'all' | 'none'>('auto')
+  const { onImmersiveModeChange } = props
   const {
     setTrainingMode,
     effectiveTrainingMode,
@@ -147,9 +149,18 @@ export function WorkoutTab(props: WorkoutTabProps) {
     workoutMarkedComplete: props.workoutMarkedComplete,
     workoutSummary: props.workoutSummary,
   })
+  useEffect(() => {
+    onImmersiveModeChange?.(effectiveTrainingMode)
+    return () => onImmersiveModeChange?.(false)
+  }, [effectiveTrainingMode, onImmersiveModeChange])
+
+  useEffect(() => {
+    if (!effectiveTrainingMode) return
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [effectiveTrainingMode])
 
   return (
-    <div className={`grid gap-4 ${effectiveTrainingMode ? 'pb-72 md:pb-56' : ''}`}>
+    <div className={`grid gap-4 ${effectiveTrainingMode ? 'pb-44 md:pb-56' : ''}`}>
       {effectiveTrainingMode ? (
         <>
           <div className="hidden md:block">
@@ -212,17 +223,6 @@ export function WorkoutTab(props: WorkoutTabProps) {
         </>
       ) : (
         <>
-          <WorkoutStatusOverview
-            restDay={props.restDay}
-            selectedWorkout={props.selectedWorkout}
-            workoutStatus={workoutStatus}
-            workoutSummary={props.workoutSummary}
-            hasIncompleteExercise={hasIncompleteExercise}
-            statusPrimaryLabel={statusPrimaryLabel}
-            onPrimaryAction={workoutReadyToConfirm ? handleFinishWorkout : () => setTrainingMode(true)}
-            onJumpToIncomplete={scrollToNextIncomplete}
-            onAddBlankWorkout={props.onAddExercise}
-          />
           <WorkoutControlPanel
             selectedDate={props.selectedDate}
             today={props.today}
@@ -238,17 +238,58 @@ export function WorkoutTab(props: WorkoutTabProps) {
             restDay={props.restDay}
             onDateChange={props.onDateChange}
             onTemplateChange={props.onTemplateChange}
-            onApplyTemplate={props.onApplyTemplate}
-            onApplyRecommended={props.onApplyRecommended}
-            onAddExercise={props.onAddExercise}
+            onApplyTemplate={(template) => {
+              props.onApplyTemplate(template)
+              if (!hasWorkout && template.exercises.length > 0) setTrainingMode(true)
+            }}
+            onApplyRecommended={() => {
+              props.onApplyRecommended()
+              if (!hasWorkout) setTrainingMode(true)
+            }}
+            onAddExercise={() => {
+              props.onAddExercise()
+              if (!hasWorkout) setTrainingMode(true)
+            }}
           />
+          <div className="hidden md:block">
+            <WorkoutStatusOverview
+              restDay={props.restDay}
+              selectedWorkout={props.selectedWorkout}
+              workoutStatus={workoutStatus}
+              workoutSummary={props.workoutSummary}
+              hasIncompleteExercise={hasIncompleteExercise}
+              statusPrimaryLabel={statusPrimaryLabel}
+              onPrimaryAction={workoutReadyToConfirm ? handleFinishWorkout : () => setTrainingMode(true)}
+              onJumpToIncomplete={scrollToNextIncomplete}
+              onAddBlankWorkout={props.onAddExercise}
+            />
+          </div>
         </>
       )}
 
       {props.restDay ? (
         null
       ) : (
-      <section className={`grid gap-4 ${effectiveTrainingMode ? 'hidden md:block' : ''}`}>
+      <>
+        {!effectiveTrainingMode && props.selectedWorkout ? (
+          <WorkoutMobileActionPanel
+            primaryLabel={mobilePrimaryLabel}
+            completionHint={completionHint}
+            showOnlyUnfinished={props.showOnlyUnfinishedExercises}
+            hasIncompleteExercise={hasIncompleteExercise}
+            onPrimaryAction={() => {
+              if (!props.workoutMarkedComplete && props.workoutSummary.completionPercent === 100) {
+                handleFinishWorkout()
+                return
+              }
+              setTrainingMode(true)
+            }}
+            onAddExercise={props.onAddExercise}
+            onToggleUnfinished={() => setShowOnlyUnfinished(!props.showOnlyUnfinishedExercises)}
+            onJumpToIncomplete={scrollToNextIncomplete}
+          />
+        ) : null}
+      <section className={`grid gap-4 ${effectiveTrainingMode ? 'hidden md:block' : 'hidden md:grid'} ${!props.selectedWorkout ? 'hidden md:grid' : ''}`}>
         <WorkoutRecordToolbar
           badgeLabel={workoutRecordBadge.label}
           badgeTone={workoutRecordBadge.tone}
@@ -265,25 +306,6 @@ export function WorkoutTab(props: WorkoutTabProps) {
 
         {props.selectedWorkout ? (
           <div className="mt-5 grid gap-4">
-            {!effectiveTrainingMode ? (
-              <WorkoutMobileActionPanel
-                primaryLabel={mobilePrimaryLabel}
-                completionHint={completionHint}
-                showOnlyUnfinished={props.showOnlyUnfinishedExercises}
-                hasIncompleteExercise={hasIncompleteExercise}
-                onPrimaryAction={() => {
-                  if (!props.workoutMarkedComplete && props.workoutSummary.completionPercent === 100) {
-                    handleFinishWorkout()
-                    return
-                  }
-                  setTrainingMode(true)
-                }}
-                onAddExercise={props.onAddExercise}
-                onToggleUnfinished={() => setShowOnlyUnfinished(!props.showOnlyUnfinishedExercises)}
-                onJumpToIncomplete={scrollToNextIncomplete}
-              />
-            ) : null}
-
             <ExerciseQuickJumpStrip
               exercises={props.selectedWorkout.exercises}
               visibleIndexes={props.visibleWorkoutExercises.map((entry) => entry.exerciseIndex)}
@@ -333,23 +355,26 @@ export function WorkoutTab(props: WorkoutTabProps) {
           />
         )}
       </section>
+      </>
       )}
 
       {effectiveTrainingMode || props.restDay ? null : (
-        <WorkoutTemplateManager
-          templates={props.workoutTemplates}
-          selectedWorkout={props.selectedWorkout}
-          onCreateTemplate={props.onCreateTemplate}
-          onSaveCurrent={props.onSaveAsTemplate}
-          onUpdateTemplate={props.onUpdateTemplate}
-          onUpdateTemplateExercise={props.onUpdateTemplateExercise}
-          onAddTemplateExercise={props.onAddTemplateExercise}
-          onDeleteTemplateExercise={props.onDeleteTemplateExercise}
-          onApplyTemplate={(template) => props.onApplyTemplate(templateToOption(template))}
-          onDeleteTemplate={props.onDeleteTemplate}
-          onExportToken={props.onExportTemplateToken}
-          onImportToken={props.onImportTemplateToken}
-        />
+        <div className="hidden md:block">
+          <WorkoutTemplateManager
+            templates={props.workoutTemplates}
+            selectedWorkout={props.selectedWorkout}
+            onCreateTemplate={props.onCreateTemplate}
+            onSaveCurrent={props.onSaveAsTemplate}
+            onUpdateTemplate={props.onUpdateTemplate}
+            onUpdateTemplateExercise={props.onUpdateTemplateExercise}
+            onAddTemplateExercise={props.onAddTemplateExercise}
+            onDeleteTemplateExercise={props.onDeleteTemplateExercise}
+            onApplyTemplate={(template) => props.onApplyTemplate(templateToOption(template))}
+            onDeleteTemplate={props.onDeleteTemplate}
+            onExportToken={props.onExportTemplateToken}
+            onImportToken={props.onImportTemplateToken}
+          />
+        </div>
       )}
 
       {completionToast && (

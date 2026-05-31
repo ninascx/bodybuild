@@ -3,6 +3,7 @@ import { TodayOverview } from '../components/today/TodayOverview'
 import type { AdjustmentRecommendation, DailyLog, DailyTarget, WorkoutPlan } from '../types'
 import type { DashboardStats } from '../lib/metrics'
 import type { TodaySnapshot } from '../lib/statusInsights'
+import type { DailyFocusKey, TodayTaskPlan } from '../lib/productFlow'
 
 type TodayTabProps = {
   today: string
@@ -20,7 +21,8 @@ type TodayTabProps = {
   todayCalorieTarget: number | undefined
   signedRemaining: (target: number | undefined, actual: number | undefined) => string
   remainingTone: (target: number | undefined, actual: number | undefined) => 'positive' | 'warning' | 'neutral'
-  onRecordToday: () => void
+  taskPlan: TodayTaskPlan
+  onRecordToday: (focusKey?: DailyFocusKey) => void
   onStartWorkout: () => void
 }
 
@@ -36,7 +38,7 @@ export function TodayTab(props: TodayTabProps) {
         today={props.today}
         todayKey={props.todayKey}
         target={props.target}
-        todaySnapshot={props.todaySnapshot}
+        taskPlan={props.taskPlan}
         onRecordToday={props.onRecordToday}
         onStartWorkout={props.onStartWorkout}
       />

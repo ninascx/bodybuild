@@ -50,12 +50,14 @@ export function WorkoutControlPanel({
   const recommendedId = `builtin-${getDayKey(selectedDate)}`
   const canStartSelectedTemplate = Boolean(selectedTemplate && selectedTemplate.exercises.length > 0)
 
-  // 当天还没开练时默认展开预览，已经记录了则折叠。用 soft-controlled state 保留用户手动切换。
-  const [previewOpen, setPreviewOpen] = useState(!hasWorkout)
+  // 桌面端保留计划预览，移动端先让开始训练路径更短。
+  const [previewOpen, setPreviewOpen] = useState(() =>
+    !hasWorkout && typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches,
+  )
   const lastHasWorkoutRef = useRef(hasWorkout)
   useEffect(() => {
     if (lastHasWorkoutRef.current !== hasWorkout) {
-      setPreviewOpen(!hasWorkout)
+      setPreviewOpen(!hasWorkout && typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches)
       lastHasWorkoutRef.current = hasWorkout
     }
   }, [hasWorkout])

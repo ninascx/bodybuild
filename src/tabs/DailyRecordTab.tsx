@@ -1,13 +1,14 @@
 import { Button, Card, DropdownMenu } from '../components/ui'
 import { DateNavigator } from '../components/DateNavigator'
 import { QuickRecordSection } from '../components/QuickRecordSection'
-import { BodyStatusPanel, DailyCalendarPanel, MeasurementPanel } from '../components/daily/DailyRecordPanels'
+import { DailyCalendarPanel, MeasurementPanel } from '../components/daily/DailyRecordPanels'
 import { addDays } from '../lib/dates'
 import { summarizeWorkout } from '../lib/workout'
 import { useSwipe } from '../hooks/useSwipe'
 import { useMemo } from 'react'
 import type { DailyLog, DailyTarget, WorkoutLog } from '../types'
 import type { SyncState } from '../lib/storage'
+import type { DailyFocusKey } from '../lib/productFlow'
 
 type QuickStatus = { label: string; value: string; helper: string; tone: 'positive' | 'warning' | 'neutral' }
 
@@ -132,6 +133,8 @@ type DailyRecordTabProps = {
   onQuickAction: (patch: Partial<DailyLog>) => void
   onCopySelectedDate: () => void
   onExportSelectedDate: () => void
+  focusKey?: DailyFocusKey
+  onFocusConsumed?: () => void
 }
 
 export function DailyRecordTab(props: DailyRecordTabProps) {
@@ -277,12 +280,14 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         hasFillableTargetFields={hasFillableTargetQuickFields}
         canSyncWorkoutCompletion={canSyncWorkoutCompletion}
         workoutCompletionFromLog={workoutCompletionFromLog}
+        focusKey={props.focusKey}
+        onFocusConsumed={props.onFocusConsumed}
       />
 
       <section className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/70">
         <div className="mb-3">
           <h3 className="text-base font-semibold text-slate-950 dark:text-slate-50">补充详情</h3>
-          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">日历、身体状态和围度放在这里，不打断今日录入。</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">日历和围度放在这里，不打断今日录入。</p>
         </div>
 
         <DailyCalendarPanel
@@ -292,8 +297,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
           workoutLogs={props.workoutLogs}
           onSelectDate={props.onDateChange}
         />
-
-        <BodyStatusPanel selectedLog={props.selectedLog} onUpdateDailyLog={props.onUpdateDailyLog} />
 
         <MeasurementPanel
           selectedLog={props.selectedLog}

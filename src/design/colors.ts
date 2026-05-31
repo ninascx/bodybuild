@@ -1,21 +1,21 @@
 /**
  * 色彩系统
- * 基于 emerald 主题，建立完整的 9 级色阶
+ * 基于 Teal Blue 主题，建立完整的 9 级色阶
  */
 
 export const colors = {
-  // 主色 - Emerald 绿色系统
-  emerald: {
-    50: '#ecfdf5',
-    100: '#d1fae5',
-    200: '#a7f3d0',
-    300: '#6ee7b7',
-    400: '#34d399',
-    500: '#10b981',
-    600: '#059669',
-    700: '#047857',
-    800: '#065f46',
-    900: '#064e3b',
+  // 主色 - Teal Blue 系统
+  primary: {
+    50: '#ecfeff',
+    100: '#cffafe',
+    200: '#a5f3fc',
+    300: '#67e8f9',
+    400: '#22d3ee',
+    500: '#0891b2',
+    600: '#0e7490',
+    700: '#0f766e',
+    800: '#115e59',
+    900: '#134e4a',
   },
 
   // 状态色 - 成功
@@ -77,4 +77,4 @@ export const colors = {
 } as const
 
 export type ColorScale = keyof typeof colors
-export type ColorShade = keyof typeof colors.emerald
+export type ColorShade = keyof typeof colors.primary

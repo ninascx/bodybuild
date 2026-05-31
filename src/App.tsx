@@ -32,6 +32,7 @@ import {
   buildWeeklyActionRecommendations,
 } from './lib/statusInsights'
 import type { TodaySnapshot } from './lib/statusInsights'
+import { buildTodayTaskPlan, type DailyFocusKey, type TodayTaskPlan } from './lib/productFlow'
 import {
   type AppData,
   type CurrentUser,
@@ -78,10 +79,10 @@ import { DailyRecordSkeleton } from './components/DailyRecordSkeleton'
 type TabKey = 'today' | 'daily' | 'workout' | 'analytics' | 'settings' | 'admin'
 
 const baseTabs: Array<{ key: TabKey; label: string }> = [
-  { key: 'today', label: '概览' },
-  { key: 'daily', label: '日志' },
+  { key: 'today', label: '今日' },
+  { key: 'daily', label: '记录' },
   { key: 'workout', label: '训练' },
-  { key: 'analytics', label: '分析' },
+  { key: 'analytics', label: '复盘' },
   { key: 'settings', label: '设置' },
 ]
 const adminTab: { key: TabKey; label: string } = { key: 'admin', label: '用户管理' }
@@ -208,6 +209,8 @@ function App() {
   const [exportAnchorDate, setExportAnchorDate] = useState<string>(() => formatDateInput())
   const [exportPending, setExportPending] = useState(false)
   const [showOnlyUnfinishedExercises, setShowOnlyUnfinishedExercises] = useState(false)
+  const [workoutImmersiveMode, setWorkoutImmersiveMode] = useState(false)
+  const [dailyFocusKey, setDailyFocusKey] = useState<DailyFocusKey | undefined>()
   const [showAllPerformanceLines, setShowAllPerformanceLines] = useState(false)
   const [trendDays, setTrendDays] = useState<7 | 14 | 30 | 90>(30)
   const [weeklyAnchorDate, setWeeklyAnchorDate] = useState<string>(() => formatDateInput())
@@ -321,6 +324,20 @@ function App() {
           })
         : ({} as TodaySnapshot),
     [contentTab, today, todayLog, todayWorkout, target, dailyLogs, dashboardStats, dailyTargetsByDay, userPreference],
+  )
+  const todayTaskPlan = useMemo(
+    () =>
+      contentTab === 'today'
+        ? buildTodayTaskPlan({
+            log: todayLog,
+            target,
+            workout: todayWorkout,
+            todaySnapshot,
+            dashboardStats,
+            preference: userPreference,
+          })
+        : ({} as TodayTaskPlan),
+    [contentTab, todayLog, target, todayWorkout, todaySnapshot, dashboardStats, userPreference],
   )
   const trendAlerts = useMemo(
     () => (contentTab === 'today' || contentTab === 'analytics' ? buildTrendAlerts(dailyLogs, today, dailyTargetsByDay, userPreference) : ([] as AdjustmentRecommendation[])),
@@ -619,6 +636,9 @@ function App() {
   }, [currentUser])
 
   function changeTab(tabKey: TabKey) {
+    if (tabKey !== 'workout') {
+      setWorkoutImmersiveMode(false)
+    }
     setActiveTab(tabKey)
     // 跨 tab 切换重置滚动位置，避免上一个 tab 滚到很远的状态残留。
     if (typeof window !== 'undefined' && tabKey !== activeTab) {
@@ -631,13 +651,15 @@ function App() {
     }
   }
 
-  function openTodayRecord() {
+  function openTodayRecord(focusKey?: DailyFocusKey) {
     setSelectedDate(today)
+    setDailyFocusKey(focusKey)
     changeTab('daily')
   }
 
   function openTodayWorkout() {
     setSelectedDate(today)
+    setDailyFocusKey(undefined)
     changeTab('workout')
   }
 
@@ -685,6 +707,7 @@ function App() {
   }, [autoRetryEnabled, currentUser, retrySync, syncState])
 
   function handleDateChange(nextDate: string) {
+    setDailyFocusKey(undefined)
     if (nextDate === '') {
       setSelectedDate(today)
       return
@@ -1288,6 +1311,7 @@ function App() {
     <AppShell
       tabs={visibleTabs}
       activeTab={contentTab}
+      immersiveMode={contentTab === 'workout' && workoutImmersiveMode}
       currentUser={currentUser}
       colorPreference={colorPreference}
       resolvedColorScheme={resolvedColorScheme}
@@ -1327,6 +1351,7 @@ function App() {
             todayLog={todayLog}
             dashboardStats={dashboardStats}
             todaySnapshot={todaySnapshot}
+            taskPlan={todayTaskPlan}
             trendAlerts={trendAlerts}
             dailyRecommendations={dailyRecommendations}
             weekendRisk={weekendRisk}
@@ -1369,6 +1394,8 @@ function App() {
             onQuickAction={quickDailyAction}
             onCopySelectedDate={() => void copySelectedDateData()}
             onExportSelectedDate={() => openExportDialog('today')}
+            focusKey={dailyFocusKey}
+            onFocusConsumed={() => setDailyFocusKey(undefined)}
           />
         ) : null}
 
@@ -1426,6 +1453,7 @@ function App() {
               }, 'csv')
             }
             onFinishWorkout={finishSelectedWorkout}
+            onImmersiveModeChange={setWorkoutImmersiveMode}
           />
         ) : null}
 
