@@ -62,6 +62,8 @@ npm run dev
 
 ## 生产部署
 
+完整生产部署流程与一键更新脚本见 [`docs/PRODUCTION_DEPLOYMENT.md`](docs/PRODUCTION_DEPLOYMENT.md)。
+
 ```bash
 npm ci --include=dev
 npm run prisma:generate

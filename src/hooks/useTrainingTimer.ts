@@ -30,6 +30,10 @@ function vibrateDevice() {
 }
 
 export function useTrainingTimer(selectedDate: string, active: boolean) {
+  const [pageVisible, setPageVisible] = useState(() => {
+    if (typeof document === 'undefined') return true
+    return document.visibilityState === 'visible'
+  })
   const [elapsedSeconds, setElapsedSeconds] = useState(() => {
     try {
       const key = `bodybuild:elapsed:${selectedDate}`
@@ -63,6 +67,14 @@ export function useTrainingTimer(selectedDate: string, active: boolean) {
   const elapsedIntervalRef = useRef<number | null>(null)
   const lastWorkoutDateRef = useRef<string | null>(null)
   const prevRestSecondsRef = useRef(restSeconds)
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setPageVisible(document.visibilityState === 'visible')
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
 
   const startRestTimer = useCallback(() => {
     setRestSeconds(restDefaultDuration)
@@ -123,7 +135,7 @@ export function useTrainingTimer(selectedDate: string, active: boolean) {
   }, [restSeconds, restActive])
 
   useEffect(() => {
-    if (!active) {
+    if (!active || !pageVisible) {
       if (elapsedIntervalRef.current !== null) {
         window.clearInterval(elapsedIntervalRef.current)
         elapsedIntervalRef.current = null
@@ -138,12 +150,13 @@ export function useTrainingTimer(selectedDate: string, active: boolean) {
     return () => {
       if (elapsedIntervalRef.current !== null) {
         window.clearInterval(elapsedIntervalRef.current)
+        elapsedIntervalRef.current = null
       }
     }
-  }, [active])
+  }, [active, pageVisible])
 
   useEffect(() => {
-    if (restActive && restSeconds > 0) {
+    if (restActive && restSeconds > 0 && pageVisible) {
       restIntervalRef.current = window.setInterval(() => {
         setRestSeconds((prev) => (prev <= 1 ? 0 : prev - 1))
       }, 1000)
@@ -151,9 +164,10 @@ export function useTrainingTimer(selectedDate: string, active: boolean) {
     return () => {
       if (restIntervalRef.current !== null) {
         window.clearInterval(restIntervalRef.current)
+        restIntervalRef.current = null
       }
     }
-  }, [restActive, restSeconds])
+  }, [restActive, restSeconds, pageVisible])
 
   useEffect(() => {
     try {

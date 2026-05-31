@@ -142,21 +142,21 @@ export function useMobileExerciseSession({
   const shouldSuggestNextExercise = suggestedExerciseIndex !== null || (bulkFillCompleted && completed && hasNextIncompleteExercise)
   const canConfirmWorkout = canFinishWorkout && !workoutMarkedComplete
   const canFinishNow = !workoutMarkedComplete
-  const currentSetActionDisabled = !currentSetComplete || (!hasAnotherIncompleteSet && !shouldSuggestNextExercise && !canConfirmWorkout)
+  const currentSetActionDisabled = !currentSetComplete || (!hasAnotherIncompleteSet && !shouldSuggestNextExercise)
   const currentSetActionLabel = !currentSetComplete
-    ? '填重量和次数后完成本组'
+    ? '填重量和次数后可确认本组'
     : hasAnotherIncompleteSet
-      ? '完成本组，下一未填组'
+      ? '确认本组，去下一组'
       : shouldSuggestNextExercise
-        ? '完成动作，去下一个'
+        ? '确认动作，去下一个'
         : canConfirmWorkout
-          ? '确认完成训练'
+          ? '本动作已完成'
           : '本动作已完成'
   const bottomPrimaryLabel = workoutMarkedComplete
     ? '返回记录'
     : canConfirmWorkout
       ? '确认完成'
-      : '完成本组'
+      : '确认本组'
   const bottomPrimaryTitle = workoutMarkedComplete
     ? '已同步到今日记录'
     : canConfirmWorkout
@@ -192,7 +192,7 @@ export function useMobileExerciseSession({
     }
   }
 
-  function applyPatchToCurrentSet(patch: Partial<ExerciseSetLog> | null, advanceWhenComplete = true) {
+  function applyPatchToCurrentSet(patch: Partial<ExerciseSetLog> | null, advanceWhenComplete = false) {
     if (!patch || !currentSet) return
     updateCurrentSet(patch, advanceWhenComplete)
   }
@@ -216,10 +216,6 @@ export function useMobileExerciseSession({
     if (!currentSetComplete) return
     if (hasAnotherIncompleteSet || shouldSuggestNextExercise) {
       finishCurrentSet()
-      return
-    }
-    if (canConfirmWorkout) {
-      onFinishWorkout()
     }
   }
 

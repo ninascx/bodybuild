@@ -19,15 +19,56 @@ export function WeightStepControls({
         onClick={onDecrease}
         className="px-2 text-xs text-slate-600 shadow-none dark:text-slate-400"
       >
-        -2.5{suffix}
+        -5{suffix}
       </Button>
       <Button
         variant="secondary"
         onClick={onIncrease}
         className="px-2 text-xs text-slate-600 shadow-none dark:text-slate-400"
       >
-        +2.5{suffix}
+        +5{suffix}
       </Button>
+    </div>
+  )
+}
+
+function buildWeightOptions(value: number | undefined): number[] {
+  const anchor = value === undefined ? 40 : Math.round(value / 5) * 5
+  const start = Math.max(0, anchor - 10)
+  return Array.from(new Set([start, start + 5, start + 10, start + 15, start + 20].filter((option) => option >= 0 && option <= 500)))
+}
+
+export function WeightQuickSelect({
+  value,
+  onSelect,
+  className = '',
+}: {
+  value?: number
+  onSelect: (value: number) => void
+  className?: string
+}) {
+  const options = buildWeightOptions(value)
+
+  return (
+    <div className={cn('grid grid-cols-5 gap-1.5', className)}>
+      {options.map((weight) => {
+        const selected = value !== undefined && Math.abs(value - weight) < 0.001
+        return (
+          <Button
+            key={weight}
+            variant="secondary"
+            className={cn(
+              'min-h-9 px-1 text-xs font-semibold shadow-none',
+              selected
+                ? 'border-teal-500 bg-cyan-50 text-teal-950 dark:border-cyan-500 dark:bg-cyan-950/50 dark:text-cyan-50'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-teal-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
+            )}
+            onClick={() => onSelect(weight)}
+          >
+            {weight}
+          </Button>
+        )
+      })}
     </div>
   )
 }

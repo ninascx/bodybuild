@@ -3,7 +3,7 @@ import { formatTargetRepRange } from '../../lib/workout'
 import type { ExerciseSetLog } from '../../types'
 import { NumberField } from '../NumberField'
 import { Badge, Button, Checkbox, DisclosurePanel } from '../ui'
-import { RirSelector, TargetRepButtons, WeightStepControls } from './WorkoutSetQuickControls'
+import { RirSelector, TargetRepButtons, WeightQuickSelect, WeightStepControls } from './WorkoutSetQuickControls'
 
 type MobileCurrentSetCardProps = {
   currentSet: ExerciseSetLog | undefined
@@ -138,11 +138,17 @@ export function MobileCurrentSetCard({
         onSelect={(reps) => onUpdateSet({ reps })}
       />
 
+      <WeightQuickSelect
+        className="mt-2"
+        value={currentSet.weight}
+        onSelect={(weight) => onUpdateSet({ weight })}
+      />
+
       <div className="mt-1.5 grid grid-cols-2 gap-2">
         <WeightStepControls
           suffix="kg"
-          onDecrease={() => onUpdateSet({ weight: Math.max(0, (currentSet.weight ?? 0) - 2.5) })}
-          onIncrease={() => onUpdateSet({ weight: (currentSet.weight ?? 0) + 2.5 })}
+          onDecrease={() => onUpdateSet({ weight: Math.max(0, (currentSet.weight ?? 0) - 5) })}
+          onIncrease={() => onUpdateSet({ weight: (currentSet.weight ?? 0) + 5 })}
         />
         <div className="grid grid-cols-2 gap-1.5">
           <Button
@@ -166,7 +172,7 @@ export function MobileCurrentSetCard({
         <RirSelector
           value={currentSet.rir}
           labelPrefix="RIR "
-          onChange={(rir) => onUpdateSet({ rir }, true)}
+          onChange={(rir) => onUpdateSet({ rir })}
         />
       </div>
 

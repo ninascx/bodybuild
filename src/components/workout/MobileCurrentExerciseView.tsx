@@ -203,9 +203,6 @@ export function MobileCurrentExerciseView({
             <div className="mt-2 rounded-lg border border-emerald-200 bg-white p-2.5 dark:border-emerald-700/40 dark:bg-slate-900">
               <p className="text-xs font-medium text-slate-900 dark:text-slate-100">所有组已填完</p>
               <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">确认后会同步到今日记录，并把训练完成度记为 100%。</p>
-              <Button className="mt-1.5 w-full py-2" onClick={onFinishWorkout}>
-                确认完成训练
-              </Button>
             </div>
           ) : shouldSuggestNextExercise ? (
             <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-800">
