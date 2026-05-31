@@ -113,12 +113,9 @@ export function WorkoutControlPanel({
       {!restDay && !hasWorkout ? (
         <div className="mt-3 flex flex-wrap gap-2">
           <Button onClick={() => selectedTemplate && onApplyTemplate(selectedTemplate)} disabled={!canStartSelectedTemplate}>
-            选择计划开始
+            开始训练
           </Button>
-          {!canStartSelectedTemplate ? (
-            <Button variant="secondary" onClick={onAddExercise}>空白训练</Button>
-          ) : null}
-          <Button variant="secondary" onClick={onApplyRecommended}>今日推荐</Button>
+          <Button variant="secondary" onClick={onAddExercise}>空白训练</Button>
         </div>
       ) : null}
 

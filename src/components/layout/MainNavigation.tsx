@@ -8,6 +8,7 @@ type MainNavigationProps<T extends string> = {
 }
 
 export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: MainNavigationProps<T>) {
+  const mobileTabs = tabs.filter((tab) => tab.key !== 'admin')
   return (
     <>
       <nav className="sticky top-0 z-20 mb-5 hidden overflow-x-auto border-y border-slate-200/80 bg-slate-100/90 py-2 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90 md:block">
@@ -38,8 +39,8 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
         className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_rgb(15_23_42_/_0.08)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden"
         aria-label="主要导航"
       >
-        <div className={`mx-auto grid max-w-md gap-1 ${tabs.length === 6 ? 'grid-cols-6' : 'grid-cols-5'}`}>
-          {tabs.map((tab) => {
+        <div className={`mx-auto grid max-w-md gap-1 ${mobileTabs.length === 6 ? 'grid-cols-6' : 'grid-cols-5'}`}>
+          {mobileTabs.map((tab) => {
             const active = activeTab === tab.key
             return (
               <Button

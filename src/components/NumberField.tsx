@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Field, TextInput } from './ui'
 
 export type NumberRange = {
@@ -22,6 +23,7 @@ export function NumberField({
   kind = 'integer',
   inputRef,
   className,
+  labelAction,
 }: {
   label: string
   value?: number
@@ -33,6 +35,7 @@ export function NumberField({
   kind?: 'decimal' | 'integer'
   inputRef?: (el: HTMLInputElement | null) => void
   className?: string
+  labelAction?: ReactNode
 }) {
   const effectiveRange: NumberRange | undefined =
     range ?? (min !== undefined || max !== undefined ? { min, max, allowZero: min === 0 } : undefined)
@@ -94,7 +97,7 @@ export function NumberField({
       : '请输入有效数字'
 
   return (
-    <Field label={label} error={outOfRange ? rangeHint : undefined}>
+    <Field label={label} error={outOfRange ? rangeHint : undefined} labelAction={labelAction}>
       <TextInput
         type="text"
         inputMode={inputMode}

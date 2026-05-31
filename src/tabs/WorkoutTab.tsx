@@ -275,8 +275,6 @@ export function WorkoutTab(props: WorkoutTabProps) {
           <WorkoutMobileActionPanel
             primaryLabel={mobilePrimaryLabel}
             completionHint={completionHint}
-            showOnlyUnfinished={props.showOnlyUnfinishedExercises}
-            hasIncompleteExercise={hasIncompleteExercise}
             onPrimaryAction={() => {
               if (!props.workoutMarkedComplete && props.workoutSummary.completionPercent === 100) {
                 handleFinishWorkout()
@@ -284,9 +282,6 @@ export function WorkoutTab(props: WorkoutTabProps) {
               }
               setTrainingMode(true)
             }}
-            onAddExercise={props.onAddExercise}
-            onToggleUnfinished={() => setShowOnlyUnfinished(!props.showOnlyUnfinishedExercises)}
-            onJumpToIncomplete={scrollToNextIncomplete}
           />
         ) : null}
       <section className={`grid gap-4 ${effectiveTrainingMode ? 'hidden md:block' : 'hidden md:grid'} ${!props.selectedWorkout ? 'hidden md:grid' : ''}`}>

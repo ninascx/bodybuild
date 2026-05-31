@@ -72,6 +72,21 @@ function summarizeTrainingPerformance(data: TrainingPerformancePoint[], showAllL
     : '训练表现图表暂无可读数据。'
 }
 
+function countTrendPoints(data: TrendPoint[], key: keyof TrendPoint): number {
+  return data.filter((point) => typeof point[key] === 'number').length
+}
+
+function countTrainingPoints(data: TrainingPerformancePoint[]): number {
+  return data.filter((point) =>
+    typeof point.benchPress === 'number' ||
+    typeof point.chestPress === 'number' ||
+    typeof point.pulldown === 'number' ||
+    typeof point.row === 'number' ||
+    typeof point.squatOrLegPress === 'number' ||
+    typeof point.romanianDeadlift === 'number',
+  ).length
+}
+
 export function DashboardTab(props: DashboardTabProps) {
   const weightTrendTone: RecommendationTone =
     props.dashboardStats.averageWeight7 === undefined || props.dashboardStats.previous.averageWeight7 === undefined
@@ -87,6 +102,67 @@ export function DashboardTab(props: DashboardTabProps) {
       : props.dashboardStats.trainingCompletionRate >= 60
         ? 'warning'
         : 'danger'
+  const weightTrendPoints = countTrendPoints(props.trendData, 'weightAverage7')
+  const calorieTrendPoints = countTrendPoints(props.trendData, 'calories')
+  const proteinTrendPoints = countTrendPoints(props.trendData, 'proteinMet')
+  const trainingTrendPoints = countTrainingPoints(props.trainingPerformanceData)
+  const reliableTrendCount = [
+    weightTrendPoints >= 3,
+    calorieTrendPoints >= 3,
+    proteinTrendPoints >= 3,
+    trainingTrendPoints >= 2,
+  ].filter(Boolean).length
+  const hasSparseData = reliableTrendCount < 2
+  const missingDataHints = [
+    weightTrendPoints < 3 ? `晨起体重还差 ${3 - weightTrendPoints} 次` : null,
+    calorieTrendPoints < 3 ? `热量记录还差 ${3 - calorieTrendPoints} 天` : null,
+    proteinTrendPoints < 3 ? `蛋白记录还差 ${3 - proteinTrendPoints} 天` : null,
+    trainingTrendPoints < 2 ? `训练重量记录还差 ${2 - trainingTrendPoints} 次` : null,
+  ].filter((item): item is string => item !== null)
+
+  if (hasSparseData) {
+    return (
+      <div className="grid gap-3 sm:gap-4">
+        <PageHeader
+          eyebrow="仪表盘"
+          title="先补数据，再看趋势"
+          description="目前记录点还少，先明确缺口，避免被低可信图表误导。"
+          actions={
+            <SegmentedControl
+              value={String(props.trendDays)}
+              options={([7, 14, 30, 90] as const).map((days) => ({ value: String(days), label: `${days} 天` }))}
+              onChange={(value) => props.onTrendDaysChange(Number(value) as 7 | 14 | 30 | 90)}
+            />
+          }
+        />
+
+        <section className="grid gap-3 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.45fr)]">
+          <Card className="shadow-none">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">当前判断</p>
+              <Badge tone={props.twoWeekAdjustment.tone}>两周趋势</Badge>
+            </div>
+            <h2 className="mt-3 text-xl font-semibold text-slate-950 dark:text-slate-50">{props.twoWeekAdjustment.title}</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{props.twoWeekAdjustment.message}</p>
+          </Card>
+
+          <Card className="shadow-none">
+            <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">需要再记录哪些数据</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              至少积累 3 个饮食/体重记录点和 2 次训练记录后，再展示趋势图表。
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {missingDataHints.map((hint) => (
+                <div key={hint} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  {hint}
+                </div>
+              ))}
+            </div>
+          </Card>
+        </section>
+      </div>
+    )
+  }
 
   return (
     <div className="grid gap-3 sm:gap-4">

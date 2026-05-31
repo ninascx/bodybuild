@@ -14,7 +14,7 @@ export function BasicProfileSection({
   onUpdateProfile: (patch: Partial<UserProfile>) => void
 }) {
   return (
-    <FormSection title="基础资料">
+    <FormSection title="个人资料">
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         <Field label="性别">
           <Select
@@ -45,7 +45,10 @@ export function BodyMeasurementsSection({
   onUpdateProfile: (patch: Partial<UserProfile>) => void
 }) {
   return (
-    <FormSection title="当前身体属性">
+    <FormSection title="基准身体数据">
+      <p className="mb-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
+        这里作为长期资料基准；每日体重和围度变化优先在记录页更新。
+      </p>
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
         <NumberField label="当前体重 kg" value={profile.currentWeightKg} kind="decimal" range={{ min: 20, max: 300 }} onChange={(value) => onUpdateProfile({ currentWeightKg: value })} />
         <NumberField label="腰围 cm" value={profile.waistCm} kind="decimal" range={{ min: 30, max: 250 }} onChange={(value) => onUpdateProfile({ waistCm: value })} />
@@ -65,7 +68,7 @@ export function ProfileGoalsSection({
   onUpdateProfile: (patch: Partial<UserProfile>) => void
 }) {
   return (
-    <FormSection title="目标与习惯">
+    <FormSection title="目标备注">
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         <NumberField label="初始体重 kg" value={profile.initialWeightKg} kind="decimal" range={{ min: 20, max: 300 }} onChange={(value) => onUpdateProfile({ initialWeightKg: value })} />
         <NumberField label="睡眠目标 h" value={profile.sleepHours} kind="decimal" range={{ min: 0, max: 24, allowZero: true }} onChange={(value) => onUpdateProfile({ sleepHours: value })} />
@@ -113,7 +116,7 @@ export function PersonalizationSection({
   onToggleTrainingDay: (day: DayKey) => void
 }) {
   return (
-    <FormSection title="极简个性化配置" actions={<span className="text-xs font-medium text-slate-500 dark:text-slate-400">{trainingDayCount} 个训练日</span>}>
+    <FormSection title="目标规则与训练日" actions={<span className="text-xs font-medium text-slate-500 dark:text-slate-400">{trainingDayCount} 个训练日</span>}>
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         <Field label="当前目标">
           <Select

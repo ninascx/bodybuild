@@ -9,7 +9,6 @@ import {
   BodyMeasurementsSection,
   PersonalizationSection,
   ProfileGoalsSection,
-  ProfileSaveFooter,
 } from '../components/profile/ProfileFormSections'
 import { useProfileDraft } from '../components/profile/useProfileDraft'
 
@@ -143,12 +142,6 @@ export function ProfileTab({ currentUser, preference, planData, onSavePreference
               onUpdateAverageCalories={updateAverageCalories}
               onUpdateWeekendUpper={updateWeekendUpper}
               onToggleTrainingDay={toggleTrainingDay}
-            />
-            <ProfileSaveFooter
-              dirty={dirty}
-              saveDisabled={saveDisabled}
-              saveLabel={saveLabel}
-              onSave={() => void handleSave()}
             />
           </div>
         )}

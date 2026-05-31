@@ -6,10 +6,12 @@ export interface FieldProps {
   children: ReactNode
   helper?: ReactNode
   error?: ReactNode
+  labelAction?: ReactNode
   className?: string
 }
 
 type DescribedFieldControlProps = {
+  id?: string
   'aria-describedby'?: string
   'aria-invalid'?: boolean | 'false' | 'true' | 'grammar' | 'spelling'
 }
@@ -18,6 +20,7 @@ function withFieldDescription(
   children: ReactNode,
   describedBy: string | undefined,
   hasError: boolean,
+  controlId?: string,
 ): ReactNode {
   const childArray = Children.toArray(children)
   if (childArray.length !== 1) return children
@@ -31,15 +34,37 @@ function withFieldDescription(
   return cloneElement(child as ReactElement<DescribedFieldControlProps>, {
     'aria-describedby': nextDescription,
     'aria-invalid': hasError ? true : child.props['aria-invalid'],
+    ...(controlId ? { id: controlId } : {}),
   })
 }
 
-export function Field({ label, children, helper, error, className = '' }: FieldProps) {
+export function Field({ label, children, helper, error, labelAction, className = '' }: FieldProps) {
   const fieldId = useId()
+  const controlId = labelAction ? `${fieldId}-control` : undefined
   const helperId = helper ? `${fieldId}-helper` : undefined
   const errorId = error ? `${fieldId}-error` : undefined
   const describedBy = [helperId, errorId].filter(Boolean).join(' ') || undefined
-  const control = withFieldDescription(children, describedBy, Boolean(error))
+  const control = withFieldDescription(children, describedBy, Boolean(error), controlId)
+
+  if (labelAction) {
+    return (
+      <div className={cn('grid min-w-0 gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300', className)}>
+        <div className="flex min-h-5 items-center justify-between gap-2">
+          <label htmlFor={controlId} className="min-w-0 truncate">
+            {label}
+          </label>
+          {labelAction}
+        </div>
+        {control}
+        {helper ? <span id={helperId} className="text-xs font-normal leading-5 text-slate-500 dark:text-slate-400">{helper}</span> : null}
+        {error ? (
+          <span id={errorId} className="text-xs font-semibold leading-5 text-rose-600 dark:text-rose-400" role="alert">
+            {error}
+          </span>
+        ) : null}
+      </div>
+    )
+  }
 
   return (
     <label className={cn('grid min-w-0 gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300', className)}>

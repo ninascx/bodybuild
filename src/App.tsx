@@ -64,7 +64,6 @@ import type { AdjustmentRecommendation, DailyLog, ExerciseLog, ExercisePlan, Exe
 import { LoadingBlock } from './components/ui'
 import { useColorScheme } from './hooks/useColorScheme'
 import { useConfirm } from './components/ConfirmDialog'
-import { CopyPreviewDialog } from './components/CopyPreviewDialog'
 import { ExportDataDialog } from './components/ExportDataDialog'
 import { AppShell } from './components/layout/AppShell'
 import { LoginScreen } from './components/layout/LoginScreen'
@@ -1156,8 +1155,6 @@ function App() {
     return saved
   }
 
-  const [copyPreviewText, setCopyPreviewText] = useState<string | null>(null)
-
   function buildCopyTextForDate(date: string) {
     const dateKey = getDayKey(date)
     return buildDailyCopyText({
@@ -1190,40 +1187,11 @@ function App() {
     }
   }
 
-  async function copyTodayData() {
-    const text = buildCopyTextForDate(today)
-    const ok = await writeToClipboard(text)
-    if (ok) {
-      setCopyMessage('已复制今天的数据。')
-      setCopyStatus('success')
-    } else {
-      setCopyMessage('复制失败，请检查浏览器剪贴板权限。')
-      setCopyStatus('error')
-    }
-  }
-
   async function copySelectedDateData() {
     const text = buildCopyTextForDate(selectedDate)
     const ok = await writeToClipboard(text)
     if (ok) {
       setCopyMessage(`已复制 ${selectedDate} 的数据。`)
-      setCopyStatus('success')
-    } else {
-      setCopyMessage('复制失败，请检查浏览器剪贴板权限。')
-      setCopyStatus('error')
-    }
-  }
-
-  function previewTodayData() {
-    setCopyPreviewText(buildCopyTextForDate(today))
-  }
-
-  async function confirmCopyFromPreview() {
-    if (!copyPreviewText) return
-    const ok = await writeToClipboard(copyPreviewText)
-    setCopyPreviewText(null)
-    if (ok) {
-      setCopyMessage('已复制今天的数据。')
       setCopyStatus('success')
     } else {
       setCopyMessage('复制失败，请检查浏览器剪贴板权限。')
@@ -1322,12 +1290,8 @@ function App() {
       autoRetryEnabled={autoRetryEnabled}
       noticeMessage={noticeMessage}
       copyMessage={copyMessage}
-      copyStatus={copyStatus}
       onTabChange={changeTab}
       onCycleColorScheme={cycleColorScheme}
-      onCopyToday={() => void copyTodayData()}
-      onPreviewToday={previewTodayData}
-      onOpenExport={() => openExportDialog()}
       onLogout={() => void handleLogout()}
       onRetrySync={() => void retrySync()}
     >
@@ -1490,13 +1454,6 @@ function App() {
       </>
       )}
       {confirmDialog}
-      {copyPreviewText !== null ? (
-        <CopyPreviewDialog
-          text={copyPreviewText}
-          onClose={() => setCopyPreviewText(null)}
-          onConfirm={() => void confirmCopyFromPreview()}
-        />
-      ) : null}
       {showExportDialog ? (
         <ExportDataDialog
           today={exportAnchorDate}

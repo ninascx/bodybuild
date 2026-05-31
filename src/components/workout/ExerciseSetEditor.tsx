@@ -2,7 +2,7 @@ import { formatTargetRepRange, isSetEmpty, parseTargetRepRange, targetRepQuickOp
 import type { ExerciseSetLog } from '../../types'
 import { NumberField } from '../NumberField'
 import { Button } from '../ui'
-import { RirSelector, TargetRepButtons, WeightQuickSelect, WeightStepControls } from './WorkoutSetQuickControls'
+import { RirSelector, TargetRepButtons, WEIGHT_STEP_KG, WeightQuickSelect, WeightStepControls } from './WorkoutSetQuickControls'
 
 export function ExerciseSetEditor({
   set,
@@ -66,8 +66,8 @@ export function ExerciseSetEditor({
               className={compact ? 'h-14 text-base' : undefined}
             />
             <WeightStepControls
-              onDecrease={() => onUpdateSet({ weight: Math.max(0, (set.weight ?? 0) - 5) })}
-              onIncrease={() => onUpdateSet({ weight: (set.weight ?? 0) + 5 })}
+              onDecrease={() => onUpdateSet({ weight: Math.max(0, (set.weight ?? 0) - WEIGHT_STEP_KG) })}
+              onIncrease={() => onUpdateSet({ weight: (set.weight ?? 0) + WEIGHT_STEP_KG })}
             />
             <WeightQuickSelect
               className="mt-2"

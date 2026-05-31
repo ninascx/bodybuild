@@ -2,6 +2,7 @@ import { cn } from '../../lib/cn'
 import { Button } from '../ui'
 
 const RIR_OPTIONS = [0, 1, 2, 3] as const
+export const WEIGHT_STEP_KG = 2.5
 
 export function WeightStepControls({
   onDecrease,
@@ -19,14 +20,14 @@ export function WeightStepControls({
         onClick={onDecrease}
         className="px-2 text-xs text-slate-600 shadow-none dark:text-slate-400"
       >
-        -5{suffix}
+        -{WEIGHT_STEP_KG}{suffix}
       </Button>
       <Button
         variant="secondary"
         onClick={onIncrease}
         className="px-2 text-xs text-slate-600 shadow-none dark:text-slate-400"
       >
-        +5{suffix}
+        +{WEIGHT_STEP_KG}{suffix}
       </Button>
     </div>
   )

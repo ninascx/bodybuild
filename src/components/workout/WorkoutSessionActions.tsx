@@ -4,21 +4,11 @@ import { Button, DisclosurePanel, Field, TextArea, TextInput } from '../ui'
 export function WorkoutMobileActionPanel({
   primaryLabel,
   completionHint,
-  showOnlyUnfinished,
-  hasIncompleteExercise,
   onPrimaryAction,
-  onAddExercise,
-  onToggleUnfinished,
-  onJumpToIncomplete,
 }: {
   primaryLabel: string
   completionHint: string
-  showOnlyUnfinished: boolean
-  hasIncompleteExercise: boolean
   onPrimaryAction: () => void
-  onAddExercise: () => void
-  onToggleUnfinished: () => void
-  onJumpToIncomplete: () => void
 }) {
   return (
     <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800 sm:hidden">
@@ -26,19 +16,6 @@ export function WorkoutMobileActionPanel({
         {primaryLabel}
       </Button>
       <p className="text-center text-xs leading-5 text-slate-500 dark:text-slate-400">{completionHint}</p>
-      <div className="grid grid-cols-2 gap-2">
-        <Button variant="secondary" className="px-2" onClick={onAddExercise}>
-          新增动作
-        </Button>
-        <Button variant="secondary" className="px-2" onClick={onToggleUnfinished}>
-          {showOnlyUnfinished ? '查看全部' : '只看未完成'}
-        </Button>
-        {hasIncompleteExercise ? (
-          <Button variant="secondary" className="col-span-2 px-2" onClick={onJumpToIncomplete}>
-            跳到未完成
-          </Button>
-        ) : null}
-      </div>
     </div>
   )
 }

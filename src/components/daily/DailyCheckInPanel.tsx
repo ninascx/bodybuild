@@ -5,7 +5,6 @@ import type { DailyLog, DailyTarget } from '../../types'
 import type { SyncState } from '../../lib/storage'
 import type { DailyFocusKey } from '../../lib/productFlow'
 import { DailyEssentialsForm } from './DailyEssentialsForm'
-import { DailySummaryStrip } from './DailySummaryStrip'
 
 type QuickStatus = { label: string; value: string; helper: string; tone: 'positive' | 'warning' | 'neutral' }
 
@@ -102,6 +101,7 @@ function DailyTrainingPanel({
 }: DailyCheckInPanelProps) {
   const trainingValue = selectedLog.trained === undefined ? 'unset' : selectedLog.trained ? 'yes' : 'no'
   const completionValue = String(selectedLog.workoutCompletion ?? 0)
+  const hasWorkoutDerivedCompletion = workoutCompletionFromLog > 0
 
   return (
     <div
@@ -119,6 +119,10 @@ function DailyTrainingPanel({
           <Button variant="secondary" className="min-h-9 px-3 text-xs shadow-none" onClick={onSyncWorkoutCompletion}>
             同步训练 {workoutCompletionFromLog}%
           </Button>
+        ) : hasWorkoutDerivedCompletion ? (
+          <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100">
+            训练日志已计算 {workoutCompletionFromLog}%
+          </span>
         ) : null}
       </div>
 
@@ -138,22 +142,24 @@ function DailyTrainingPanel({
             })}
         />
 
-        <ChoiceButtonGroup
-          label="训练完成度"
-          helper="按整次训练估算"
-          value={completionValue}
-          columns={4}
-          options={[
-            { value: '0', label: '0%', helper: '未开始' },
-            { value: '50', label: '50%', helper: '做一半' },
-            { value: '80', label: '80%', helper: '快完成' },
-            { value: '100', label: '100%', helper: '完成' },
-          ]}
-          onChange={(value) => onQuickAction({
-              trained: Number(value) > 0 ? true : selectedLog.trained,
-              workoutCompletion: Number(value),
-            })}
-        />
+        {!hasWorkoutDerivedCompletion ? (
+          <ChoiceButtonGroup
+            label="训练完成度"
+            helper="没有训练日志时手动估算"
+            value={completionValue}
+            columns={4}
+            options={[
+              { value: '0', label: '0%', helper: '未开始' },
+              { value: '50', label: '50%', helper: '做一半' },
+              { value: '80', label: '80%', helper: '快完成' },
+              { value: '100', label: '100%', helper: '完成' },
+            ]}
+            onChange={(value) => onQuickAction({
+                trained: Number(value) > 0 ? true : selectedLog.trained,
+                workoutCompletion: Number(value),
+              })}
+          />
+        ) : null}
       </div>
     </div>
   )
@@ -188,38 +194,8 @@ function DailyQuickTools({
   if (!yesterdayLog && !hasFillableTargetFields) return null
   return (
     <div className="grid w-full grid-cols-2 gap-2">
-      <Button variant="secondary" className="w-full px-2 text-xs shadow-none sm:text-sm" disabled={!yesterdayLog} onClick={onCopyYesterday}>沿用昨天</Button>
-      <Button variant="secondary" className="w-full px-2 text-xs shadow-none sm:text-sm" disabled={!hasFillableTargetFields} onClick={onFillTarget}>按目标补空</Button>
-    </div>
-  )
-}
-
-function CompactStatusCard({ status }: { status: QuickStatus }) {
-  const toneClass =
-    status.tone === 'positive' ? 'border-emerald-200 bg-emerald-50/60 text-emerald-900 dark:border-emerald-700/40 dark:bg-emerald-900/20 dark:text-emerald-100'
-    : status.tone === 'warning' ? 'border-amber-200 bg-amber-50/80 text-amber-950 dark:border-amber-600/40 dark:bg-amber-900/20 dark:text-amber-100'
-    : 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
-  return (
-    <div className={`rounded-md border px-2.5 py-2 text-center ${toneClass}`}>
-      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{status.label}</p>
-      <p className="mt-0.5 truncate text-sm font-semibold tabular-nums">{status.value}</p>
-    </div>
-  )
-}
-
-function DailyStatusGrid({ statuses }: { statuses: QuickStatus[] }) {
-  const body = [statuses[0], statuses[1], statuses[2], statuses[3]]
-  const state = [statuses[4], statuses[5], statuses[6], statuses[7]]
-  return (
-    <div className="grid gap-3">
-      <div>
-        <p className="mb-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">身体数据</p>
-        <div className="grid grid-cols-4 gap-1.5">{body.map((s) => <CompactStatusCard key={s.label} status={s} />)}</div>
-      </div>
-      <div>
-        <p className="mb-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">状态数据</p>
-        <div className="grid grid-cols-4 gap-1.5">{state.map((s) => <CompactStatusCard key={s.label} status={s} />)}</div>
-      </div>
+      <Button variant="secondary" className="w-full px-2 text-xs shadow-none sm:text-sm" disabled={!yesterdayLog} onClick={onCopyYesterday}>填入昨天值</Button>
+      <Button variant="secondary" className="w-full px-2 text-xs shadow-none sm:text-sm" disabled={!hasFillableTargetFields} onClick={onFillTarget}>填入目标值</Button>
     </div>
   )
 }
@@ -246,8 +222,10 @@ export function DailyCheckInPanel(props: DailyCheckInPanelProps) {
   }, [focusKey, onFocusConsumed])
 
   return (
-    <div className="grid gap-3 sm:gap-4 lg:grid-cols-[1fr_minmax(16rem,20rem)]">
+    <div className="grid gap-3 sm:gap-4">
       <div className="grid gap-3 sm:gap-4">
+        <DailyEssentialsForm {...props} />
+        <DailyNotesSection selectedLog={props.selectedLog} onUpdateDailyLog={props.onUpdateDailyLog} />
         <section className="rounded-lg border border-teal-200 bg-cyan-50/70 p-3 dark:border-cyan-700/40 dark:bg-cyan-950/20 sm:p-4">
           <div className="grid gap-3">
             <div className="flex items-start justify-between gap-3">
@@ -283,13 +261,7 @@ export function DailyCheckInPanel(props: DailyCheckInPanelProps) {
             <DailyQuickTools {...props} />
           </div>
         </section>
-        <DailyEssentialsForm {...props} />
-        <DailyNotesSection selectedLog={props.selectedLog} onUpdateDailyLog={props.onUpdateDailyLog} />
         <DailyTrainingPanel {...props} />
-        <DailyStatusGrid statuses={props.quickStatuses} />
-      </div>
-      <div className="grid gap-3 lg:pt-0">
-        <DailySummaryStrip statuses={props.quickStatuses} />
       </div>
     </div>
   )

@@ -33,6 +33,7 @@ dist-server
 
 # Tool configurations and outputs
 .codex/
+.codex-*.png
 repomix-output.*
 
 # Claude Code local configuration

@@ -20,12 +20,8 @@ type AppShellProps<T extends string> = {
   autoRetryEnabled: boolean
   noticeMessage: string
   copyMessage: string
-  copyStatus: 'idle' | 'success' | 'error'
   onTabChange: (tab: T) => void
   onCycleColorScheme: () => void
-  onCopyToday: () => void
-  onPreviewToday: () => void
-  onOpenExport: () => void
   onLogout: () => void
   onRetrySync: () => void
 }
@@ -45,23 +41,19 @@ export function AppShell<T extends string>({
   autoRetryEnabled,
   noticeMessage,
   copyMessage,
-  copyStatus,
   onTabChange,
   onCycleColorScheme,
-  onCopyToday,
-  onPreviewToday,
-  onOpenExport,
   onLogout,
   onRetrySync,
 }: AppShellProps<T>) {
   const activeLabel = tabs.find((tab) => tab.key === activeTab)?.label ?? '追踪'
+  const adminTab = tabs.find((tab) => tab.key === 'admin')
   const themeLabel =
     colorPreference === 'system'
       ? `系统 ${resolvedColorScheme === 'dark' ? '深色' : '浅色'}`
       : colorPreference === 'dark'
         ? '深色'
         : '浅色'
-  const copyLabel = copyStatus === 'success' ? '已复制今天' : copyStatus === 'error' ? '重新复制今天' : '复制今天'
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -90,9 +82,8 @@ export function AppShell<T extends string>({
                   <DropdownMenu
                     label="更多"
                     items={[
-                      { label: copyLabel, onSelect: onCopyToday },
-                      { label: '预览复制', onSelect: onPreviewToday },
-                      { label: '导出', onSelect: onOpenExport },
+                      ...(adminTab ? [{ label: '用户管理', onSelect: () => onTabChange(adminTab.key) }] : []),
+                      { label: `账号：${currentUser?.displayName ?? '未登录'}`, onSelect: () => undefined, disabled: true },
                       { label: `主题：${themeLabel}`, onSelect: onCycleColorScheme },
                       { label: '退出', onSelect: onLogout, tone: 'danger' },
                     ]}

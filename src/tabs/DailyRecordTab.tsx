@@ -1,4 +1,4 @@
-import { Button, Card, DropdownMenu } from '../components/ui'
+import { Button, Card, DisclosurePanel } from '../components/ui'
 import { DateNavigator } from '../components/DateNavigator'
 import { QuickRecordSection } from '../components/QuickRecordSection'
 import { DailyCalendarPanel, MeasurementPanel } from '../components/daily/DailyRecordPanels'
@@ -196,8 +196,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
       steps: yesterdayLog.steps,
       sleepHours: yesterdayLog.sleepHours,
       fatigueScore: yesterdayLog.fatigueScore,
-      trained: yesterdayLog.trained,
-      workoutCompletion: yesterdayLog.trained === true ? yesterdayLog.workoutCompletion : 0,
     })
   }
   const fillTargetQuickFields = () => {
@@ -206,10 +204,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
     if (props.selectedLog.protein === undefined) patch.protein = props.selectedTarget.protein
     if (props.selectedLog.steps === undefined) patch.steps = props.selectedTarget.stepTarget
     if (props.selectedLog.sleepHours === undefined) patch.sleepHours = props.sleepFloorHours
-    if (!props.selectedTarget.isTrainingDay && props.selectedLog.trained === undefined) {
-      patch.trained = false
-      patch.workoutCompletion = 0
-    }
     if (Object.keys(patch).length === 0) return
     props.onQuickAction(patch)
   }
@@ -217,8 +211,7 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
     (props.selectedLog.calories === undefined && calorieTarget !== undefined) ||
     props.selectedLog.protein === undefined ||
     props.selectedLog.steps === undefined ||
-    props.selectedLog.sleepHours === undefined ||
-    (!props.selectedTarget.isTrainingDay && props.selectedLog.trained === undefined)
+    props.selectedLog.sleepHours === undefined
   const workoutCompletionFromLog = selectedWorkoutSummary?.completionPercent ?? 0
   const canSyncWorkoutCompletion =
     workoutCompletionFromLog > 0 &&
@@ -231,37 +224,7 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
     })
   }
   return (
-    <Card {...swipeHandlers} className="space-y-4">
-      <div className="grid gap-2 sm:flex sm:items-center sm:justify-between">
-        <div className="flex items-start justify-end gap-3 sm:block sm:justify-start">
-          <div className="hidden sm:block">
-            <h2 className="text-xl font-semibold text-slate-950 dark:text-slate-50">每日记录</h2>
-            <p className="mt-1 hidden text-sm text-slate-500 dark:text-slate-400 sm:block">今天先补缺口，细节之后再填。</p>
-          </div>
-          <DropdownMenu
-            label="操作"
-            className="w-20 shrink-0 sm:hidden"
-            triggerClassName="min-h-11 gap-1 whitespace-nowrap px-2 text-xs shadow-none [&>svg]:h-3.5 [&>svg]:w-3.5"
-            menuClassName="right-0 w-36"
-            items={[
-              { label: '复制此日', onSelect: props.onCopySelectedDate },
-              { label: '导出此日', onSelect: props.onExportSelectedDate },
-            ]}
-          />
-        </div>
-        <div className="flex flex-col gap-2 sm:items-end">
-          <DateNavigator selectedDate={props.selectedDate} today={props.today} onChange={props.onDateChange} />
-          <div className="hidden grid-cols-2 gap-2 sm:flex sm:w-auto">
-            <Button variant="secondary" className="w-full px-3 sm:w-auto" onClick={props.onCopySelectedDate}>
-              复制此日
-            </Button>
-            <Button variant="secondary" className="w-full px-3 sm:w-auto" onClick={props.onExportSelectedDate}>
-              导出此日
-            </Button>
-          </div>
-        </div>
-      </div>
-
+    <Card {...swipeHandlers} className="space-y-3 sm:space-y-4">
       <QuickRecordSection
         selectedLog={props.selectedLog}
         selectedTarget={props.selectedTarget}
@@ -284,12 +247,21 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         onFocusConsumed={props.onFocusConsumed}
       />
 
-      <section className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/70">
-        <div className="mb-3">
-          <h3 className="text-base font-semibold text-slate-950 dark:text-slate-50">补充详情</h3>
-          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">日历和围度放在这里，不打断今日录入。</p>
+      <DisclosurePanel
+        title="日期与补充详情"
+        className="border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/70"
+        contentClassName="grid gap-3"
+      >
+        <DateNavigator selectedDate={props.selectedDate} today={props.today} onChange={props.onDateChange} />
+        <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">日期、日历、围度和数据操作放在这里，避免打断今日录入。</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Button variant="secondary" className="w-full px-3" onClick={props.onCopySelectedDate}>
+            复制此日
+          </Button>
+          <Button variant="secondary" className="w-full px-3" onClick={props.onExportSelectedDate}>
+            导出此日
+          </Button>
         </div>
-
         <DailyCalendarPanel
           selectedDate={props.selectedDate}
           today={props.today}
@@ -303,7 +275,7 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
           previousLogs={previousLogs}
           onUpdateDailyLog={props.onUpdateDailyLog}
         />
-      </section>
+      </DisclosurePanel>
     </Card>
   )
 }

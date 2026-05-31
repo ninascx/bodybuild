@@ -1,4 +1,4 @@
-import { Badge, Button, Card, InsightCard, SectionHeader, StatusHero } from '../ui'
+import { Badge, Button, Card, SectionHeader, StatusHero } from '../ui'
 import { dayNames } from '../../data/plans'
 import type { DailyTarget } from '../../types'
 import type { DailyFocusKey, TodayTaskAction, TodayTaskPlan } from '../../lib/productFlow'
@@ -70,13 +70,6 @@ export function TodayOverview({
   onStartWorkout: () => void
 }) {
   const primary = taskPlan.primaryAction
-  const runWorkoutCardAction = () => {
-    if (taskPlan.workoutState === 'complete') {
-      onRecordToday('notes')
-      return
-    }
-    onStartWorkout()
-  }
 
   return (
     <>
@@ -124,30 +117,6 @@ export function TodayOverview({
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
             {taskPlan.checklist.slice(0, 6).map((item) => (
               <ChecklistRow key={item.key} item={item} onRecordToday={onRecordToday} />
-            ))}
-          </div>
-        </Card>
-      </section>
-
-      <section className="grid gap-3 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-        <Card className="p-3 sm:p-4">
-          <SectionHeader title="训练入口" description="训练现场只保留开始、继续和确认。" />
-          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-base font-bold text-slate-950 dark:text-slate-50">{taskPlan.workoutTitle}</p>
-              <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{taskPlan.workoutMessage}</p>
-            </div>
-            <Button className="w-full shrink-0 sm:w-auto" variant={taskPlan.workoutState === 'complete' ? 'secondary' : 'primary'} onClick={runWorkoutCardAction}>
-              {taskPlan.workoutActionLabel}
-            </Button>
-          </div>
-        </Card>
-
-        <Card className="p-3 sm:p-4">
-          <SectionHeader title="复盘信号" description="只放会改变今天策略的趋势。" />
-          <div className="mt-3 grid gap-2 sm:grid-cols-3">
-            {taskPlan.weeklySignals.map((signal) => (
-              <InsightCard key={signal.label} title={signal.label} value={signal.value} tone={signal.tone} />
             ))}
           </div>
         </Card>

@@ -3,7 +3,7 @@ import { formatTargetRepRange } from '../../lib/workout'
 import type { ExerciseSetLog } from '../../types'
 import { NumberField } from '../NumberField'
 import { Badge, Button, Checkbox, DisclosurePanel } from '../ui'
-import { RirSelector, TargetRepButtons, WeightQuickSelect, WeightStepControls } from './WorkoutSetQuickControls'
+import { RirSelector, TargetRepButtons, WEIGHT_STEP_KG, WeightQuickSelect, WeightStepControls } from './WorkoutSetQuickControls'
 
 type MobileCurrentSetCardProps = {
   currentSet: ExerciseSetLog | undefined
@@ -147,8 +147,8 @@ export function MobileCurrentSetCard({
       <div className="mt-1.5 grid grid-cols-2 gap-2">
         <WeightStepControls
           suffix="kg"
-          onDecrease={() => onUpdateSet({ weight: Math.max(0, (currentSet.weight ?? 0) - 5) })}
-          onIncrease={() => onUpdateSet({ weight: (currentSet.weight ?? 0) + 5 })}
+          onDecrease={() => onUpdateSet({ weight: Math.max(0, (currentSet.weight ?? 0) - WEIGHT_STEP_KG) })}
+          onIncrease={() => onUpdateSet({ weight: (currentSet.weight ?? 0) + WEIGHT_STEP_KG })}
         />
         <div className="grid grid-cols-2 gap-1.5">
           <Button
