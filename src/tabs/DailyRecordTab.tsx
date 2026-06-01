@@ -225,6 +225,18 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
   }
   return (
     <Card {...swipeHandlers} className="space-y-3 sm:space-y-4">
+      <section className="flex flex-col gap-3 rounded-lg border border-teal-200 bg-cyan-50/70 p-3 dark:border-cyan-700/40 dark:bg-cyan-950/30 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">当前日期数据</p>
+          <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
+            导出 {props.selectedDate} 的记录、围度和训练摘要。
+          </p>
+        </div>
+        <Button className="w-full px-4 sm:w-auto" onClick={props.onExportSelectedDate}>
+          导出此日
+        </Button>
+      </section>
+
       <QuickRecordSection
         selectedLog={props.selectedLog}
         selectedTarget={props.selectedTarget}
@@ -253,13 +265,10 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         contentClassName="grid gap-3"
       >
         <DateNavigator selectedDate={props.selectedDate} today={props.today} onChange={props.onDateChange} />
-        <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">日期、日历、围度和数据操作放在这里，避免打断今日录入。</p>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">日期、日历、围度和复制操作放在这里，避免打断今日录入。</p>
+        <div className="grid gap-2">
           <Button variant="secondary" className="w-full px-3" onClick={props.onCopySelectedDate}>
             复制此日
-          </Button>
-          <Button variant="secondary" className="w-full px-3" onClick={props.onExportSelectedDate}>
-            导出此日
           </Button>
         </div>
         <DailyCalendarPanel
