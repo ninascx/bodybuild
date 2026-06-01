@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react'
 import type { WorkoutLog } from '../../types'
 import type { SyncState } from '../../lib/storage'
 import type { WorkoutSummary, WorkoutTemplateOption } from '../../lib/workout'
@@ -50,18 +49,6 @@ export function WorkoutControlPanel({
   const recommendedId = `builtin-${getDayKey(selectedDate)}`
   const canStartSelectedTemplate = Boolean(selectedTemplate && selectedTemplate.exercises.length > 0)
 
-  // 桌面端保留计划预览，移动端先让开始训练路径更短。
-  const [previewOpen, setPreviewOpen] = useState(() =>
-    !hasWorkout && typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches,
-  )
-  const lastHasWorkoutRef = useRef(hasWorkout)
-  useEffect(() => {
-    if (lastHasWorkoutRef.current !== hasWorkout) {
-      setPreviewOpen(!hasWorkout && typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches)
-      lastHasWorkoutRef.current = hasWorkout
-    }
-  }, [hasWorkout])
-
   const syncBadge: { text: string; tone: 'positive' | 'warning' | 'danger' } =
     syncState === 'synced'
       ? { text: '已保存', tone: 'positive' }
@@ -110,6 +97,15 @@ export function WorkoutControlPanel({
         ) : null}
       </div>
 
+      {!restDay && !hasWorkout && selectedTemplate ? (
+        <div className="mt-3">
+          <WorkoutPlanPreview
+            template={selectedTemplate}
+            recommendedId={recommendedId}
+          />
+        </div>
+      ) : null}
+
       {!restDay && !hasWorkout ? (
         <div className="mt-3 flex flex-wrap gap-2">
           <Button onClick={() => selectedTemplate && onApplyTemplate(selectedTemplate)} disabled={!canStartSelectedTemplate}>
@@ -119,28 +115,26 @@ export function WorkoutControlPanel({
         </div>
       ) : null}
 
-      {/* Row 4: plan preview (collapsible, auto-open when no workout) */}
-      {!restDay && !hasWorkout && selectedTemplate ? (
-        <WorkoutPlanPreview
-          template={selectedTemplate}
-          recommendedId={recommendedId}
-          open={previewOpen}
-          onOpenChange={setPreviewOpen}
-        />
-      ) : null}
-
       {!restDay && hasWorkout ? (
         <DisclosurePanel className="mt-4" title="更换训练计划">
-          <WorkoutPlanPicker
-            selectedTemplate={selectedTemplate}
-            selectedTemplateId={selectedTemplateId}
-            templateOptions={templateOptions}
-            recommendedId={recommendedId}
-            recommendedPlanName={recommendedPlanName}
-            onTemplateChange={onTemplateChange}
-            onApplyTemplate={onApplyTemplate}
-            onApplyRecommended={onApplyRecommended}
-          />
+          <div className="grid gap-3">
+            <WorkoutPlanPicker
+              selectedTemplate={selectedTemplate}
+              selectedTemplateId={selectedTemplateId}
+              templateOptions={templateOptions}
+              recommendedId={recommendedId}
+              recommendedPlanName={recommendedPlanName}
+              onTemplateChange={onTemplateChange}
+              onApplyTemplate={onApplyTemplate}
+              onApplyRecommended={onApplyRecommended}
+            />
+            {selectedTemplate ? (
+              <WorkoutPlanPreview
+                template={selectedTemplate}
+                recommendedId={recommendedId}
+              />
+            ) : null}
+          </div>
         </DisclosurePanel>
       ) : null}
 

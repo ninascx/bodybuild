@@ -68,8 +68,14 @@ export function AppShell<T extends string>({
           <>
             <header className="mb-2 border-b border-slate-200/80 pb-2 dark:border-slate-800">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex min-w-0 items-baseline gap-2">
-                  <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-cyan-300">BodyBuild</span>
+                <div className="flex min-w-0 items-center gap-2">
+                  <img
+                    src="/favicon.png"
+                    alt="BodyBuild"
+                    className="h-8 w-8 shrink-0 rounded-md"
+                    width={32}
+                    height={32}
+                  />
                   <span className="text-slate-300 dark:text-slate-700">/</span>
                   <h1 className="truncate text-2xl font-bold tracking-tight text-slate-950 dark:text-slate-50">{activeLabel}</h1>
                 </div>

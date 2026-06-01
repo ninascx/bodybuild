@@ -135,7 +135,7 @@ export function PlanTab({ planData, onSave }: PlanTabProps) {
     <div className="grid gap-4">
       <FormPanel
         title="个人计划"
-        description="这里只设置每天关联哪一个训练计划；动作内容和饮食目标不在这里单独填写。"
+        description="这里只设置每天关联哪一个训练计划；动作内容可在训练页的模板管理中编辑。"
         badges={
           <>
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{trainingDayCount} 个训练日</span>

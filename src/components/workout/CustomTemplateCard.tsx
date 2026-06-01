@@ -3,6 +3,10 @@ import { Badge, Button, DisclosurePanel, Field, TextInput } from '../ui'
 
 export function CustomTemplateCard({
   template,
+  badgeLabel = '自定义',
+  badgeTone = 'warning',
+  showCategory = true,
+  canDelete = true,
   onUpdateTemplate,
   onUpdateTemplateExercise,
   onAddTemplateExercise,
@@ -11,6 +15,10 @@ export function CustomTemplateCard({
   onDeleteTemplate,
 }: {
   template: WorkoutTemplate
+  badgeLabel?: string
+  badgeTone?: 'positive' | 'warning' | 'neutral' | 'danger'
+  showCategory?: boolean
+  canDelete?: boolean
   onUpdateTemplate: (templateId: string, patch: Partial<WorkoutTemplate>) => void
   onUpdateTemplateExercise: (templateId: string, exerciseIndex: number, patch: Partial<ExercisePlan>) => void
   onAddTemplateExercise: (templateId: string) => void
@@ -29,22 +37,24 @@ export function CustomTemplateCard({
             {template.focus} · {template.exercises.length} 个动作 · {template.category}
           </p>
         </div>
-        <Badge tone="warning">自定义</Badge>
+        <Badge tone={badgeTone}>{badgeLabel}</Badge>
         </div>
       )}
       summaryClassName="items-start"
       contentClassName="p-3"
     >
-        <div className="grid gap-3 lg:grid-cols-3">
+        <div className={`grid gap-3 ${showCategory ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
           <Field label="模板名称">
             <TextInput value={template.name} onChange={(event) => onUpdateTemplate(template.id, { name: event.target.value })} />
           </Field>
           <Field label="重点">
             <TextInput value={template.focus} onChange={(event) => onUpdateTemplate(template.id, { focus: event.target.value })} />
           </Field>
-          <Field label="分类">
-            <TextInput value={template.category} onChange={(event) => onUpdateTemplate(template.id, { category: event.target.value })} />
-          </Field>
+          {showCategory ? (
+            <Field label="分类">
+              <TextInput value={template.category} onChange={(event) => onUpdateTemplate(template.id, { category: event.target.value })} />
+            </Field>
+          ) : null}
         </div>
 
         <div className="mt-3 grid gap-1.5">
@@ -98,7 +108,7 @@ export function CustomTemplateCard({
         <div className="mt-3 flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => onAddTemplateExercise(template.id)}>添加动作</Button>
           <Button variant="secondary" onClick={() => onApplyTemplate(template)} disabled={template.exercises.length === 0}>填入当天</Button>
-          <Button variant="ghost" onClick={() => onDeleteTemplate(template.id)}>删除模板</Button>
+          {canDelete ? <Button variant="ghost" onClick={() => onDeleteTemplate(template.id)}>删除模板</Button> : null}
         </div>
     </DisclosurePanel>
   )

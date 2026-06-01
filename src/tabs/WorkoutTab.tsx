@@ -47,6 +47,7 @@ type WorkoutTabProps = {
   visibleWorkoutExercises: Array<{ exercise: ExerciseLog; exerciseIndex: number }>
   previousRecordsByExerciseKey: Map<string, PreviousExerciseRecord | undefined>
   showOnlyUnfinishedExercises: boolean
+  builtinTemplates: WorkoutTemplate[]
   workoutTemplates: WorkoutTemplate[]
   syncState: SyncState
   restDay: boolean
@@ -354,8 +355,9 @@ export function WorkoutTab(props: WorkoutTabProps) {
       )}
 
       {effectiveTrainingMode || props.restDay ? null : (
-        <div className="hidden md:block">
+        <div>
           <WorkoutTemplateManager
+            builtinTemplates={props.builtinTemplates}
             templates={props.workoutTemplates}
             selectedWorkout={props.selectedWorkout}
             onCreateTemplate={props.onCreateTemplate}

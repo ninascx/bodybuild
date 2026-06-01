@@ -9,6 +9,7 @@ function normalizeTemplateTokenInput(value: string): string {
 }
 
 export function WorkoutTemplateManager({
+  builtinTemplates,
   templates,
   selectedWorkout,
   onCreateTemplate,
@@ -22,6 +23,7 @@ export function WorkoutTemplateManager({
   onExportToken,
   onImportToken,
 }: {
+  builtinTemplates: WorkoutTemplate[]
   templates: WorkoutTemplate[]
   selectedWorkout: WorkoutLog | undefined
   onCreateTemplate: () => void
@@ -35,6 +37,7 @@ export function WorkoutTemplateManager({
   onExportToken: () => Promise<{ token: string; count: number }>
   onImportToken: (token: string) => Promise<{ importedCount: number }>
 }) {
+  const editableBuiltinTemplates = builtinTemplates
   const customTemplates = templates.filter((t) => !t.isBuiltin)
   const [exportToken, setExportToken] = useState('')
   const [importToken, setImportToken] = useState('')
@@ -100,7 +103,7 @@ export function WorkoutTemplateManager({
   return (
     <DisclosurePanel
       className="bg-white shadow-sm dark:bg-slate-900"
-      title={`模板管理 · ${customTemplates.length} 个自定义模板`}
+      title={`模板管理 · ${editableBuiltinTemplates.length} 个内置 · ${customTemplates.length} 个自定义`}
       contentClassName="grid gap-4 p-4"
     >
         <div className="grid gap-2 sm:grid-cols-[auto_auto] sm:justify-start">
@@ -157,6 +160,29 @@ export function WorkoutTemplateManager({
             <FormStatusStack success={shareMessage} error={shareError} />
         </DisclosurePanel>
 
+        <DisclosurePanel
+          className="bg-slate-50 dark:bg-slate-800/70"
+          title={`内置训练模板 · ${editableBuiltinTemplates.length} 个`}
+          contentClassName="grid gap-3 p-3"
+        >
+          {editableBuiltinTemplates.map((template) => (
+            <CustomTemplateCard
+              key={template.id}
+              template={template}
+              badgeLabel="内置"
+              badgeTone="neutral"
+              showCategory={false}
+              canDelete={false}
+              onUpdateTemplate={onUpdateTemplate}
+              onUpdateTemplateExercise={onUpdateTemplateExercise}
+              onAddTemplateExercise={onAddTemplateExercise}
+              onDeleteTemplateExercise={onDeleteTemplateExercise}
+              onApplyTemplate={onApplyTemplate}
+              onDeleteTemplate={onDeleteTemplate}
+            />
+          ))}
+        </DisclosurePanel>
+
         {customTemplates.length === 0 ? (
           <EmptyState
             compact
@@ -170,6 +196,10 @@ export function WorkoutTemplateManager({
           <CustomTemplateCard
             key={template.id}
             template={template}
+            badgeLabel="自定义"
+            badgeTone="warning"
+            showCategory
+            canDelete
             onUpdateTemplate={onUpdateTemplate}
             onUpdateTemplateExercise={onUpdateTemplateExercise}
             onAddTemplateExercise={onAddTemplateExercise}

@@ -7,6 +7,7 @@ import type { PreviousExerciseRecord, TrendPoint, TrainingPerformancePoint } fro
 import {
   buildDailyCopyText,
   builtinTemplateOptions,
+  builtinTemplatesFromPlans,
   createBlankExercise,
   createWorkoutFromPlan,
   createWorkoutFromTemplate,
@@ -60,7 +61,7 @@ import {
 import { defaultUserPreference, mergeUserPreference } from './lib/userPreferences'
 import { buildExportCsvText, buildExportResultSummary, buildExportSummaryText, buildScopedExportPayload, type ExportFormat, type ExportOptions, type ExportRangePreset } from './lib/exportPayload'
 import { createId } from './lib/ids'
-import type { AdjustmentRecommendation, DailyLog, ExerciseLog, ExercisePlan, ExerciseSetLog, UserPlanData, UserPreference, UserProfile, WeeklySummary, WorkoutLog, WorkoutTemplate } from './types'
+import type { AdjustmentRecommendation, DailyLog, DayKey, ExerciseLog, ExercisePlan, ExerciseSetLog, UserPlanData, UserPreference, UserProfile, WeeklySummary, WorkoutLog, WorkoutPlan, WorkoutTemplate } from './types'
 import { LoadingBlock } from './components/ui'
 import { useColorScheme } from './hooks/useColorScheme'
 import { useConfirm } from './components/ConfirmDialog'
@@ -90,9 +91,17 @@ const allTabs = [...baseTabs, adminTab]
 const ACTIVE_TAB_KEY = 'bodybuild:v1:activeTab'
 const LEGACY_API_CACHE_NAMES = ['api-cache']
 const exerciseMetadataKeys = new Set<keyof ExerciseLog>(['name', 'notes'])
+const dayKeys: DayKey[] = [0, 1, 2, 3, 4, 5, 6]
 
 function isTabKey(value: string | null): value is TabKey {
   return allTabs.some((tab) => tab.key === value)
+}
+
+function builtinTemplateIdToDay(templateId: string): DayKey | null {
+  const match = templateId.match(/^builtin-([0-6])$/)
+  if (!match) return null
+  const day = Number(match[1])
+  return dayKeys.includes(day as DayKey) ? (day as DayKey) : null
 }
 
 function readInitialTab(): TabKey {
@@ -215,10 +224,14 @@ function App() {
   const [weeklyAnchorDate, setWeeklyAnchorDate] = useState<string>(() => formatDateInput())
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
   const saveVersionRef = useRef(0)
+  const planSaveQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const planSaveVersionRef = useRef(0)
   const autoRetryAtRef = useRef(0)
   const localEditsRef = useRef(false)
   const pendingDataRef = useRef<AppData | null>(null)
+  const pendingPlanDataRef = useRef<UserPlanData | null>(null)
   const debounceTimerRef = useRef<number | null>(null)
+  const planDebounceTimerRef = useRef<number | null>(null)
   const [initialLoaded, setInitialLoaded] = useState(false)
   const visibleTabs = currentUser?.role === 'admin' ? allTabs : baseTabs
   const contentTab: TabKey = currentUser?.role === 'admin' || activeTab !== 'admin' ? activeTab : 'today'
@@ -238,6 +251,10 @@ function App() {
       workoutPlans: workoutPlansByDay,
     }),
     [dailyTargetsByDay, workoutPlansByDay],
+  )
+  const builtinTemplates = useMemo(
+    () => builtinTemplatesFromPlans(workoutPlansByDay),
+    [workoutPlansByDay],
   )
 
   useEffect(() => {
@@ -386,6 +403,77 @@ function App() {
       cacheData(currentUser.id, nextData)
     }
   }, [currentUser])
+
+  const applyPlanData = useCallback((nextPlanData: UserPlanData) => {
+    setDailyTargetsByDay(nextPlanData.dailyTargets)
+    setWorkoutPlansByDay(nextPlanData.workoutPlans)
+  }, [])
+
+  const persistPlanData = useCallback(
+    async (nextPlanData: UserPlanData): Promise<UserPlanData> => {
+      if (!currentUser) throw new Error('请先登录')
+      const saveVersion = planSaveVersionRef.current + 1
+      planSaveVersionRef.current = saveVersion
+      applyPlanData(nextPlanData)
+      setSyncState('saving')
+      setSyncMessage('保存计划中...')
+
+      const saveTask = planSaveQueueRef.current.then(() => saveUserPlanData(nextPlanData))
+      planSaveQueueRef.current = saveTask.then(
+        () => undefined,
+        () => undefined,
+      )
+
+      try {
+        const saved = await saveTask
+        if (saveVersion === planSaveVersionRef.current) {
+          applyPlanData(saved)
+          setSyncState('synced')
+          setLastSyncedAt(new Date().toISOString())
+          setAutoRetryEnabled(false)
+          setSyncMessage('计划已保存')
+        }
+        return saved
+      } catch (error) {
+        if (saveVersion === planSaveVersionRef.current) {
+          setSyncState('offline')
+          setAutoRetryEnabled(true)
+          setSyncMessage(error instanceof Error ? `${error.message}（计划修改已先保留在当前页面）` : '计划保存失败，修改已先保留在当前页面。')
+        }
+        throw error
+      }
+    },
+    [applyPlanData, currentUser],
+  )
+
+  const schedulePlanPersist = useCallback(
+    (nextPlanData: UserPlanData, immediate = false) => {
+      applyPlanData(nextPlanData)
+      pendingPlanDataRef.current = nextPlanData
+      if (planDebounceTimerRef.current !== null) {
+        window.clearTimeout(planDebounceTimerRef.current)
+        planDebounceTimerRef.current = null
+      }
+      if (immediate) {
+        pendingPlanDataRef.current = null
+        void persistPlanData(nextPlanData).catch((error) => {
+          console.warn('保存训练计划失败：', error)
+        })
+        return
+      }
+      planDebounceTimerRef.current = window.setTimeout(() => {
+        const data = pendingPlanDataRef.current
+        pendingPlanDataRef.current = null
+        planDebounceTimerRef.current = null
+        if (data) {
+          void persistPlanData(data).catch((error) => {
+            console.warn('保存训练计划失败：', error)
+          })
+        }
+      }, 700)
+    },
+    [applyPlanData, persistPlanData],
+  )
 
   const persistData = useCallback(
     async (nextData: AppData) => {
@@ -947,6 +1035,22 @@ function App() {
     schedulePersist({ dailyLogs, workoutLogs, workoutTemplates: customTemplates }, immediate)
   }
 
+  function persistBuiltinTemplate(day: DayKey, nextPlan: WorkoutPlan, immediate = false) {
+    const nextPlans = {
+      ...workoutPlansByDay,
+      [day]: nextPlan,
+    }
+    const nextTargets = {
+      ...dailyTargetsByDay,
+      [day]: {
+        ...dailyTargetsByDay[day],
+        workoutName: nextPlan.name,
+        isTrainingDay: nextPlan.exercises.length > 0,
+      },
+    }
+    schedulePlanPersist({ dailyTargets: nextTargets, workoutPlans: nextPlans }, immediate)
+  }
+
   function createCustomTemplate() {
     const now = new Date().toISOString()
     const nextTemplate: WorkoutTemplate = {
@@ -965,6 +1069,18 @@ function App() {
   }
 
   function updateTemplate(templateId: string, patch: Partial<WorkoutTemplate>) {
+    const builtinDay = builtinTemplateIdToDay(templateId)
+    if (builtinDay !== null) {
+      const plan = workoutPlansByDay[builtinDay]
+      persistBuiltinTemplate(builtinDay, {
+        ...plan,
+        name: patch.name ?? plan.name,
+        focus: patch.focus ?? plan.focus,
+        exercises: patch.exercises ?? plan.exercises,
+      })
+      return
+    }
+
     const target = workoutTemplates.find((template) => template.id === templateId)
     if (!target || target.isBuiltin) return
     const now = new Date().toISOString()
@@ -973,7 +1089,7 @@ function App() {
         return {
           ...template,
           ...patch,
-          name: patch.name !== undefined && !patch.name.trim() ? template.name : patch.name ?? template.name,
+          name: patch.name ?? template.name,
           updatedAt: now,
         }
       }
@@ -984,6 +1100,17 @@ function App() {
   }
 
   function updateTemplateExercise(templateId: string, exerciseIndex: number, patch: Partial<ExercisePlan>) {
+    const builtinDay = builtinTemplateIdToDay(templateId)
+    if (builtinDay !== null) {
+      const plan = workoutPlansByDay[builtinDay]
+      if (!plan.exercises[exerciseIndex]) return
+      persistBuiltinTemplate(builtinDay, {
+        ...plan,
+        exercises: plan.exercises.map((exercise, index) => (index === exerciseIndex ? { ...exercise, ...patch } : exercise)),
+      })
+      return
+    }
+
     const target = workoutTemplates.find((template) => template.id === templateId)
     if (!target || target.isBuiltin) return
     const nextTemplates = workoutTemplates.map((template) => {
@@ -999,6 +1126,19 @@ function App() {
   }
 
   function addTemplateExercise(templateId: string) {
+    const builtinDay = builtinTemplateIdToDay(templateId)
+    if (builtinDay !== null) {
+      const plan = workoutPlansByDay[builtinDay]
+      persistBuiltinTemplate(builtinDay, {
+        ...plan,
+        exercises: [
+          ...plan.exercises,
+          { id: createId('template-exercise'), name: '新动作', prescription: '3 组 × 8-12 次' },
+        ],
+      }, true)
+      return
+    }
+
     const target = workoutTemplates.find((template) => template.id === templateId)
     if (!target || target.isBuiltin) return
     const nextTemplates = workoutTemplates.map((template) =>
@@ -1018,6 +1158,24 @@ function App() {
   }
 
   async function deleteTemplateExercise(templateId: string, exerciseIndex: number) {
+    const builtinDay = builtinTemplateIdToDay(templateId)
+    if (builtinDay !== null) {
+      const plan = workoutPlansByDay[builtinDay]
+      if (plan.exercises.length <= 1) return
+      const ok = await confirm({
+        title: '删除内置模板动作？',
+        message: '会从对应星期的训练计划中删除这个动作；已有训练记录不受影响。',
+        confirmLabel: '删除',
+        tone: 'danger',
+      })
+      if (!ok) return
+      persistBuiltinTemplate(builtinDay, {
+        ...plan,
+        exercises: plan.exercises.filter((_, index) => index !== exerciseIndex),
+      }, true)
+      return
+    }
+
     const target = workoutTemplates.find((template) => template.id === templateId)
     if (!target || target.isBuiltin) return
     const ok = await confirm({
@@ -1129,17 +1287,12 @@ function App() {
   }
 
   async function savePlanData(nextPlanData: UserPlanData): Promise<UserPlanData> {
-    if (!currentUser) throw new Error('请先登录')
-    setSyncState('saving')
-    setSyncMessage('保存计划中...')
-    const saved = await saveUserPlanData(nextPlanData)
-    setDailyTargetsByDay(saved.dailyTargets)
-    setWorkoutPlansByDay(saved.workoutPlans)
-    setSyncState('synced')
-    setLastSyncedAt(new Date().toISOString())
-    setAutoRetryEnabled(false)
-    setSyncMessage('计划已保存')
-    return saved
+    if (planDebounceTimerRef.current !== null) {
+      window.clearTimeout(planDebounceTimerRef.current)
+      planDebounceTimerRef.current = null
+    }
+    pendingPlanDataRef.current = null
+    return persistPlanData(nextPlanData)
   }
 
   async function savePreferenceData(nextPreference: UserPreference): Promise<UserPreference> {
@@ -1377,6 +1530,7 @@ function App() {
             visibleWorkoutExercises={visibleWorkoutExercises}
             previousRecordsByExerciseKey={previousRecordsByExerciseKey}
             showOnlyUnfinishedExercises={showOnlyUnfinishedExercises}
+            builtinTemplates={builtinTemplates}
             workoutTemplates={workoutTemplates}
             syncState={syncState}
             workoutMarkedComplete={(selectedLog.workoutCompletion ?? 0) >= 100}

@@ -105,24 +105,26 @@ export function createWorkoutFromPlan(date: string, planOverride?: WorkoutPlan):
 }
 
 export function builtinTemplateOptions(plans?: Record<DayKey, WorkoutPlan>): WorkoutTemplateOption[] {
-  const templates = plans
-    ? Object.values(plans).map((plan) => ({
-        id: `builtin-${plan.day}`,
-        name: plan.name,
-        focus: plan.focus,
-        category: '内置',
-        exercises: plan.exercises,
-        createdAt: '',
-        updatedAt: '',
-        isBuiltin: true,
-      }))
-    : getBuiltinTemplates()
+  const templates = plans ? builtinTemplatesFromPlans(plans) : getBuiltinTemplates()
   return templates.map((template) => ({
     id: template.id,
     name: template.name,
     focus: template.focus,
     source: 'builtin',
     exercises: template.exercises,
+  }))
+}
+
+export function builtinTemplatesFromPlans(plans: Record<DayKey, WorkoutPlan>): WorkoutTemplate[] {
+  return Object.values(plans).map((plan) => ({
+    id: `builtin-${plan.day}`,
+    name: plan.name,
+    focus: plan.focus,
+    category: '内置计划',
+    exercises: plan.exercises,
+    createdAt: '',
+    updatedAt: '',
+    isBuiltin: true,
   }))
 }
 
