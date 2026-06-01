@@ -145,7 +145,7 @@ export function MobileCurrentExerciseView({
   }
 
   return (
-    <div className="pb-48 md:hidden">
+    <div className="pb-28 md:hidden">
       <MobileTrainingModeHeader
         workoutName={workout.workoutName}
         elapsedSeconds={elapsedSeconds}
