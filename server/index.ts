@@ -22,7 +22,7 @@ import {
   upsertDailyLog,
   upsertWorkoutLog,
 } from './appData'
-import { createSession, destroySession, getCurrentUser, hashPassword, requireAdmin, requireUser, toPublicUser, verifyPassword } from './auth'
+import { createSession, currentSessionTokenHash, destroySession, getCurrentUser, hashPassword, requireAdmin, requireUser, toPublicUser, verifyPassword } from './auth'
 import { configureDatabaseRuntime, prisma } from './db'
 import { ensureDatabaseSchema } from './ensureDatabase'
 
@@ -564,10 +564,16 @@ app.post('/api/admin/users', async (request, response) => {
         : username
     const password = requireString(request.body?.password, 'password')
     const role = request.body?.role === 'admin' ? 'admin' : 'member'
+    const existingUser = await prisma.user.findUnique({
+      where: { username },
+      select: { id: true },
+    })
+    if (existingUser) {
+      throw new Error('昵称已被使用，请换一个昵称。')
+    }
     const user = await prisma.user.create({
       data: {
         username,
-        email: username,
         displayName,
         passwordHash: await hashPassword(password),
         role,
@@ -606,12 +612,19 @@ app.post('/api/admin/users/:userId/reset-password', async (request, response) =>
     const admin = await requireAdmin(request, response)
     if (!admin) return
     const password = requireString(request.body?.password, 'password')
+    const isSelf = request.params.userId === admin.id
     await prisma.user.update({
       where: { id: request.params.userId },
       data: { passwordHash: await hashPassword(password) },
     })
-    await prisma.session.deleteMany({ where: { userId: request.params.userId } })
-    response.json({ ok: true })
+    const tokenHash = isSelf ? currentSessionTokenHash(request) : null
+    await prisma.session.deleteMany({
+      where: {
+        userId: request.params.userId,
+        ...(tokenHash ? { tokenHash: { not: tokenHash } } : {}),
+      },
+    })
+    response.json({ ok: true, currentSessionKept: isSelf && Boolean(tokenHash) })
   } catch (error) {
     response.status(400).json({ error: error instanceof Error ? error.message : '重置密码失败' })
   }

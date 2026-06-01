@@ -1,5 +1,6 @@
 import type { FormEvent, ReactNode } from 'react'
 import type { AdminUser, AppData, CurrentUser, ServerHealth } from '../../lib/storage'
+import type { RecommendationTone } from '../../types'
 import { Badge, Button, EmptyState, Field, InsightCard, LoadingBlock, MetricGrid, Select, TextInput } from '../ui'
 import { FormSection } from '../FormPanel'
 import { AdminUserRow } from './AdminUserRow'
@@ -139,6 +140,7 @@ export function AdminUserList({
   busyId,
   draftNames,
   resetPasswords,
+  rowStatuses,
   onDraftNameChange,
   onResetPasswordChange,
   onToggleActive,
@@ -159,6 +161,7 @@ export function AdminUserList({
   busyId: string | null
   draftNames: Record<string, string>
   resetPasswords: Record<string, string>
+  rowStatuses: Record<string, { tone: RecommendationTone; message: string }>
   onDraftNameChange: (userId: string, value: string) => void
   onResetPasswordChange: (userId: string, value: string) => void
   onToggleActive: (user: AdminUser) => void
@@ -195,6 +198,7 @@ export function AdminUserList({
           busyId={busyId}
           draftName={draftNames[user.id] ?? ''}
           resetPassword={resetPasswords[user.id] ?? ''}
+          status={rowStatuses[user.id]}
           onDraftNameChange={(value) => onDraftNameChange(user.id, value)}
           onResetPasswordChange={(value) => onResetPasswordChange(user.id, value)}
           onToggleActive={() => onToggleActive(user)}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useConfirm } from '../ConfirmDialog'
 import { formatDateInput } from '../../lib/dates'
+import type { RecommendationTone } from '../../types'
 import type { ExportFormat, ExportOptions } from '../../lib/exportPayload'
 import {
   type AdminUser,
@@ -26,11 +27,12 @@ import {
   writeToClipboard,
 } from './adminUserActions'
 
-export function useAdminUsers() {
+export function useAdminUsers(currentUser: CurrentUser) {
   const { confirm, dialog: confirmDialog } = useConfirm()
   const [users, setUsers] = useState<AdminUser[]>([])
   const [draftNames, setDraftNames] = useState<Record<string, string>>({})
   const [resetPasswords, setResetPasswords] = useState<Record<string, string>>({})
+  const [rowStatuses, setRowStatuses] = useState<Record<string, { tone: RecommendationTone; message: string }>>({})
   const [newUsername, setNewUsername] = useState('')
   const [newDisplayName, setNewDisplayName] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -69,6 +71,19 @@ export function useAdminUsers() {
       setLoadingUsers(false)
     }
   }, [])
+
+  function setRowStatus(userId: string, tone: RecommendationTone, message: string) {
+    setRowStatuses((prev) => ({ ...prev, [userId]: { tone, message } }))
+  }
+
+  function clearRowStatus(userId: string) {
+    setRowStatuses((prev) => {
+      if (!prev[userId]) return prev
+      const next = { ...prev }
+      delete next[userId]
+      return next
+    })
+  }
 
   const loadHealth = useCallback(async () => {
     setLoadingHealth(true)
@@ -128,12 +143,27 @@ export function useAdminUsers() {
     setBusyId(user.id)
     setError('')
     setMessage('')
+    clearRowStatus(user.id)
     try {
       await updateAdminUser(user.id, patch)
+      setUsers((prev) =>
+        prev.map((item) =>
+          item.id === user.id
+            ? {
+                ...item,
+                ...patch,
+                updatedAt: new Date().toISOString(),
+              }
+            : item,
+        ),
+      )
       setMessage(successMessage)
+      setRowStatus(user.id, 'positive', successMessage)
       await loadUsers()
     } catch (err) {
-      setError(err instanceof Error ? err.message : '更新用户失败')
+      const message = err instanceof Error ? err.message : '更新用户失败'
+      setError(message)
+      setRowStatus(user.id, 'danger', message)
     } finally {
       setBusyId(null)
     }
@@ -141,26 +171,49 @@ export function useAdminUsers() {
 
   async function saveDisplayName(user: AdminUser) {
     const displayName = (draftNames[user.id] ?? '').trim()
-    if (!displayName || displayName === user.displayName) return
+    if (!displayName) {
+      const message = '显示名称不能为空。'
+      setError(message)
+      setRowStatus(user.id, 'danger', message)
+      return
+    }
+    if (displayName === user.displayName) {
+      setRowStatus(user.id, 'neutral', '显示名称没有变化。')
+      return
+    }
     await patchUser(user, { displayName }, '显示名称已更新。')
   }
 
   async function resetPassword(user: AdminUser) {
     const password = (resetPasswords[user.id] ?? '').trim()
     if (!password) {
-      setError('请输入新密码。')
+      const message = '请输入新密码。'
+      setError(message)
+      setRowStatus(user.id, 'danger', message)
       return
     }
     setBusyId(user.id)
     setError('')
     setMessage('')
+    clearRowStatus(user.id)
     try {
       await resetAdminUserPassword(user.id, password)
       const copied = await writeToClipboard(buildLoginCredentialText(user.username, password, user.displayName))
       setResetPasswords((prev) => ({ ...prev, [user.id]: '' }))
-      setMessage(copied ? '密码已重置，新的登录信息已复制。' : '密码已重置；请手动发送新的登录信息。')
+      const isSelf = user.id === currentUser.id
+      const finalMessage = isSelf
+        ? copied
+          ? '当前账号密码已更新，当前设备保持登录；新的登录信息已复制。'
+          : '当前账号密码已更新，当前设备保持登录。'
+        : copied
+          ? '密码已重置，新的登录信息已复制。'
+          : '密码已重置；请手动发送新的登录信息。'
+      setMessage(finalMessage)
+      setRowStatus(user.id, 'positive', finalMessage)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '重置密码失败')
+      const message = err instanceof Error ? err.message : '重置密码失败'
+      setError(message)
+      setRowStatus(user.id, 'danger', message)
     } finally {
       setBusyId(null)
     }
@@ -300,6 +353,7 @@ export function useAdminUsers() {
     openExportUserDialog,
     resetPassword,
     resetPasswords,
+    rowStatuses,
     saveDisplayName,
     selectedData,
     selectedUser,
@@ -309,9 +363,18 @@ export function useAdminUsers() {
     setNewPassword,
     setNewRole,
     setNewUsername,
-    setDraftName: (userId: string, value: string) => setDraftNames((prev) => ({ ...prev, [userId]: value })),
-    setResetPassword: (userId: string, value: string) => setResetPasswords((prev) => ({ ...prev, [userId]: value })),
-    generateResetPassword: (userId: string) => setResetPasswords((prev) => ({ ...prev, [userId]: generatePassword() })),
+    setDraftName: (userId: string, value: string) => {
+      clearRowStatus(userId)
+      setDraftNames((prev) => ({ ...prev, [userId]: value }))
+    },
+    setResetPassword: (userId: string, value: string) => {
+      clearRowStatus(userId)
+      setResetPasswords((prev) => ({ ...prev, [userId]: value }))
+    },
+    generateResetPassword: (userId: string) => {
+      clearRowStatus(userId)
+      setResetPasswords((prev) => ({ ...prev, [userId]: generatePassword() }))
+    },
     closeExportDialog: () => {
       setExportTarget(null)
       setExportSourceData(null)

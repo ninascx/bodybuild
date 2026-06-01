@@ -15,7 +15,7 @@ type AdminUsersTabProps = {
 }
 
 export function AdminUsersTab({ currentUser }: AdminUsersTabProps) {
-  const adminUsers = useAdminUsers()
+  const adminUsers = useAdminUsers(currentUser)
 
   return (
     <div className="grid gap-4">
@@ -72,6 +72,7 @@ export function AdminUsersTab({ currentUser }: AdminUsersTabProps) {
             busyId={adminUsers.busyId}
             draftNames={adminUsers.draftNames}
             resetPasswords={adminUsers.resetPasswords}
+            rowStatuses={adminUsers.rowStatuses}
             onDraftNameChange={adminUsers.setDraftName}
             onResetPasswordChange={adminUsers.setResetPassword}
             onToggleActive={(user) => void adminUsers.toggleActive(user)}

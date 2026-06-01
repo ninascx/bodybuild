@@ -32,6 +32,11 @@ function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex')
 }
 
+export function currentSessionTokenHash(request: Request): string | null {
+  const token = parse(request.headers.cookie ?? '')[SESSION_COOKIE]
+  return token ? hashToken(token) : null
+}
+
 function createSessionToken(): string {
   return crypto.randomBytes(32).toString('base64url')
 }

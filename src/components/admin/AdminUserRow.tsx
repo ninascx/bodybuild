@@ -1,5 +1,6 @@
 import type { AdminUser, CurrentUser } from '../../lib/storage'
-import { Badge, Button, Checkbox, Select, TextInput } from '../ui'
+import { Badge, Button, Checkbox, Select, StatusMessage, TextInput } from '../ui'
+import type { RecommendationTone } from '../../types'
 
 function formatDateTime(value: string): string {
   const date = new Date(value)
@@ -21,6 +22,7 @@ export function AdminUserRow({
   busyId,
   draftName,
   resetPassword,
+  status,
   onDraftNameChange,
   onResetPasswordChange,
   onToggleActive,
@@ -40,6 +42,7 @@ export function AdminUserRow({
   busyId: string | null
   draftName: string
   resetPassword: string
+  status?: { tone: RecommendationTone; message: string }
   onDraftNameChange: (value: string) => void
   onResetPasswordChange: (value: string) => void
   onToggleActive: () => void
@@ -104,16 +107,20 @@ export function AdminUserRow({
               value={resetPassword}
               onChange={(event) => onResetPasswordChange(event.target.value)}
               autoComplete="new-password"
-              placeholder="新密码"
-              disabled={isSelf}
+              placeholder={isSelf ? '修改当前账号密码' : '新密码'}
             />
-            <Button variant="secondary" className="px-3" onClick={onGenerateResetPassword} disabled={isSelf || rowBusy}>
+            <Button variant="secondary" className="px-3" onClick={onGenerateResetPassword} disabled={rowBusy}>
               生成
             </Button>
-            <Button variant="secondary" className="px-3" onClick={onResetPassword} disabled={isSelf || rowBusy}>
+            <Button variant="secondary" className="px-3" onClick={onResetPassword} disabled={rowBusy}>
               重置
             </Button>
           </div>
+          {status ? (
+            <StatusMessage className="py-2" tone={status.tone} announce>
+              {status.message}
+            </StatusMessage>
+          ) : null}
           <div className="grid gap-2 sm:grid-cols-2">
             <Button variant="secondary" className="px-3" onClick={onViewData} loading={dataLoadingForUser}>
               查看数据
