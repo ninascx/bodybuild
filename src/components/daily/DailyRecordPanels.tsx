@@ -107,9 +107,9 @@ export function MeasurementPanel({
     <DetailPanel title="围度 / 更多记录" summary={dimensionSummary}>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <NumberField label="腰围 cm" value={selectedLog.waistCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => onUpdateDailyLog({ waistCm: value })} />
-        <NumberField label="胸围 cm（可选）" value={selectedLog.chestCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => onUpdateDailyLog({ chestCm: value })} />
-        <NumberField label="上臂围 cm（可选）" value={selectedLog.upperArmCm} step="0.1" kind="decimal" range={{ min: 10, max: 80 }} onChange={(value) => onUpdateDailyLog({ upperArmCm: value })} />
-        <NumberField label="大腿围 cm（可选）" value={selectedLog.thighCm} step="0.1" kind="decimal" range={{ min: 20, max: 120 }} onChange={(value) => onUpdateDailyLog({ thighCm: value })} />
+        <NumberField label="胸围 cm" value={selectedLog.chestCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => onUpdateDailyLog({ chestCm: value })} />
+        <NumberField label="上臂围 cm" value={selectedLog.upperArmCm} step="0.1" kind="decimal" range={{ min: 10, max: 80 }} onChange={(value) => onUpdateDailyLog({ upperArmCm: value })} />
+        <NumberField label="大腿围 cm" value={selectedLog.thighCm} step="0.1" kind="decimal" range={{ min: 20, max: 120 }} onChange={(value) => onUpdateDailyLog({ thighCm: value })} />
         <NumberField label="实际碳水 g" value={selectedLog.carbs} range={{ min: 0, max: 1000, allowZero: true }} onChange={(value) => onUpdateDailyLog({ carbs: value })} />
         <NumberField label="实际脂肪 g" value={selectedLog.fat} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => onUpdateDailyLog({ fat: value })} />
       </div>
