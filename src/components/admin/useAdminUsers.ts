@@ -9,6 +9,7 @@ import {
   type AppData,
   type CurrentUser,
   type ServerHealth,
+  changeCurrentPassword,
   cloneAdminDefaultPlan,
   createAdminUser,
   deleteAdminUserData,
@@ -33,6 +34,9 @@ export function useAdminUsers(currentUser: CurrentUser) {
   const [draftNames, setDraftNames] = useState<Record<string, string>>({})
   const [resetPasswords, setResetPasswords] = useState<Record<string, string>>({})
   const [rowStatuses, setRowStatuses] = useState<Record<string, { tone: RecommendationTone; message: string }>>({})
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [currentNewPassword, setCurrentNewPassword] = useState('')
+  const [currentConfirmPassword, setCurrentConfirmPassword] = useState('')
   const [newUsername, setNewUsername] = useState('')
   const [newDisplayName, setNewDisplayName] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -50,6 +54,7 @@ export function useAdminUsers(currentUser: CurrentUser) {
   const [creating, setCreating] = useState(false)
   const [backupBusy, setBackupBusy] = useState(false)
   const [exportPending, setExportPending] = useState(false)
+  const [changingOwnPassword, setChangingOwnPassword] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -219,6 +224,35 @@ export function useAdminUsers(currentUser: CurrentUser) {
     }
   }
 
+  async function changeOwnPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const oldPassword = currentPassword.trim()
+    const nextPassword = currentNewPassword.trim()
+    const confirmedPassword = currentConfirmPassword.trim()
+    if (!oldPassword || !nextPassword || !confirmedPassword) {
+      setError('请完整填写当前密码、新密码和确认密码。')
+      return
+    }
+    if (nextPassword !== confirmedPassword) {
+      setError('两次输入的新密码不一致。')
+      return
+    }
+    setChangingOwnPassword(true)
+    setError('')
+    setMessage('')
+    try {
+      await changeCurrentPassword(oldPassword, nextPassword)
+      setCurrentPassword('')
+      setCurrentNewPassword('')
+      setCurrentConfirmPassword('')
+      setMessage('当前账号密码已更新，当前设备保持登录；下次登录请使用新密码。')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '修改密码失败')
+    } finally {
+      setChangingOwnPassword(false)
+    }
+  }
+
   async function loadUserData(user: AdminUser) {
     setSelectedUserId(user.id)
     setSelectedData(null)
@@ -329,6 +363,11 @@ export function useAdminUsers(currentUser: CurrentUser) {
     confirmDialog,
     createBackup,
     creating,
+    changingOwnPassword,
+    changeOwnPassword,
+    currentPassword,
+    currentNewPassword,
+    currentConfirmPassword,
     deleteUserData,
     draftNames,
     error,
@@ -363,6 +402,9 @@ export function useAdminUsers(currentUser: CurrentUser) {
     setNewPassword,
     setNewRole,
     setNewUsername,
+    setCurrentPassword,
+    setCurrentNewPassword,
+    setCurrentConfirmPassword,
     setDraftName: (userId: string, value: string) => {
       clearRowStatus(userId)
       setDraftNames((prev) => ({ ...prev, [userId]: value }))

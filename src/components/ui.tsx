@@ -120,7 +120,7 @@ export function InsightCard({
   tone?: RecommendationTone
 }) {
   return (
-    <div className={cn('min-w-0 rounded-lg border p-3 transition-all duration-200 hover:shadow-md hover:-translate-y-px sm:p-4', toneAccentClasses[tone])}>
+    <div className={cn('min-w-0 rounded-lg border p-3 sm:p-4', toneAccentClasses[tone])}>
       <p className={cn('text-xs font-semibold', toneSoftTextClasses[tone])}>{title}</p>
       {value ? <p className="mt-2 text-xl font-bold leading-tight tabular-nums sm:text-2xl">{value}</p> : null}
       {message ? <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{message}</p> : null}
@@ -140,7 +140,7 @@ export function ActionCard({
   action?: ReactNode
 }) {
   return (
-    <div className={cn('rounded-lg border p-3 transition-all duration-200 hover:shadow-md sm:p-4', toneAccentClasses[tone])}>
+    <div className={cn('rounded-lg border p-3 sm:p-4', toneAccentClasses[tone])}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-base font-bold text-slate-950 dark:text-slate-50">{title}</p>

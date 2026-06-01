@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
-import { DropdownMenu } from '../ui'
+import { DropdownMenu, StatusMessage } from '../ui'
 import { MainNavigation } from './MainNavigation'
 import { SyncStatusBar } from './SyncStatusBar'
 import type { ColorSchemePreference } from '../../hooks/useColorScheme'
 import type { CurrentUser, SyncState } from '../../lib/storage'
+import type { RecommendationTone } from '../../types'
 
 type AppShellProps<T extends string> = {
   children: ReactNode
@@ -16,6 +17,7 @@ type AppShellProps<T extends string> = {
   syncState: SyncState
   syncMessage: string
   lastSyncedLabel: string
+  saveFeedback: { tone: RecommendationTone; message: string } | null
   slowSave: boolean
   autoRetryEnabled: boolean
   noticeMessage: string
@@ -37,6 +39,7 @@ export function AppShell<T extends string>({
   syncState,
   syncMessage,
   lastSyncedLabel,
+  saveFeedback,
   slowSave,
   autoRetryEnabled,
   noticeMessage,
@@ -88,7 +91,7 @@ export function AppShell<T extends string>({
                   <DropdownMenu
                     label="更多"
                     items={[
-                      ...(adminTab ? [{ label: '用户管理', onSelect: () => onTabChange(adminTab.key) }] : []),
+                      ...(adminTab ? [{ label: '用户管理与备份', onSelect: () => onTabChange(adminTab.key) }] : []),
                       { label: `账号：${currentUser?.displayName ?? '未登录'}`, onSelect: () => undefined, disabled: true },
                       { label: `主题：${themeLabel}`, onSelect: onCycleColorScheme },
                       { label: '退出', onSelect: onLogout, tone: 'danger' },
@@ -101,6 +104,7 @@ export function AppShell<T extends string>({
                 syncState={syncState}
                 syncMessage={syncMessage}
                 lastSyncedLabel={lastSyncedLabel}
+                saveFeedback={saveFeedback}
                 slowSave={slowSave}
                 autoRetryEnabled={autoRetryEnabled}
                 noticeMessage={noticeMessage}
@@ -116,6 +120,13 @@ export function AppShell<T extends string>({
         <section id="app-content" tabIndex={-1} className={`outline-none ${immersiveMode ? 'pt-1' : ''}`}>
           {children}
         </section>
+        {saveFeedback && !(saveFeedback.tone === 'neutral' && syncState === 'saving') ? (
+          <div className="pointer-events-none fixed left-1/2 top-4 z-50 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2">
+            <StatusMessage className="pointer-events-auto shadow-lg" tone={saveFeedback.tone} announce>
+              {saveFeedback.message}
+            </StatusMessage>
+          </div>
+        ) : null}
       </div>
     </main>
   )

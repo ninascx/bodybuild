@@ -140,6 +140,17 @@ export async function logout(): Promise<void> {
   await fetch('/api/auth/logout', { method: 'POST' })
 }
 
+export async function changeCurrentPassword(currentPassword: string, newPassword: string): Promise<void> {
+  const response = await fetch('/api/auth/password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  })
+  await readApiJson(response, '修改密码失败')
+}
+
 async function readApiJson<T>(response: Response, fallbackMessage: string): Promise<T> {
   const payload = (await response.json().catch(() => ({}))) as T & { error?: string }
   if (!response.ok) {

@@ -356,6 +356,33 @@ app.post('/api/auth/logout', async (request, response) => {
   }
 })
 
+app.post('/api/auth/password', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    const currentPassword = requireString(request.body?.currentPassword, 'currentPassword')
+    const newPassword = requireString(request.body?.newPassword, 'newPassword')
+    if (!(await verifyPassword(currentPassword, user.passwordHash))) {
+      response.status(400).json({ error: '当前密码不正确，请重新输入。' })
+      return
+    }
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash: await hashPassword(newPassword) },
+    })
+    const tokenHash = currentSessionTokenHash(request)
+    await prisma.session.deleteMany({
+      where: {
+        userId: user.id,
+        ...(tokenHash ? { tokenHash: { not: tokenHash } } : {}),
+      },
+    })
+    response.json({ ok: true, currentSessionKept: Boolean(tokenHash) })
+  } catch (error) {
+    response.status(400).json({ error: error instanceof Error ? error.message : '修改密码失败' })
+  }
+})
+
 app.get('/api/auth/me', async (request, response) => {
   try {
     const user = await getCurrentUser(request)
@@ -613,18 +640,20 @@ app.post('/api/admin/users/:userId/reset-password', async (request, response) =>
     if (!admin) return
     const password = requireString(request.body?.password, 'password')
     const isSelf = request.params.userId === admin.id
+    if (isSelf) {
+      response.status(400).json({ error: '请在当前账号区域修改自己的密码。' })
+      return
+    }
     await prisma.user.update({
       where: { id: request.params.userId },
       data: { passwordHash: await hashPassword(password) },
     })
-    const tokenHash = isSelf ? currentSessionTokenHash(request) : null
     await prisma.session.deleteMany({
       where: {
         userId: request.params.userId,
-        ...(tokenHash ? { tokenHash: { not: tokenHash } } : {}),
       },
     })
-    response.json({ ok: true, currentSessionKept: isSelf && Boolean(tokenHash) })
+    response.json({ ok: true })
   } catch (error) {
     response.status(400).json({ error: error instanceof Error ? error.message : '重置密码失败' })
   }

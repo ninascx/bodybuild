@@ -7,6 +7,24 @@ type MainNavigationProps<T extends string> = {
   onChange: (tab: T) => void
 }
 
+const iconPaths: Record<string, string> = {
+  today: 'M4 6.5A2.5 2.5 0 016.5 4h11A2.5 2.5 0 0120 6.5v11a2.5 2.5 0 01-2.5 2.5h-11A2.5 2.5 0 014 17.5v-11z M8 3v3 M16 3v3 M4 9h16 M8 13h3 M8 16h6',
+  daily: 'M6 4h9l3 3v13H6V4z M14 4v4h4 M9 12h6 M9 15h6 M9 18h3',
+  workout: 'M6 10v4 M4 12h4 M16 10v4 M14 12h4 M8 12h6 M12 7v10',
+  analytics: 'M5 19V9 M10 19V5 M15 19v-7 M20 19V8 M4 19h17',
+  settings: 'M12 8.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z M12 3v3 M12 18v3 M4.8 5.2l2.1 2.1 M17.1 16.7l2.1 2.1 M3 12h3 M18 12h3 M4.8 18.8l2.1-2.1 M17.1 7.3l2.1-2.1',
+  admin: 'M12 4l7 3v5c0 4.2-2.8 6.8-7 8-4.2-1.2-7-3.8-7-8V7l7-3z M9 12l2 2 4-5',
+}
+
+function NavigationIcon({ tabKey }: { tabKey: string }) {
+  const path = iconPaths[tabKey] ?? iconPaths.today
+  return (
+    <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={path} />
+    </svg>
+  )
+}
+
 export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: MainNavigationProps<T>) {
   const mobileTabs = tabs.filter((tab) => tab.key !== 'admin')
   return (
@@ -28,6 +46,7 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
                     : 'text-slate-600 hover:bg-white hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-50',
                 )}
               >
+                <NavigationIcon tabKey={tab.key} />
                 {tab.label}
               </Button>
             )
@@ -49,12 +68,13 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
                 onClick={() => onChange(tab.key)}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'min-h-12 rounded-lg px-1 py-1 text-xs font-semibold shadow-none',
+                  'min-h-12 flex-col gap-0.5 rounded-lg px-1 py-1 text-xs font-semibold shadow-none',
                   active
                     ? 'bg-teal-700 text-white hover:bg-teal-800 dark:bg-cyan-600 dark:text-white dark:hover:bg-cyan-500'
                     : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-50',
                 )}
               >
+                <NavigationIcon tabKey={tab.key} />
                 <span className="whitespace-nowrap leading-5">{tab.label}</span>
               </Button>
             )

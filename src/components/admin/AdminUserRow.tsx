@@ -1,5 +1,5 @@
 import type { AdminUser, CurrentUser } from '../../lib/storage'
-import { Badge, Button, Checkbox, Select, StatusMessage, TextInput } from '../ui'
+import { Badge, Button, Checkbox, DisclosurePanel, Select, StatusMessage, TextInput } from '../ui'
 import type { RecommendationTone } from '../../types'
 
 function formatDateTime(value: string): string {
@@ -107,13 +107,14 @@ export function AdminUserRow({
               value={resetPassword}
               onChange={(event) => onResetPasswordChange(event.target.value)}
               autoComplete="new-password"
-              placeholder={isSelf ? '修改当前账号密码' : '新密码'}
+              placeholder="输入新密码"
+              aria-label={`${user.displayName} 的新密码`}
             />
             <Button variant="secondary" className="px-3" onClick={onGenerateResetPassword} disabled={rowBusy}>
               生成
             </Button>
             <Button variant="secondary" className="px-3" onClick={onResetPassword} disabled={rowBusy}>
-              重置
+              重置密码
             </Button>
           </div>
           {status ? (
@@ -121,19 +122,23 @@ export function AdminUserRow({
               {status.message}
             </StatusMessage>
           ) : null}
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
             <Button variant="secondary" className="px-3" onClick={onViewData} loading={dataLoadingForUser}>
               查看数据
             </Button>
-            <Button variant="secondary" className="px-3" onClick={onOpenExport} disabled={rowBusy}>
-              导出用户
-            </Button>
-            <Button variant="secondary" className="px-3" onClick={onCloneDefaultPlan} disabled={rowBusy}>
-              默认计划
-            </Button>
-            <Button variant="danger" className="px-3" onClick={onDeleteData} disabled={isSelf || rowBusy}>
-              清空数据
-            </Button>
+            <DisclosurePanel title="更多操作" className="bg-white dark:bg-slate-900">
+              <div className="grid gap-2 sm:grid-cols-3">
+                <Button variant="secondary" className="px-3" onClick={onOpenExport} disabled={rowBusy}>
+                  导出用户
+                </Button>
+                <Button variant="secondary" className="px-3" onClick={onCloneDefaultPlan} disabled={rowBusy}>
+                  默认计划
+                </Button>
+                <Button variant="danger" className="px-3" onClick={onDeleteData} disabled={isSelf || rowBusy}>
+                  清空数据
+                </Button>
+              </div>
+            </DisclosurePanel>
           </div>
         </div>
       </div>

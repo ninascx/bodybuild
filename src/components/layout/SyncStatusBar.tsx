@@ -1,10 +1,12 @@
 import { Button, StatusMessage } from '../ui'
 import type { SyncState } from '../../lib/storage'
+import type { RecommendationTone } from '../../types'
 
 type SyncStatusBarProps = {
   syncState: SyncState
   syncMessage: string
   lastSyncedLabel: string
+  saveFeedback: { tone: RecommendationTone; message: string } | null
   slowSave: boolean
   autoRetryEnabled: boolean
   noticeMessage: string
@@ -30,6 +32,7 @@ export function SyncStatusBar({
   syncState,
   syncMessage,
   lastSyncedLabel,
+  saveFeedback,
   slowSave,
   autoRetryEnabled,
   noticeMessage,
@@ -38,11 +41,11 @@ export function SyncStatusBar({
 }: SyncStatusBarProps) {
   const label = syncState === 'synced' && lastSyncedLabel ? `已同步 ${lastSyncedLabel}` : statusLabel[syncState]
   const compactMessage = syncState === 'synced' ? label : syncMessage
-  const hasTransientMessage = Boolean(slowSave || noticeMessage || copyMessage)
+  const hasTransientMessage = Boolean(saveFeedback || slowSave || noticeMessage || copyMessage)
   const quietSynced = syncState === 'synced' && !autoRetryEnabled && !hasTransientMessage
 
   return (
-    <div className={quietSynced ? 'mt-1 hidden sm:block' : 'mt-1'}>
+    <div className="mt-1">
       <div className={quietSynced ? 'flex justify-end' : 'flex flex-wrap items-center justify-between gap-x-3 gap-y-1'}>
         <p className="min-w-0 truncate text-xs leading-5 text-slate-500 dark:text-slate-400">
           <span className="font-medium text-slate-700 dark:text-slate-200">同步</span>
@@ -68,8 +71,9 @@ export function SyncStatusBar({
       {autoRetryEnabled && syncState === 'offline' ? (
         <p className="mt-1 px-1 text-xs text-slate-500 dark:text-slate-400">已先保存在本机；恢复连接或回到页面时会自动重试。</p>
       ) : null}
-      {slowSave || noticeMessage || copyMessage ? (
+      {saveFeedback || slowSave || noticeMessage || copyMessage ? (
         <div className="mt-2 grid gap-2">
+          {saveFeedback ? <StatusMessage tone={saveFeedback.tone} announce>{saveFeedback.message}</StatusMessage> : null}
           {slowSave ? <StatusMessage tone="warning" announce>网络较慢，仍在尝试，本地缓存已先保存。</StatusMessage> : null}
           {noticeMessage ? <StatusMessage tone="neutral" announce>{noticeMessage}</StatusMessage> : null}
           {copyMessage ? <StatusMessage tone="positive" announce>{copyMessage}</StatusMessage> : null}

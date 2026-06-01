@@ -5,6 +5,7 @@ import {
   AdminUserDataPanel,
   AdminUserList,
   CreateAdminUserForm,
+  CurrentAdminAccountPanel,
 } from '../components/admin/AdminUserPanels'
 import { useAdminUsers } from '../components/admin/useAdminUsers'
 import { ExportDataDialog } from '../components/ExportDataDialog'
@@ -41,6 +42,17 @@ export function AdminUsersTab({ currentUser }: AdminUsersTabProps) {
           serverHealth={adminUsers.serverHealth}
           loadingHealth={adminUsers.loadingHealth}
           onRefresh={() => void adminUsers.loadHealth()}
+        />
+        <CurrentAdminAccountPanel
+          currentUser={currentUser}
+          currentPassword={adminUsers.currentPassword}
+          currentNewPassword={adminUsers.currentNewPassword}
+          currentConfirmPassword={adminUsers.currentConfirmPassword}
+          changingOwnPassword={adminUsers.changingOwnPassword}
+          onCurrentPasswordChange={adminUsers.setCurrentPassword}
+          onNewPasswordChange={adminUsers.setCurrentNewPassword}
+          onConfirmPasswordChange={adminUsers.setCurrentConfirmPassword}
+          onSubmit={(event) => void adminUsers.changeOwnPassword(event)}
         />
         <CreateAdminUserForm
           newUsername={adminUsers.newUsername}

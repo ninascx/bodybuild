@@ -61,7 +61,7 @@ import {
 import { defaultUserPreference, mergeUserPreference } from './lib/userPreferences'
 import { buildExportCsvText, buildExportResultSummary, buildExportSummaryText, buildScopedExportPayload, type ExportFormat, type ExportOptions, type ExportRangePreset } from './lib/exportPayload'
 import { createId } from './lib/ids'
-import type { AdjustmentRecommendation, DailyLog, DayKey, ExerciseLog, ExercisePlan, ExerciseSetLog, UserPlanData, UserPreference, UserProfile, WeeklySummary, WorkoutLog, WorkoutPlan, WorkoutTemplate } from './types'
+import type { AdjustmentRecommendation, DailyLog, DayKey, ExerciseLog, ExercisePlan, ExerciseSetLog, RecommendationTone, UserPlanData, UserPreference, UserProfile, WeeklySummary, WorkoutLog, WorkoutPlan, WorkoutTemplate } from './types'
 import { LoadingBlock } from './components/ui'
 import { useColorScheme } from './hooks/useColorScheme'
 import { useConfirm } from './components/ConfirmDialog'
@@ -203,6 +203,7 @@ function App() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(`builtin-${getDayKey(formatDateInput())}`)
   const [syncState, setSyncState] = useState<SyncState>('loading')
   const [syncMessage, setSyncMessage] = useState('加载中...')
+  const [saveFeedback, setSaveFeedback] = useState<{ tone: RecommendationTone; message: string } | null>(null)
   const [savePending, setSavePending] = useState(false)
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null)
   const [autoRetryEnabled, setAutoRetryEnabled] = useState(false)
@@ -417,6 +418,7 @@ function App() {
       applyPlanData(nextPlanData)
       setSyncState('saving')
       setSyncMessage('保存计划中...')
+      setSaveFeedback({ tone: 'neutral', message: '正在保存计划...' })
 
       const saveTask = planSaveQueueRef.current.then(() => saveUserPlanData(nextPlanData))
       planSaveQueueRef.current = saveTask.then(
@@ -432,6 +434,7 @@ function App() {
           setLastSyncedAt(new Date().toISOString())
           setAutoRetryEnabled(false)
           setSyncMessage('计划已保存')
+          setSaveFeedback({ tone: 'positive', message: '计划已保存到服务器。' })
         }
         return saved
       } catch (error) {
@@ -439,6 +442,7 @@ function App() {
           setSyncState('offline')
           setAutoRetryEnabled(true)
           setSyncMessage(error instanceof Error ? `${error.message}（计划修改已先保留在当前页面）` : '计划保存失败，修改已先保留在当前页面。')
+          setSaveFeedback({ tone: 'warning', message: '计划已先保留在当前页面，恢复连接后再同步。' })
         }
         throw error
       }
@@ -485,6 +489,7 @@ function App() {
       setSavePending(false)
       setSyncState('saving')
       setSyncMessage('保存中...')
+      setSaveFeedback({ tone: 'neutral', message: '正在保存到服务器...' })
       const saveTask = saveQueueRef.current.then(() => saveAppData(currentUser.id, nextData))
       saveQueueRef.current = saveTask.then(
         () => undefined,
@@ -500,6 +505,7 @@ function App() {
           setLastSyncedAt(new Date().toISOString())
           setAutoRetryEnabled(false)
           setSyncMessage('已同步')
+          setSaveFeedback({ tone: 'positive', message: '数据已保存到服务器。' })
         }
       } catch (error) {
         if (saveVersion === saveVersionRef.current) {
@@ -511,6 +517,7 @@ function App() {
               ? `${error.message}（已先保存在浏览器缓存）`
               : '服务器保存失败，已先保存在浏览器缓存；恢复连接后请再次保存。'
           setSyncMessage(message)
+          setSaveFeedback({ tone: 'warning', message: '数据已先保存在本机，恢复连接后可重试同步。' })
         }
       }
     },
@@ -543,6 +550,7 @@ function App() {
         flushPending()
       } else {
         setSyncMessage('已记录')
+        setSaveFeedback({ tone: 'neutral', message: '已记录，正在保存...' })
         debounceTimerRef.current = window.setTimeout(flushPending, 400)
       }
     },
@@ -593,6 +601,12 @@ function App() {
     const timer = window.setTimeout(() => setCopyMessage(''), 3000)
     return () => window.clearTimeout(timer)
   }, [copyMessage])
+
+  useEffect(() => {
+    if (!saveFeedback || (saveFeedback.tone === 'neutral' && syncState === 'saving')) return
+    const timer = window.setTimeout(() => setSaveFeedback(null), saveFeedback.tone === 'positive' ? 2500 : 4000)
+    return () => window.clearTimeout(timer)
+  }, [saveFeedback, syncState])
 
   useEffect(() => {
     if (copyStatus === 'idle') return
@@ -1305,6 +1319,7 @@ function App() {
     setLastSyncedAt(new Date().toISOString())
     setAutoRetryEnabled(false)
     setSyncMessage('配置已保存')
+    setSaveFeedback({ tone: 'positive', message: '配置已保存到服务器。' })
     return saved
   }
 
@@ -1439,6 +1454,7 @@ function App() {
       syncState={syncState}
       syncMessage={syncMessage}
       lastSyncedLabel={lastSyncedLabel}
+      saveFeedback={saveFeedback}
       slowSave={slowSave}
       autoRetryEnabled={autoRetryEnabled}
       noticeMessage={noticeMessage}

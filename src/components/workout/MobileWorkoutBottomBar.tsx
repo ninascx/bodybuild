@@ -61,12 +61,12 @@ export function MobileWorkoutBottomBar({
 }) {
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 shadow-lg backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 shadow-[0_-10px_28px_rgb(15_23_42_/_0.12)] backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
       style={{ transform: keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : undefined }}
     >
       {/* Rest timer — prominent when active */}
       {restActive ? (
-        <div className="border-b border-slate-200 px-4 py-2 dark:border-slate-700">
+        <div className={`border-b px-4 py-2 ${restSeconds === 0 ? 'border-amber-200 bg-amber-50 dark:border-amber-700/50 dark:bg-amber-900/30' : 'border-emerald-200 bg-emerald-50 dark:border-emerald-700/50 dark:bg-emerald-900/20'}`}>
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">组间休息</p>
             <p className={`text-xl font-bold tabular-nums ${restSeconds === 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
@@ -84,7 +84,7 @@ export function MobileWorkoutBottomBar({
       {/* Top info bar */}
       <div className="flex items-center gap-2 px-3 pt-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-semibold text-slate-700 dark:text-slate-300">{exerciseName}</p>
+          <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{exerciseName}</p>
           <p className="truncate text-xs text-slate-500 dark:text-slate-400">
             第 {setIndex + 1} 组 · {currentSetStatus} · {workoutSummary.completionPercent}%
           </p>
@@ -102,11 +102,11 @@ export function MobileWorkoutBottomBar({
       </div>
 
       {/* Main action buttons */}
-      <div className="grid grid-cols-[0.82fr_1.28fr_0.9fr] gap-2 px-3 pt-1.5 pb-1.5">
+      <div className="grid grid-cols-[0.76fr_1.48fr_0.84fr] gap-2 px-3 pt-2 pb-1.5">
         <Button variant="secondary" className="min-h-11 whitespace-nowrap px-2 text-xs" onClick={onPreviousExercise} disabled={!canGoPrevious}>
           上一动作
         </Button>
-        <Button className="min-h-11 whitespace-nowrap px-2 text-sm font-semibold" onClick={onPrimary} disabled={bottomPrimaryDisabled} title={bottomPrimaryTitle}>
+        <Button className="min-h-12 whitespace-nowrap px-2 text-base font-semibold" onClick={onPrimary} disabled={bottomPrimaryDisabled} title={bottomPrimaryTitle}>
           {bottomPrimaryLabel}
         </Button>
         <Button variant="secondary" className="min-h-11 whitespace-nowrap px-2 text-xs" onClick={onNext} disabled={bottomNextDisabled}>

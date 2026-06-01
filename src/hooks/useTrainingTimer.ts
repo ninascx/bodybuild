@@ -30,10 +30,6 @@ function vibrateDevice() {
 }
 
 export function useTrainingTimer(selectedDate: string, active: boolean) {
-  const [pageVisible, setPageVisible] = useState(() => {
-    if (typeof document === 'undefined') return true
-    return document.visibilityState === 'visible'
-  })
   const [elapsedSeconds, setElapsedSeconds] = useState(() => {
     try {
       const key = `bodybuild:elapsed:${selectedDate}`
@@ -67,22 +63,34 @@ export function useTrainingTimer(selectedDate: string, active: boolean) {
   const elapsedIntervalRef = useRef<number | null>(null)
   const lastWorkoutDateRef = useRef<string | null>(null)
   const prevRestSecondsRef = useRef(restSeconds)
+  const elapsedSecondsRef = useRef(elapsedSeconds)
+  const elapsedBaseSecondsRef = useRef(elapsedSeconds)
+  const elapsedStartedAtRef = useRef<number | null>(null)
+  const restEndsAtRef = useRef<number | null>(null)
 
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      setPageVisible(document.visibilityState === 'visible')
-    }
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [])
+  const syncElapsedFromClock = useCallback(() => {
+    const startedAt = elapsedStartedAtRef.current
+    if (!active || startedAt === null) return
+    const nextElapsed = elapsedBaseSecondsRef.current + Math.floor((Date.now() - startedAt) / 1000)
+    setElapsedSeconds((prev) => (prev === nextElapsed ? prev : nextElapsed))
+  }, [active])
+
+  const syncRestFromClock = useCallback(() => {
+    const endsAt = restEndsAtRef.current
+    if (!restActive || endsAt === null) return
+    const nextRestSeconds = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000))
+    setRestSeconds((prev) => (prev === nextRestSeconds ? prev : nextRestSeconds))
+  }, [restActive])
 
   const startRestTimer = useCallback(() => {
+    restEndsAtRef.current = Date.now() + restDefaultDuration * 1000
     setRestSeconds(restDefaultDuration)
     setRestActive(true)
   }, [restDefaultDuration])
 
   const stopRestTimer = useCallback(() => {
     setRestActive(false)
+    restEndsAtRef.current = null
     if (restIntervalRef.current !== null) {
       window.clearInterval(restIntervalRef.current)
       restIntervalRef.current = null
@@ -91,8 +99,14 @@ export function useTrainingTimer(selectedDate: string, active: boolean) {
 
   const adjustRestDuration = useCallback((delta: number) => {
     setRestDefaultDuration((prev) => Math.min(300, Math.max(15, prev + delta)))
-    setRestSeconds((prev) => Math.min(300, Math.max(0, prev + delta)))
-  }, [])
+    setRestSeconds((prev) => {
+      const next = Math.min(300, Math.max(0, prev + delta))
+      if (restActive) {
+        restEndsAtRef.current = Date.now() + next * 1000
+      }
+      return next
+    })
+  }, [restActive])
 
   const toggleAutoStartRest = useCallback(() => {
     setAutoStartRest((prev) => {
@@ -114,12 +128,15 @@ export function useTrainingTimer(selectedDate: string, active: boolean) {
         nextElapsed = saved ? Number(saved) || 0 : 0
       } catch { /* ignore */ }
       lastWorkoutDateRef.current = selectedDate
+      elapsedBaseSecondsRef.current = nextElapsed
+      elapsedStartedAtRef.current = active ? Date.now() : null
       const timer = window.setTimeout(() => setElapsedSeconds(nextElapsed), 0)
       return () => window.clearTimeout(timer)
     }
-  }, [selectedDate])
+  }, [active, selectedDate])
 
   useEffect(() => {
+    elapsedSecondsRef.current = elapsedSeconds
     try {
       const key = `bodybuild:elapsed:${selectedDate}`
       localStorage.setItem(key, String(elapsedSeconds))
@@ -127,7 +144,7 @@ export function useTrainingTimer(selectedDate: string, active: boolean) {
   }, [elapsedSeconds, selectedDate])
 
   useEffect(() => {
-    if (restActive && prevRestSecondsRef.current === 1 && restSeconds === 0) {
+    if (restActive && prevRestSecondsRef.current > 0 && restSeconds === 0) {
       playRestCompleteSound()
       vibrateDevice()
     }
@@ -135,7 +152,43 @@ export function useTrainingTimer(selectedDate: string, active: boolean) {
   }, [restSeconds, restActive])
 
   useEffect(() => {
-    if (!active || !pageVisible) {
+    if (active) {
+      elapsedStartedAtRef.current = Date.now()
+      return () => {
+        const startedAt = elapsedStartedAtRef.current
+        if (startedAt !== null) {
+          const nextElapsed = elapsedBaseSecondsRef.current + Math.floor((Date.now() - startedAt) / 1000)
+          elapsedBaseSecondsRef.current = nextElapsed
+          elapsedSecondsRef.current = nextElapsed
+          setElapsedSeconds((prev) => (prev === nextElapsed ? prev : nextElapsed))
+          try {
+            localStorage.setItem(`bodybuild:elapsed:${selectedDate}`, String(nextElapsed))
+          } catch { /* ignore */ }
+        }
+        elapsedStartedAtRef.current = null
+      }
+    }
+    elapsedBaseSecondsRef.current = elapsedSecondsRef.current
+    elapsedStartedAtRef.current = null
+  }, [active, selectedDate])
+
+  useEffect(() => {
+    const syncAllClocks = () => {
+      syncElapsedFromClock()
+      syncRestFromClock()
+    }
+    document.addEventListener('visibilitychange', syncAllClocks)
+    window.addEventListener('focus', syncAllClocks)
+    window.addEventListener('pageshow', syncAllClocks)
+    return () => {
+      document.removeEventListener('visibilitychange', syncAllClocks)
+      window.removeEventListener('focus', syncAllClocks)
+      window.removeEventListener('pageshow', syncAllClocks)
+    }
+  }, [syncElapsedFromClock, syncRestFromClock])
+
+  useEffect(() => {
+    if (!active) {
       if (elapsedIntervalRef.current !== null) {
         window.clearInterval(elapsedIntervalRef.current)
         elapsedIntervalRef.current = null
@@ -144,7 +197,7 @@ export function useTrainingTimer(selectedDate: string, active: boolean) {
     }
 
     elapsedIntervalRef.current = window.setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1)
+      syncElapsedFromClock()
     }, 1000)
 
     return () => {
@@ -153,12 +206,12 @@ export function useTrainingTimer(selectedDate: string, active: boolean) {
         elapsedIntervalRef.current = null
       }
     }
-  }, [active, pageVisible])
+  }, [active, syncElapsedFromClock])
 
   useEffect(() => {
-    if (restActive && restSeconds > 0 && pageVisible) {
+    if (restActive && restSeconds > 0) {
       restIntervalRef.current = window.setInterval(() => {
-        setRestSeconds((prev) => (prev <= 1 ? 0 : prev - 1))
+        syncRestFromClock()
       }, 1000)
     }
     return () => {
@@ -167,7 +220,7 @@ export function useTrainingTimer(selectedDate: string, active: boolean) {
         restIntervalRef.current = null
       }
     }
-  }, [restActive, restSeconds, pageVisible])
+  }, [restActive, restSeconds, syncRestFromClock])
 
   useEffect(() => {
     try {

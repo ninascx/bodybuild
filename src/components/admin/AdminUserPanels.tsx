@@ -131,6 +131,78 @@ export function CreateAdminUserForm({
   )
 }
 
+export function CurrentAdminAccountPanel({
+  currentUser,
+  currentPassword,
+  currentNewPassword,
+  currentConfirmPassword,
+  changingOwnPassword,
+  onCurrentPasswordChange,
+  onNewPasswordChange,
+  onConfirmPasswordChange,
+  onSubmit,
+}: {
+  currentUser: CurrentUser
+  currentPassword: string
+  currentNewPassword: string
+  currentConfirmPassword: string
+  changingOwnPassword: boolean
+  onCurrentPasswordChange: (value: string) => void
+  onNewPasswordChange: (value: string) => void
+  onConfirmPasswordChange: (value: string) => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+}) {
+  return (
+    <FormSection
+      title="当前账号"
+      description="修改自己的密码需要先确认当前密码；修改后当前设备保持登录。"
+      actions={<Badge tone="positive">管理员</Badge>}
+    >
+      <form
+        className="grid gap-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900 lg:grid-cols-[1fr_1fr_1fr_auto]"
+        onSubmit={onSubmit}
+      >
+        <div className="rounded-md bg-slate-50 px-3 py-2 text-sm dark:bg-slate-800 lg:col-span-4">
+          <p className="font-semibold text-slate-950 dark:text-slate-50">{currentUser.displayName}</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">@{currentUser.username}</p>
+        </div>
+        <Field label="当前密码">
+          <TextInput
+            type="password"
+            value={currentPassword}
+            onChange={(event) => onCurrentPasswordChange(event.target.value)}
+            autoComplete="current-password"
+            required
+          />
+        </Field>
+        <Field label="新密码">
+          <TextInput
+            type="password"
+            value={currentNewPassword}
+            onChange={(event) => onNewPasswordChange(event.target.value)}
+            autoComplete="new-password"
+            required
+          />
+        </Field>
+        <Field label="确认新密码">
+          <TextInput
+            type="password"
+            value={currentConfirmPassword}
+            onChange={(event) => onConfirmPasswordChange(event.target.value)}
+            autoComplete="new-password"
+            required
+          />
+        </Field>
+        <div className="flex items-end">
+          <Button className="w-full" type="submit" loading={changingOwnPassword}>
+            修改密码
+          </Button>
+        </div>
+      </form>
+    </FormSection>
+  )
+}
+
 export function AdminUserList({
   users,
   currentUser,
@@ -174,21 +246,23 @@ export function AdminUserList({
   onCloneDefaultPlan: (user: AdminUser) => void
   onDeleteData: (user: AdminUser) => void
 }) {
+  const managedUsers = users.filter((user) => user.id !== currentUser.id)
+
   if (loadingUsers) {
     return <LoadingBlock className="mt-4" title="正在加载用户列表..." />
   }
 
-  if (users.length === 0) {
+  if (managedUsers.length === 0) {
     return (
       <div className="mt-4">
-        <EmptyState title="还没有用户" message="先在上方创建一个昵称账户。" />
+        <EmptyState title="还没有其他用户" message="创建用户后，这里会显示可管理的成员账户。" />
       </div>
     )
   }
 
   return (
     <div className="mt-4 grid gap-3">
-      {users.map((user) => (
+      {managedUsers.map((user) => (
         <AdminUserRow
           key={user.id}
           user={user}
