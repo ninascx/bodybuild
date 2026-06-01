@@ -1526,7 +1526,6 @@ function App() {
             onUpdateDailyLog={updateDailyLog}
             onQuickAction={quickDailyAction}
             onCopySelectedDate={() => void copySelectedDateData()}
-            onExportSelectedDate={() => openExportDialog('today')}
             focusKey={dailyFocusKey}
             onFocusConsumed={() => setDailyFocusKey(undefined)}
           />

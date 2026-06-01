@@ -1,6 +1,7 @@
 import type { DailyLog, DailyTarget } from '../../types'
 import type { SyncState } from '../../lib/storage'
 import type { DailyFocusKey } from '../../lib/productFlow'
+import { Button } from '../ui'
 import { NumberField, type NumberRange } from '../NumberField'
 
 export type DailyEssentialsFormProps = {
@@ -14,6 +15,9 @@ export type DailyEssentialsFormProps = {
   lastSyncedLabel: string
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
   onQuickAction: (patch: Partial<DailyLog>) => void
+  onCopyYesterday: () => void
+  onFillTarget: () => void
+  hasFillableTargetFields: boolean
   focusKey?: DailyFocusKey
 }
 
@@ -22,6 +26,7 @@ const quickFieldClass = 'h-11 text-base'
 type EssentialField = {
   key: DailyFocusKey
   label: string
+  labelNote?: string
   value?: number
   step: string
   kind: 'decimal' | 'integer'
@@ -94,11 +99,11 @@ function getSaveLabel(syncState: SyncState, savePending: boolean, lastSyncedLabe
 export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
   const essentialFields: EssentialField[] = [
     { key: 'weight', label: '体重 kg', value: props.selectedLog.morningWeightKg, step: '0.1', kind: 'decimal', range: { min: 20, max: 300 }, quickStep: 0.1, quickStepLabel: '0.1', patch: (value: number | undefined) => ({ morningWeightKg: value }) },
-    { key: 'calories', label: '热量 kcal', value: props.selectedLog.calories, step: '1', kind: 'integer', range: { min: 0, max: 10000, allowZero: true }, quickStep: 100, quickStepLabel: '100', patch: (value: number | undefined) => ({ calories: value }) },
-    { key: 'protein', label: '蛋白质 g', value: props.selectedLog.protein, step: '1', kind: 'integer', range: { min: 0, max: 500, allowZero: true }, quickStep: 10, quickStepLabel: '10', patch: (value: number | undefined) => ({ protein: value }) },
-    { key: 'steps', label: '步数', value: props.selectedLog.steps, step: '1', kind: 'integer', range: { min: 0, max: 100000, allowZero: true }, quickStep: 1000, quickStepLabel: '1k', patch: (value: number | undefined) => ({ steps: value }) },
+    { key: 'calories', label: '热量 kcal', labelNote: props.calorieTarget !== undefined ? `目标 ${props.calorieTarget}kcal` : undefined, value: props.selectedLog.calories, step: '1', kind: 'integer', range: { min: 0, max: 10000, allowZero: true }, quickStep: 100, quickStepLabel: '100', patch: (value: number | undefined) => ({ calories: value }) },
+    { key: 'protein', label: '蛋白质 g', labelNote: `目标 ${props.selectedTarget.protein}g`, value: props.selectedLog.protein, step: '1', kind: 'integer', range: { min: 0, max: 500, allowZero: true }, quickStep: 10, quickStepLabel: '10', patch: (value: number | undefined) => ({ protein: value }) },
+    { key: 'steps', label: '步数', labelNote: `目标 ${props.selectedTarget.stepTarget}步`, value: props.selectedLog.steps, step: '1', kind: 'integer', range: { min: 0, max: 100000, allowZero: true }, quickStep: 1000, quickStepLabel: '1k', patch: (value: number | undefined) => ({ steps: value }) },
     { key: 'sleep', label: '睡眠 h', value: props.selectedLog.sleepHours, step: '0.1', kind: 'decimal', range: { min: 0, max: 24, allowZero: true }, quickStep: 0.5, quickStepLabel: '0.5', patch: (value: number | undefined) => ({ sleepHours: value }) },
-    { key: 'fatigue', label: `疲劳 ≤${props.fatigueThreshold}`, value: props.selectedLog.fatigueScore, step: '1', kind: 'integer', range: { min: 0, max: 10, allowZero: true }, quickStep: 1, quickStepLabel: '1', patch: (value: number | undefined) => ({ fatigueScore: value }) },
+    { key: 'fatigue', label: `疲劳 ≤${props.fatigueThreshold}`, labelNote: `上限 ${props.fatigueThreshold}分`, value: props.selectedLog.fatigueScore, step: '1', kind: 'integer', range: { min: 0, max: 10, allowZero: true }, quickStep: 1, quickStepLabel: '1', patch: (value: number | undefined) => ({ fatigueScore: value }) },
   ]
   const fieldOrder = essentialFields
     .map((item) => ({ ...item, missing: item.value === undefined }))
@@ -132,25 +137,43 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
               kind={field.kind}
               range={field.range}
               labelAction={
-                <QuickAdjustButtons
-                  label={field.label}
-                  stepLabel={field.quickStepLabel}
-                  disabled={field.value === undefined}
-                  onDecrease={() => {
-                    if (field.value === undefined) return
-                    props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value - field.quickStep, field)))
-                  }}
-                  onIncrease={() => {
-                    if (field.value === undefined) return
-                    props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value + field.quickStep, field)))
-                  }}
-                />
+                <div className="flex min-w-0 items-center gap-2">
+                  {field.labelNote ? (
+                    <span className="min-w-0 truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                      {field.labelNote}
+                    </span>
+                  ) : null}
+                  <QuickAdjustButtons
+                    label={field.label}
+                    stepLabel={field.quickStepLabel}
+                    disabled={field.value === undefined}
+                    onDecrease={() => {
+                      if (field.value === undefined) return
+                      props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value - field.quickStep, field)))
+                    }}
+                    onIncrease={() => {
+                      if (field.value === undefined) return
+                      props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value + field.quickStep, field)))
+                    }}
+                  />
+                </div>
               }
               onChange={(value) => props.onUpdateDailyLog(field.patch(value))}
             />
           </div>
         ))}
       </div>
+
+      {(props.yesterdayLog || props.hasFillableTargetFields) ? (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <Button variant="secondary" className="w-full px-2 text-xs shadow-none sm:text-sm" disabled={!props.yesterdayLog} onClick={props.onCopyYesterday}>
+            填入昨天值
+          </Button>
+          <Button variant="secondary" className="w-full px-2 text-xs shadow-none sm:text-sm" disabled={!props.hasFillableTargetFields} onClick={props.onFillTarget}>
+            填入目标值
+          </Button>
+        </div>
+      ) : null}
     </section>
   )
 }

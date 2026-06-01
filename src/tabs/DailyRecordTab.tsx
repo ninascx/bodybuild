@@ -9,62 +9,9 @@ import type { DailyLog, DailyTarget, WorkoutLog } from '../types'
 import type { SyncState } from '../lib/storage'
 import type { DailyFocusKey } from '../lib/productFlow'
 
-type QuickStatus = { label: string; value: string; helper: string; tone: 'positive' | 'warning' | 'neutral' }
-
 function targetCalories(target: DailyTarget): number | undefined {
   if (target.calories !== undefined) return target.calories
   return target.calorieRange?.[1]
-}
-
-function targetDeltaStatus(
-  label: string,
-  actual: number | undefined,
-  target: number | undefined,
-  unit: string,
-  mode: 'upper' | 'floor',
-): QuickStatus {
-  if (target === undefined) {
-    return { label, value: '无目标', helper: '可在个人页设置', tone: 'neutral' }
-  }
-  if (actual === undefined) {
-    return { label, value: '未记录', helper: `目标 ${target}${unit}`, tone: 'neutral' }
-  }
-  const diff = Math.round((target - actual) * 10) / 10
-  if (mode === 'upper') {
-    if (diff === 0) {
-      return { label, value: '刚好达标', helper: `已记 ${actual}${unit}`, tone: 'positive' }
-    }
-    return diff >= 0
-      ? { label, value: `还可 ${diff}${unit}`, helper: `已记 ${actual}${unit}`, tone: 'positive' }
-      : { label, value: `超出 ${Math.abs(diff)}${unit}`, helper: `目标 ${target}${unit}`, tone: 'warning' }
-  }
-  if (diff === 0) {
-    return { label, value: '刚好达标', helper: `目标 ${target}${unit}`, tone: 'positive' }
-  }
-  return diff <= 0
-    ? { label, value: `已达标 +${Math.abs(diff)}${unit}`, helper: `目标 ${target}${unit}`, tone: 'positive' }
-    : { label, value: `还差 ${diff}${unit}`, helper: `已记 ${actual}${unit}`, tone: 'warning' }
-}
-
-function weightDeltaStatus(
-  actual: number | undefined,
-  previous: DailyLog | undefined,
-): QuickStatus {
-  if (actual === undefined) {
-    return { label: '体重', value: '未记录', helper: '填晨起体重', tone: 'neutral' }
-  }
-  if (previous?.morningWeightKg === undefined) {
-    return { label: '体重', value: `${actual}kg`, helper: '暂无上次对比', tone: 'neutral' }
-  }
-  const diff = Math.round((actual - previous.morningWeightKg) * 10) / 10
-  const helper = `上次 ${previous.date.slice(5)} ${previous.morningWeightKg}kg`
-  if (diff === 0) return { label: '体重', value: '较上次持平', helper, tone: 'neutral' }
-  return {
-    label: '体重',
-    value: `较上次 ${diff > 0 ? '+' : ''}${diff}kg`,
-    helper,
-    tone: 'neutral',
-  }
 }
 
 type DailyRecordTabProps = {
@@ -83,7 +30,6 @@ type DailyRecordTabProps = {
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
   onQuickAction: (patch: Partial<DailyLog>) => void
   onCopySelectedDate: () => void
-  onExportSelectedDate: () => void
   focusKey?: DailyFocusKey
   onFocusConsumed?: () => void
 }
@@ -108,26 +54,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
     [props.dailyLogs, props.selectedDate]
   )
 
-  const previousWeightLog = useMemo(
-    () => previousLogs.find((log) => log.morningWeightKg !== undefined),
-    [previousLogs]
-  )
-
-  const quickStatuses = useMemo(() => [
-    weightDeltaStatus(props.selectedLog.morningWeightKg, previousWeightLog),
-    targetDeltaStatus('热量', props.selectedLog.calories, calorieTarget, 'kcal', 'upper'),
-    targetDeltaStatus('蛋白', props.selectedLog.protein, props.selectedTarget.protein, 'g', 'floor'),
-    targetDeltaStatus('步数', props.selectedLog.steps, props.selectedTarget.stepTarget, '步', 'floor'),
-    targetDeltaStatus('睡眠', props.selectedLog.sleepHours, props.sleepFloorHours, 'h', 'floor'),
-    targetDeltaStatus('疲劳', props.selectedLog.fatigueScore, props.fatigueThreshold, '分', 'upper'),
-  ], [
-    props.selectedLog,
-    props.selectedTarget,
-    props.sleepFloorHours,
-    props.fatigueThreshold,
-    previousWeightLog,
-    calorieTarget,
-  ])
   const copyYesterdayQuickFields = () => {
     if (!yesterdayLog) return
     props.onQuickAction({
@@ -160,8 +86,8 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
           <p className="mb-2 text-sm font-semibold text-slate-950 dark:text-slate-50">记录日期</p>
           <DateNavigator selectedDate={props.selectedDate} today={props.today} onChange={props.onDateChange} />
         </div>
-        <Button className="w-full px-4 sm:w-auto" onClick={props.onExportSelectedDate}>
-          导出此日
+        <Button className="w-full px-4 sm:w-auto" onClick={props.onCopySelectedDate}>
+          复制此日
         </Button>
       </section>
 
@@ -169,7 +95,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         selectedLog={props.selectedLog}
         selectedTarget={props.selectedTarget}
         yesterdayLog={yesterdayLog}
-        quickStatuses={quickStatuses}
         calorieTarget={calorieTarget}
         fatigueThreshold={props.fatigueThreshold}
         syncState={props.syncState}
@@ -189,12 +114,7 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         className="border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/70"
         contentClassName="grid gap-3"
       >
-        <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">日历、围度和复制操作放在这里，避免打断今日录入。</p>
-        <div className="grid gap-2">
-          <Button variant="secondary" className="w-full px-3" onClick={props.onCopySelectedDate}>
-            复制此日
-          </Button>
-        </div>
+        <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">日历和围度放在这里，避免打断今日录入。</p>
         <DailyCalendarPanel
           selectedDate={props.selectedDate}
           today={props.today}
