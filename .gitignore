@@ -11,6 +11,13 @@ node_modules
 dist
 dist-ssr
 dist-server
+.vite
+.turbo
+.cache
+coverage
+playwright-report
+test-results
+*.tsbuildinfo
 *.local
 .env
 .env.*
@@ -19,6 +26,17 @@ dist-server
 # Local/server runtime data
 /data
 *.tmp
+*.bak
+*.backup
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
 
 # Editor directories and files
 .vscode/*
