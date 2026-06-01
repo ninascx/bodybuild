@@ -1457,6 +1457,9 @@ function App() {
       saveFeedback={saveFeedback}
       slowSave={slowSave}
       autoRetryEnabled={autoRetryEnabled}
+      extraMenuItems={contentTab === 'daily' ? [
+        { label: '导出此日', onSelect: () => openExportDialog('today') },
+      ] : []}
       noticeMessage={noticeMessage}
       copyMessage={copyMessage}
       onTabChange={changeTab}

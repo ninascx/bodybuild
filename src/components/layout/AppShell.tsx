@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { DropdownMenu, StatusMessage } from '../ui'
+import type { DropdownMenuItem } from '../ui'
 import { MainNavigation } from './MainNavigation'
 import { SyncStatusBar } from './SyncStatusBar'
 import type { ColorSchemePreference } from '../../hooks/useColorScheme'
@@ -20,6 +21,7 @@ type AppShellProps<T extends string> = {
   saveFeedback: { tone: RecommendationTone; message: string } | null
   slowSave: boolean
   autoRetryEnabled: boolean
+  extraMenuItems?: DropdownMenuItem[]
   noticeMessage: string
   copyMessage: string
   onTabChange: (tab: T) => void
@@ -42,6 +44,7 @@ export function AppShell<T extends string>({
   saveFeedback,
   slowSave,
   autoRetryEnabled,
+  extraMenuItems = [],
   noticeMessage,
   copyMessage,
   onTabChange,
@@ -92,6 +95,7 @@ export function AppShell<T extends string>({
                     label="更多"
                     items={[
                       ...(adminTab ? [{ label: '用户管理与备份', onSelect: () => onTabChange(adminTab.key) }] : []),
+                      ...extraMenuItems,
                       { label: `账号：${currentUser?.displayName ?? '未登录'}`, onSelect: () => undefined, disabled: true },
                       { label: `主题：${themeLabel}`, onSelect: onCycleColorScheme },
                       { label: '退出', onSelect: onLogout, tone: 'danger' },
