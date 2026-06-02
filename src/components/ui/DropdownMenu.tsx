@@ -141,7 +141,7 @@ export function DropdownMenu({
           role="menu"
           onKeyDown={handleMenuKeyDown}
           className={cn(
-            'absolute right-0 z-40 mt-2 grid w-44 gap-1 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900',
+            'motion-panel absolute right-0 z-40 mt-2 grid w-44 gap-1 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900',
             menuClassName,
           )}
         >

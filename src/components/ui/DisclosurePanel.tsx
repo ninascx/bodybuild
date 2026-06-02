@@ -28,16 +28,16 @@ export function DisclosurePanel({
     >
       <summary
         className={cn(
-          'flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 dark:text-slate-200 dark:hover:bg-slate-900 dark:focus-visible:ring-cyan-500',
+          'flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-semibold text-slate-800 transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 dark:text-slate-200 dark:hover:bg-slate-900 dark:focus-visible:ring-cyan-500',
           summaryClassName,
         )}
       >
         <span className="min-w-0">{title}</span>
-        <svg className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <svg className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-[var(--motion-base)] ease-[var(--ease-out-smooth)] group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m6 9 6 6 6-6" />
         </svg>
       </summary>
-      <div className={cn('border-t border-slate-200 px-3 py-3 dark:border-slate-700', contentClassName)}>
+      <div className={cn('motion-disclosure-content border-t border-slate-200 px-3 py-3 dark:border-slate-700', contentClassName)}>
         {children}
       </div>
     </details>

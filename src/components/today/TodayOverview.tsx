@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { Badge, Button, Card, SectionHeader, StatusHero } from '../ui'
 import { dayNames } from '../../data/plans'
 import type { DailyTarget } from '../../types'
@@ -23,14 +24,17 @@ function ChecklistRow({
   item,
   onRecordToday,
   compact = false,
+  motionIndex,
 }: {
   item: TodayTaskPlan['checklist'][number]
   onRecordToday: (focusKey?: DailyFocusKey) => void
   compact?: boolean
+  motionIndex?: number
 }) {
   return (
     <button
       type="button"
+      style={motionIndex !== undefined ? ({ '--motion-index': motionIndex } as CSSProperties) : undefined}
       className={`flex min-h-12 w-full items-center justify-between gap-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 dark:focus-visible:ring-cyan-500 ${
         item.done
           ? compact
@@ -83,7 +87,7 @@ export function TodayOverview({
   return (
     <>
       <div className="md:hidden">
-        <section className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+        <section className="motion-enter rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -116,16 +120,16 @@ export function TodayOverview({
           </div>
         </section>
 
-        <section className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+        <section className="motion-enter mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-slate-950 dark:text-slate-50">缺口清单</h3>
             {remainingChecklistCount > 0 ? (
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400">还有 {remainingChecklistCount} 项</span>
             ) : null}
           </div>
-          <div className="mt-1">
-            {visibleChecklist.map((item) => (
-              <ChecklistRow key={item.key} item={item} onRecordToday={onRecordToday} compact />
+          <div className="motion-list mt-1">
+            {visibleChecklist.map((item, index) => (
+              <ChecklistRow key={item.key} item={item} onRecordToday={onRecordToday} compact motionIndex={index} />
             ))}
           </div>
         </section>
@@ -174,9 +178,9 @@ export function TodayOverview({
 
         <Card className="p-3 sm:p-4">
           <SectionHeader title="缺口清单" description="点任何一项都能直达对应记录。" />
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-            {taskPlan.checklist.slice(0, 6).map((item) => (
-              <ChecklistRow key={item.key} item={item} onRecordToday={onRecordToday} />
+          <div className="motion-list mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+            {taskPlan.checklist.slice(0, 6).map((item, index) => (
+              <ChecklistRow key={item.key} item={item} onRecordToday={onRecordToday} motionIndex={Math.min(index, 3)} />
             ))}
           </div>
         </Card>

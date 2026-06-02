@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import type { DailyLog, DailyTarget } from '../../types'
 import type { SyncState } from '../../lib/storage'
 import type { DailyFocusKey } from '../../lib/productFlow'
@@ -125,9 +126,9 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
         </span>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
-        {fieldOrder.map((field) => (
-          <div key={field.key} data-daily-focus={field.key}>
+      <div className="motion-list mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
+        {fieldOrder.map((field, index) => (
+          <div key={field.key} data-daily-focus={field.key} style={{ '--motion-index': Math.min(index, 3) } as CSSProperties}>
             <NumberField
               className={quickFieldClass}
               label={field.label}

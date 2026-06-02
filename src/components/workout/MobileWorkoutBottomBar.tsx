@@ -84,7 +84,7 @@ export function MobileWorkoutBottomBar({
         <button
           type="button"
           aria-label="收起训练控制面板"
-          className="fixed inset-0 z-40 bg-slate-950/25"
+          className="motion-enter fixed inset-0 z-40 bg-slate-950/25"
           onClick={() => setExpanded(false)}
         />
       ) : null}
@@ -94,7 +94,7 @@ export function MobileWorkoutBottomBar({
         style={{ transform: keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : undefined }}
       >
         {expanded ? (
-          <div className="mx-auto mb-2 w-[min(30rem,calc(100vw-1rem))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          <div className="motion-sheet mx-auto mb-2 w-[min(30rem,calc(100vw-1rem))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{exerciseName}</p>
@@ -109,7 +109,7 @@ export function MobileWorkoutBottomBar({
 
             <div className="grid gap-3 p-3">
               <div
-                className={`rounded-lg border p-3 ${
+                className={`rounded-lg border p-3 transition-colors ${restDone ? 'motion-rest-ready' : ''} ${
                   restDone
                     ? 'border-amber-300 bg-amber-50 dark:border-amber-600/50 dark:bg-amber-900/30'
                     : restActive
@@ -176,7 +176,7 @@ export function MobileWorkoutBottomBar({
               <button
                 type="button"
                 onClick={restActive ? () => setExpanded(true) : onStartRest}
-                className={`shrink-0 rounded-md border px-2.5 py-1.5 text-xs font-semibold ${
+                className={`shrink-0 rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-colors ${restDone ? 'motion-rest-ready' : ''} ${
                   restDone
                     ? 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-600/50 dark:bg-amber-900/30 dark:text-amber-200'
                     : restActive

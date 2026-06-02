@@ -70,7 +70,7 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
                 className={cn(
                   'relative min-h-12 flex-col gap-0.5 rounded-lg px-1 py-1 text-xs font-semibold shadow-none',
                   active
-                    ? 'bg-cyan-50 text-teal-800 hover:bg-cyan-50 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950/40 after:absolute after:inset-x-4 after:top-1 after:h-0.5 after:rounded-full after:bg-teal-700 dark:after:bg-cyan-400'
+                    ? 'motion-nav-active bg-cyan-50 text-teal-800 hover:bg-cyan-50 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950/40 after:absolute after:inset-x-4 after:top-1 after:h-0.5 after:rounded-full after:bg-teal-700 dark:after:bg-cyan-400'
                     : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-50',
                 )}
               >

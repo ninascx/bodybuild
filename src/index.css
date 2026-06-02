@@ -45,6 +45,11 @@
   /* 设计 Token - 阴影 */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 240ms;
+  --ease-out-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Display type is reserved for the top-level brand/page title. */
@@ -116,12 +121,14 @@ select {
 button[data-pressable="true"]:active:not(:disabled),
 button[data-pressable="true"]:active:not(:disabled) {
   transform: scale(0.97);
-  transition: transform 100ms ease;
+  transition: transform var(--motion-fast) var(--ease-out-smooth);
 }
 
 /* 卡片悬浮抬升 */
 .card-hover {
-  transition: box-shadow 200ms ease, transform 200ms ease;
+  transition:
+    box-shadow var(--motion-base) var(--ease-out-smooth),
+    transform var(--motion-base) var(--ease-out-smooth);
 }
 .card-hover:hover {
   box-shadow: 0 4px 12px rgb(15 23 42 / 0.08);
@@ -159,4 +166,80 @@ button[data-pressable="true"]:active:not(:disabled) {
 @keyframes rest-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+@keyframes motion-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes motion-panel {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes motion-sheet {
+  from { opacity: 0; transform: translateY(10px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes motion-success-pulse {
+  0% { box-shadow: 0 0 0 0 rgb(16 185 129 / 0); transform: scale(1); }
+  45% { box-shadow: 0 0 0 5px rgb(16 185 129 / 0.16); transform: scale(1.006); }
+  100% { box-shadow: 0 0 0 0 rgb(16 185 129 / 0); transform: scale(1); }
+}
+
+@keyframes motion-rest-ready {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgb(245 158 11 / 0.26); }
+  55% { transform: scale(1.015); box-shadow: 0 0 0 7px rgb(245 158 11 / 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgb(245 158 11 / 0); }
+}
+
+@keyframes motion-nav-active {
+  from { opacity: 0; transform: translateY(-2px) scaleX(0.72); }
+  to { opacity: 1; transform: translateY(0) scaleX(1); }
+}
+
+.motion-enter,
+.motion-tab-view {
+  animation: motion-enter var(--motion-base) var(--ease-out-smooth) both;
+}
+
+.motion-panel,
+.motion-feedback {
+  animation: motion-panel var(--motion-slow) var(--ease-out-smooth) both;
+  transform-origin: top right;
+}
+
+.motion-sheet {
+  animation: motion-sheet var(--motion-slow) var(--ease-out-smooth) both;
+  transform-origin: bottom center;
+}
+
+.motion-list > * {
+  animation: motion-enter var(--motion-base) var(--ease-out-smooth) both;
+  animation-delay: calc(var(--motion-index, 0) * 45ms);
+}
+
+.motion-success-pulse {
+  animation:
+    motion-panel var(--motion-slow) var(--ease-out-smooth) both,
+    motion-success-pulse var(--motion-slow) var(--ease-out-smooth) both;
+}
+
+.motion-current-set {
+  animation: motion-success-pulse var(--motion-slow) var(--ease-out-smooth) both;
+}
+
+.motion-rest-ready {
+  animation: motion-rest-ready 900ms var(--ease-out-smooth) both;
+}
+
+.motion-nav-active::after {
+  animation: motion-nav-active var(--motion-base) var(--ease-out-smooth) both;
+  transform-origin: center;
+}
+
+.group[open] > .motion-disclosure-content {
+  animation: motion-enter var(--motion-base) var(--ease-out-smooth) both;
 }

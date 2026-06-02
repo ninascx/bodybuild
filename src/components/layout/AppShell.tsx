@@ -121,12 +121,12 @@ export function AppShell<T extends string>({
           </>
         ) : null}
 
-        <section id="app-content" tabIndex={-1} className={`outline-none ${immersiveMode ? 'pt-1' : ''}`}>
+        <section id="app-content" key={String(activeTab)} tabIndex={-1} className={`outline-none ${immersiveMode ? 'pt-1' : 'motion-tab-view'}`}>
           {children}
         </section>
         {saveFeedback && !(saveFeedback.tone === 'neutral' && syncState === 'saving') ? (
           <div className="pointer-events-none fixed left-1/2 top-4 z-50 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2">
-            <StatusMessage className="pointer-events-auto shadow-lg" tone={saveFeedback.tone} announce>
+            <StatusMessage className="pointer-events-auto motion-feedback shadow-lg" tone={saveFeedback.tone} announce>
               {saveFeedback.message}
             </StatusMessage>
           </div>

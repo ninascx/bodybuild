@@ -166,6 +166,7 @@ export function MobileCurrentExerciseView({
           onSelectSet={setCurrentSetIndex}
         >
           <MobileCurrentSetCard
+            key={`${exercise.exerciseId}-${exercise.name}-${safeCurrentSetIndex}`}
             currentSet={currentSet}
             setIndex={safeCurrentSetIndex}
             targetRange={targetRange}

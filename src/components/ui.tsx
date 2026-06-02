@@ -234,7 +234,12 @@ export function StatusMessage({
 
   return (
     <p
-      className={cn('rounded-lg border px-4 py-3 text-sm font-medium', toneClasses[tone], className)}
+      className={cn(
+        'motion-feedback rounded-lg border px-4 py-3 text-sm font-medium',
+        toneClasses[tone],
+        tone === 'positive' && 'motion-success-pulse',
+        className,
+      )}
       role={liveRole}
       aria-live={liveMode}
       aria-atomic={announce ? 'true' : undefined}

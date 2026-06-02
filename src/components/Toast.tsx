@@ -35,7 +35,7 @@ export function Toast({ toast, onClose }: ToastProps) {
 
   return (
     <div
-      className={`flex min-w-[280px] max-w-[90vw] items-center justify-between gap-3 rounded-lg border px-4 py-3 ${toneClasses[toast.tone]}`}
+      className={`motion-feedback ${toast.tone === 'success' ? 'motion-success-pulse' : ''} flex min-w-[280px] max-w-[90vw] items-center justify-between gap-3 rounded-lg border px-4 py-3 ${toneClasses[toast.tone]}`}
       role={toast.tone === 'danger' ? 'alert' : 'status'}
       aria-live={liveMode}
     >
