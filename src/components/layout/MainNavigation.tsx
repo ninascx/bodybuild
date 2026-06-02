@@ -55,7 +55,7 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
       </nav>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_rgb(15_23_42_/_0.08)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-3 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-1.5 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden"
         aria-label="主要导航"
       >
         <div className={`mx-auto grid max-w-md gap-1 ${mobileTabs.length === 6 ? 'grid-cols-6' : 'grid-cols-5'}`}>
@@ -68,9 +68,9 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
                 onClick={() => onChange(tab.key)}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'min-h-12 flex-col gap-0.5 rounded-lg px-1 py-1 text-xs font-semibold shadow-none',
+                  'relative min-h-12 flex-col gap-0.5 rounded-lg px-1 py-1 text-xs font-semibold shadow-none',
                   active
-                    ? 'bg-teal-700 text-white hover:bg-teal-800 dark:bg-cyan-600 dark:text-white dark:hover:bg-cyan-500'
+                    ? 'bg-cyan-50 text-teal-800 hover:bg-cyan-50 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950/40 after:absolute after:inset-x-4 after:top-1 after:h-0.5 after:rounded-full after:bg-teal-700 dark:after:bg-cyan-400'
                     : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-50',
                 )}
               >

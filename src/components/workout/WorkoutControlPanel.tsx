@@ -61,7 +61,7 @@ export function WorkoutControlPanel({
   const statusBadgeTone = workoutStatusTone ?? (hasWorkout ? 'positive' : 'neutral')
 
   return (
-    <Card className="border-slate-300 dark:border-slate-600">
+    <Card className="border-slate-200 p-3 shadow-none dark:border-slate-800 sm:p-4 md:shadow-sm">
       {/* Row 1: badges + title + sync */}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
@@ -81,7 +81,7 @@ export function WorkoutControlPanel({
       </div>
 
       {/* Row 2: date */}
-      <div className="mt-4 grid gap-3 lg:grid-cols-[auto_1fr] lg:items-end">
+      <div className="mt-3 grid gap-3 lg:grid-cols-[auto_1fr] lg:items-end sm:mt-4">
         <WorkoutDateControls selectedDate={selectedDate} today={today} onDateChange={onDateChange} />
 
         {!restDay && !hasWorkout ? (
@@ -99,21 +99,21 @@ export function WorkoutControlPanel({
         ) : null}
       </div>
 
+      {!restDay && !hasWorkout ? (
+        <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
+          <Button className="min-h-12 text-base font-semibold sm:min-h-11 sm:text-sm" data-pressable="true" onClick={() => selectedTemplate && onApplyTemplate(selectedTemplate)} disabled={!canStartSelectedTemplate}>
+            开始训练
+          </Button>
+          <Button variant="secondary" onClick={onAddExercise}>空白训练</Button>
+        </div>
+      ) : null}
+
       {!restDay && !hasWorkout && selectedTemplate ? (
         <div className="mt-3">
           <WorkoutPlanPreview
             template={selectedTemplate}
             recommendedId={recommendedId}
           />
-        </div>
-      ) : null}
-
-      {!restDay && !hasWorkout ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button onClick={() => selectedTemplate && onApplyTemplate(selectedTemplate)} disabled={!canStartSelectedTemplate}>
-            开始训练
-          </Button>
-          <Button variant="secondary" onClick={onAddExercise}>空白训练</Button>
         </div>
       ) : null}
 

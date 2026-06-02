@@ -112,8 +112,9 @@ select {
 
 /* ── 微交互 & 质感 ── */
 
-/* 按钮按压反馈 */
-button:active:not(:disabled) {
+/* 按压反馈只用于真正的操作按钮，避免导航和小控件整体抖动。 */
+button[data-pressable="true"]:active:not(:disabled),
+button[data-pressable="true"]:active:not(:disabled) {
   transform: scale(0.97);
   transition: transform 100ms ease;
 }
@@ -123,7 +124,7 @@ button:active:not(:disabled) {
   transition: box-shadow 200ms ease, transform 200ms ease;
 }
 .card-hover:hover {
-  box-shadow: 0 8px 24px rgb(15 23 42 / 0.12);
+  box-shadow: 0 4px 12px rgb(15 23 42 / 0.08);
   transform: translateY(-1px);
 }
 

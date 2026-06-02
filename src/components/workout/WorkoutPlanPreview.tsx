@@ -22,7 +22,7 @@ export function WorkoutPlanPreview({
       : '内置计划'
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/70">
+    <section className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900 md:bg-slate-50 md:dark:border-slate-700 md:dark:bg-slate-800/70">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">计划预览 · {template.name}</p>
@@ -44,7 +44,7 @@ export function WorkoutPlanPreview({
               {previewExercises.map((exercise, index) => (
                 <div
                   key={`${exercise.id}-${index}`}
-                  className="grid grid-cols-[2rem_minmax(0,1fr)] gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                  className="grid grid-cols-[2rem_minmax(0,1fr)] gap-2 rounded-md border border-slate-100 bg-slate-50 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950 md:border-slate-200 md:bg-white md:dark:border-slate-700 md:dark:bg-slate-900"
                 >
                   <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
                     {index + 1}
@@ -64,7 +64,7 @@ export function WorkoutPlanPreview({
               {previewCardio.map((cardio, index) => (
                 <div
                   key={`${cardio.id}-${index}`}
-                  className="grid grid-cols-[2rem_minmax(0,1fr)] gap-2 rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-sm dark:border-cyan-900/50 dark:bg-cyan-950/30"
+                  className="grid grid-cols-[2rem_minmax(0,1fr)] gap-2 rounded-md border border-cyan-100 bg-cyan-50/70 px-3 py-2 text-sm dark:border-cyan-900/50 dark:bg-cyan-950/30"
                 >
                   <div className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-100 text-xs font-semibold text-cyan-800 dark:bg-cyan-900/60 dark:text-cyan-100">
                     {index + 1}

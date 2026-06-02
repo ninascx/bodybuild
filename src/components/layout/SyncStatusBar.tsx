@@ -47,7 +47,7 @@ export function SyncStatusBar({
   return (
     <div className="mt-1">
       <div className={quietSynced ? 'flex justify-end' : 'flex flex-wrap items-center justify-between gap-x-3 gap-y-1'}>
-        <p className="min-w-0 truncate text-xs leading-5 text-slate-500 dark:text-slate-400">
+        <p className="hidden min-w-0 truncate text-xs leading-5 text-slate-500 dark:text-slate-400 sm:block">
           <span className="font-medium text-slate-700 dark:text-slate-200">同步</span>
           <span className="mx-1.5 text-slate-300 dark:text-slate-700">/</span>
           <span>{compactMessage}</span>

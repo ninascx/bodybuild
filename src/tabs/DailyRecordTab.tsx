@@ -79,10 +79,10 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
     props.selectedLog.steps === undefined ||
     props.selectedLog.sleepHours === undefined
   return (
-    <Card {...swipeHandlers} className="space-y-3 sm:space-y-4">
-      <section className="rounded-lg border border-teal-200 bg-cyan-50/70 p-3 dark:border-cyan-700/40 dark:bg-cyan-950/30">
+    <Card {...swipeHandlers} className="space-y-3 border-0 bg-transparent p-0 shadow-none dark:bg-transparent sm:space-y-4 md:border-slate-200 md:bg-white md:p-4 md:shadow-sm md:dark:border-slate-800 md:dark:bg-slate-900">
+      <section className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900 md:border-teal-200 md:bg-cyan-50/70 md:p-3 md:dark:border-cyan-700/40 md:dark:bg-cyan-950/30">
         <div className="min-w-0">
-          <p className="mb-2 text-sm font-semibold text-slate-950 dark:text-slate-50">记录日期</p>
+          <p className="mb-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 md:text-sm md:font-semibold md:text-slate-950 md:dark:text-slate-50">记录日期</p>
           <DateNavigator selectedDate={props.selectedDate} today={props.today} onChange={props.onDateChange} />
         </div>
       </section>

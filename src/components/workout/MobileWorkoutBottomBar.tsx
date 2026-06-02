@@ -84,7 +84,7 @@ export function MobileWorkoutBottomBar({
         <button
           type="button"
           aria-label="收起训练控制面板"
-          className="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-[1px]"
+          className="fixed inset-0 z-40 bg-slate-950/25"
           onClick={() => setExpanded(false)}
         />
       ) : null}
@@ -94,7 +94,7 @@ export function MobileWorkoutBottomBar({
         style={{ transform: keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : undefined }}
       >
         {expanded ? (
-          <div className="mx-auto mb-2 w-[min(30rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+          <div className="mx-auto mb-2 w-[min(30rem,calc(100vw-1rem))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{exerciseName}</p>
@@ -164,7 +164,7 @@ export function MobileWorkoutBottomBar({
           </div>
         ) : null}
 
-        <div className="border-t border-slate-200 bg-white/95 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_28px_rgb(15_23_42_/_0.12)] backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
+        <div className="border-t border-slate-200 bg-white/95 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
           <div className="mx-auto grid max-w-md gap-2">
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1">
@@ -192,7 +192,7 @@ export function MobileWorkoutBottomBar({
             </div>
 
             <div className="grid grid-cols-[1fr_0.72fr] gap-2">
-              <Button className="min-h-12 px-3 text-base font-semibold" onClick={onPrimary} disabled={bottomPrimaryDisabled} title={bottomPrimaryTitle}>
+              <Button className="min-h-12 px-3 text-base font-semibold" data-pressable="true" onClick={onPrimary} disabled={bottomPrimaryDisabled} title={bottomPrimaryTitle}>
                 {bottomPrimaryLabel}
               </Button>
               <Button variant="secondary" className="min-h-12 whitespace-nowrap px-2 text-sm" onClick={onNext} disabled={bottomNextDisabled}>

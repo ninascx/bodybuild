@@ -69,21 +69,21 @@ export function AppShell<T extends string>({
       >
         跳到主要内容
       </a>
-      <div className={`mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pt-3 sm:px-6 sm:pt-4 lg:px-8 ${immersiveMode ? 'pb-4' : 'pb-24 md:pb-4'}`}>
+      <div className={`mx-auto flex min-h-screen w-full max-w-7xl flex-col px-3 pt-2 sm:px-6 sm:pt-4 lg:px-8 ${immersiveMode ? 'pb-4' : 'pb-24 md:pb-4'}`}>
         {!immersiveMode ? (
           <>
-            <header className="mb-2 border-b border-slate-200/80 pb-2 dark:border-slate-800">
+            <header className="mb-2 border-b border-slate-200/70 pb-1.5 dark:border-slate-800 sm:pb-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
                   <img
                     src="/favicon.png"
                     alt="BodyBuild"
-                    className="h-8 w-8 shrink-0 rounded-md"
+                    className="h-7 w-7 shrink-0 rounded-md sm:h-8 sm:w-8"
                     width={32}
                     height={32}
                   />
-                  <span className="text-slate-300 dark:text-slate-700">/</span>
-                  <h1 className="truncate text-2xl font-bold tracking-tight text-slate-950 dark:text-slate-50">{activeLabel}</h1>
+                  <span className="hidden text-slate-300 dark:text-slate-700 sm:inline">/</span>
+                  <h1 className="truncate text-xl font-bold tracking-tight text-slate-950 dark:text-slate-50 sm:text-2xl">{activeLabel}</h1>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
