@@ -64,7 +64,7 @@ function QuickAdjustButtons({
     'h-7 border-l border-slate-200 px-1.5 text-[11px] font-bold leading-none text-slate-600 transition-colors first:border-l-0 hover:bg-slate-100 hover:text-teal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-cyan-100 dark:focus-visible:ring-cyan-500/40 dark:disabled:text-slate-600'
 
   return (
-    <div className="hidden shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-50 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:inline-flex" aria-label={`${label} 快速微调`}>
+    <div className="inline-flex shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-50 shadow-sm dark:border-slate-700 dark:bg-slate-900" aria-label={`${label} 快速微调`}>
       <button
         type="button"
         className={buttonClass}
