@@ -141,7 +141,7 @@ export function DropdownMenu({
           role="menu"
           onKeyDown={handleMenuKeyDown}
           className={cn(
-            'motion-panel absolute right-0 z-40 mt-2 grid w-44 gap-1 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900',
+            'motion-panel absolute right-0 z-40 mt-2 grid w-[min(16rem,calc(100vw-1.5rem))] gap-1 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900',
             menuClassName,
           )}
         >
@@ -155,7 +155,7 @@ export function DropdownMenu({
               variant="ghost"
               disabled={item.disabled}
               className={cn(
-                'w-full justify-start px-3',
+                'w-full justify-start px-3 text-left',
                 item.tone === 'danger' && 'text-rose-700 hover:bg-rose-50 hover:text-rose-800 dark:text-rose-300 dark:hover:bg-rose-900/30 dark:hover:text-rose-200',
               )}
               onClick={() => {
@@ -163,7 +163,7 @@ export function DropdownMenu({
                 item.onSelect()
               }}
             >
-              {item.label}
+              <span className="min-w-0 truncate">{item.label}</span>
             </Button>
           ))}
         </div>
