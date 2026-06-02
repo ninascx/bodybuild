@@ -24,7 +24,6 @@ export function NumberField({
   inputRef,
   className,
   labelAction,
-  helper,
 }: {
   label: string
   value?: number
@@ -37,7 +36,6 @@ export function NumberField({
   inputRef?: (el: HTMLInputElement | null) => void
   className?: string
   labelAction?: ReactNode
-  helper?: ReactNode
 }) {
   const effectiveRange: NumberRange | undefined =
     range ?? (min !== undefined || max !== undefined ? { min, max, allowZero: min === 0 } : undefined)
@@ -99,7 +97,7 @@ export function NumberField({
       : '请输入有效数字'
 
   return (
-    <Field label={label} helper={helper} error={outOfRange ? rangeHint : undefined} labelAction={labelAction}>
+    <Field label={label} error={outOfRange ? rangeHint : undefined} labelAction={labelAction}>
       <TextInput
         type="text"
         inputMode={inputMode}
