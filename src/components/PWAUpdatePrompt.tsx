@@ -54,7 +54,7 @@ export function PWAUpdatePrompt() {
         <div className="flex w-full items-center gap-3 rounded-lg border border-emerald-200 bg-white p-3 dark:border-emerald-700/40 dark:bg-slate-900">
           <div className="flex-1 text-sm">
             <p className="font-semibold text-slate-950 dark:text-slate-50">新版本已就绪</p>
-            <p className="text-slate-600 dark:text-slate-400">点击重新加载使用最新功能。</p>
+            <p className="text-slate-600 dark:text-slate-400">重新加载后使用最新界面，不会影响已保存数据。</p>
           </div>
           <Button className="shrink-0 px-3" onClick={() => updateServiceWorker(true)}>
             重新加载

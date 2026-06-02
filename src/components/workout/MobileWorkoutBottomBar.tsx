@@ -18,12 +18,9 @@ type MobileWorkoutBottomBarProps = {
   bottomFinishTitle: string
   bottomCompletionHint: string
   canGoPrevious: boolean
-  quickFillLabel: string | null
-  quickFillDisabled: boolean
   onPreviousExercise: () => void
   onNext: () => void
   onFinish: () => void
-  onQuickFill: () => void
   onStartRest: () => void
   onAdjustRestDuration: (delta: number) => void
   onSkipRest: () => void
@@ -50,12 +47,9 @@ export function MobileWorkoutBottomBar({
   bottomFinishTitle,
   bottomCompletionHint,
   canGoPrevious,
-  quickFillLabel,
-  quickFillDisabled,
   onPreviousExercise,
   onNext,
   onFinish,
-  onQuickFill,
   onStartRest,
   onAdjustRestDuration,
   onSkipRest,
@@ -141,10 +135,6 @@ export function MobileWorkoutBottomBar({
                   {bottomFinishLabel}
                 </Button>
               </div>
-
-              <Button variant="secondary" className="w-full px-3" onClick={onQuickFill} disabled={quickFillDisabled}>
-                {quickFillLabel ?? '快速套用'}
-              </Button>
 
               {bottomCompletionHint ? (
                 <p className="text-center text-xs leading-5 text-slate-500 dark:text-slate-400">{bottomCompletionHint}</p>

@@ -29,7 +29,7 @@ export function ExerciseQuickJumpStrip({
   return (
     <div
       data-exercise-jump-strip
-      className="sticky top-14 z-[5] -mx-3 overflow-x-auto rounded-md border border-slate-200 bg-white/95 px-3 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
+      className="sticky top-14 z-10 -mx-3 overflow-x-auto rounded-md border border-slate-200 bg-white/95 px-3 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
     >
       <div className="flex min-w-max gap-1.5">
         {exercises.map((exercise, index) => {

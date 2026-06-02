@@ -1,5 +1,5 @@
 {
-  "name": "bodybuild",
+  "name": "liftlog",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,6 +12,7 @@
     "typecheck": "tsc -b",
     "test": "npm run lint && npm run typecheck",
     "prod:check": "node scripts/check-prod-start.mjs",
+    "health:check": "tsx scripts/check-app-health.ts",
     "preview": "vite preview",
     "start": "node dist-server/index.js",
     "icons:generate": "node scripts/generate-icons.mjs",

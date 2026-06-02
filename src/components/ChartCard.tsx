@@ -90,9 +90,9 @@ export function ChartLegend({
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
       {items.map((item) => (
-        <span key={item.label} className="inline-flex min-h-6 items-center gap-2">
+        <span key={item.label} className="inline-flex min-h-6 max-w-full items-center gap-2">
           <ChartLegendMarker item={item} />
-          <span>{item.label}</span>
+          <span className="min-w-0 max-w-44 truncate">{item.label}</span>
         </span>
       ))}
       {note ? <span className="text-slate-500 dark:text-slate-400">{note}</span> : null}

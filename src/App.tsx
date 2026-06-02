@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { dailyTargets as defaultDailyTargets, dayNames, workoutPlans as defaultWorkoutPlans } from './data/plans'
 import { formatDateInput, getDayKey, isValidDateInput } from './lib/dates'
 import { calculateDashboardStats, buildTrainingPerformanceData, buildTrendData, createWeeklySummary, findPreviousExerciseRecord, logsForWeek } from './lib/metrics'
-import type { PreviousExerciseRecord, TrendPoint, TrainingPerformancePoint } from './lib/metrics'
+import type { PreviousExerciseRecord, TrendPoint, TrainingPerformanceData } from './lib/metrics'
 import {
   buildDailyCopyText,
   builtinTemplateOptions,
@@ -314,7 +314,10 @@ function App() {
     [dailyLogs, today, trendDays, dailyTargetsByDay, contentTab],
   )
   const trainingPerformanceData = useMemo(
-    () => (contentTab === 'analytics' ? buildTrainingPerformanceData(workoutLogs, today, Math.max(60, trendDays)) : ([] as TrainingPerformancePoint[])),
+    () =>
+      contentTab === 'analytics'
+        ? buildTrainingPerformanceData(workoutLogs, today, Math.max(60, trendDays))
+        : ({ points: [], series: [], totalLoggedExercises: 0, totalScoredExercises: 0 } as TrainingPerformanceData),
     [workoutLogs, today, trendDays, contentTab],
   )
   const weeklySummary = useMemo(
@@ -1368,11 +1371,11 @@ function App() {
         const ok = await writeToClipboard(buildExportSummaryText(scopedPayload))
         if (!ok) throw new Error('复制摘要失败，请检查浏览器剪贴板权限。')
       } else if (format === 'summary') {
-        downloadText(buildExportSummaryText(scopedPayload), `bodybuild-summary-${currentUser.username}-${rangeLabel}`, scopedPayload.exportedAt)
+        downloadText(buildExportSummaryText(scopedPayload), `liftlog-summary-${currentUser.username}-${rangeLabel}`, scopedPayload.exportedAt)
       } else if (format === 'csv') {
-        downloadCsv(buildExportCsvText(scopedPayload), `bodybuild-table-${currentUser.username}-${rangeLabel}`, scopedPayload.exportedAt)
+        downloadCsv(buildExportCsvText(scopedPayload), `liftlog-table-${currentUser.username}-${rangeLabel}`, scopedPayload.exportedAt)
       } else {
-        downloadJson(scopedPayload, `bodybuild-user-${currentUser.username}-${rangeLabel}`)
+        downloadJson(scopedPayload, `liftlog-user-${currentUser.username}-${rangeLabel}`)
       }
       setShowExportDialog(false)
       setExportInitialOptions(undefined)

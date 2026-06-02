@@ -135,6 +135,10 @@ export function MobileCurrentExerciseView({
   }
 
   function handleGoToNextExercise() {
+    if (shouldSuggestNextExercise) {
+      goToSuggestedOrNextIncomplete()
+      return
+    }
     if (currentExerciseIndex >= workout.exercises.length - 1) return
     onJumpToExercise(currentExerciseIndex + 1)
   }
@@ -223,9 +227,6 @@ export function MobileCurrentExerciseView({
           ) : shouldSuggestNextExercise ? (
             <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-800">
               <p className="text-xs font-medium text-slate-800 dark:text-slate-200">当前动作已完成</p>
-              <Button className="mt-1.5 w-full py-2" onClick={goToSuggestedOrNextIncomplete}>
-                去下一个未完成动作
-              </Button>
             </div>
           ) : null}
         </MobileExerciseProgressCard>
@@ -241,17 +242,14 @@ export function MobileCurrentExerciseView({
         workoutSummary={workoutSummary}
         keyboardHeight={keyboardHeight}
         bottomNextLabel="下一动作"
-        bottomNextDisabled={currentExerciseIndex >= workout.exercises.length - 1}
+        bottomNextDisabled={!shouldSuggestNextExercise && currentExerciseIndex >= workout.exercises.length - 1}
         bottomFinishLabel={bottomFinishLabel}
         bottomFinishTitle={bottomFinishTitle}
         bottomCompletionHint={bottomCompletionHint}
         canGoPrevious={currentExerciseIndex > 0}
-        quickFillLabel={quickFillLabel}
-        quickFillDisabled={!quickFillPatch || !currentSet}
         onPreviousExercise={goToPreviousExercise}
         onNext={handleGoToNextExercise}
         onFinish={handleBottomFinishAction}
-        onQuickFill={() => applyPatchToCurrentSet(quickFillPatch)}
         onStartRest={onStartRest}
         onAdjustRestDuration={onAdjustRestDuration}
         onSkipRest={onSkipRest}

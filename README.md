@@ -1,4 +1,4 @@
-# 减脂增肌追踪
+# LiftLog
 
 一个小范围多用户训练与饮食记录网站。核心目标是让每个用户持续记录身体变化、训练表现和营养执行情况，并根据个人目标得到简单、可执行的调整建议。
 
@@ -118,7 +118,7 @@ systemd 示例：
 
 ```ini
 [Unit]
-Description=Bodybuild Tracker
+Description=LiftLog Tracker
 After=network.target
 
 [Service]

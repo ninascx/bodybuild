@@ -1,4 +1,4 @@
-# BodyBuild UI/UX 实施计划
+# LiftLog UI/UX 实施计划
 
 **基于审计报告：** [UI_UX_AUDIT_REPORT.md](./UI_UX_AUDIT_REPORT.md)  
 **计划日期：** 2026-05-30  

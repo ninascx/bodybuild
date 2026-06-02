@@ -46,8 +46,8 @@ export function LoginScreen({
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-teal-700 dark:text-cyan-300">BodyBuild</p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">减脂增肌追踪</h1>
+            <p className="text-sm font-semibold text-teal-700 dark:text-cyan-300">训练记录工具</p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">LiftLog</h1>
             <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
               登录后记录训练、饮食和身体变化。邀请制使用，没有自助注册。
             </p>

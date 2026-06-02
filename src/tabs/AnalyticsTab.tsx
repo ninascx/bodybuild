@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { SegmentedControl } from '../components/ui'
 import { DashboardTab } from './DashboardTab'
 import { WeeklyTab } from './WeeklyTab'
-import type { TrendPoint, DashboardStats, TrainingPerformancePoint } from '../lib/metrics'
+import type { TrendPoint, DashboardStats, TrainingPerformanceData } from '../lib/metrics'
 import type { AdjustmentRecommendation, DailyLog, WeeklySummary } from '../types'
 import type { RecommendationTone } from '../types'
 
 type AnalyticsTabProps = {
   dashboardStats: DashboardStats
   trendData: TrendPoint[]
-  trainingPerformanceData: TrainingPerformancePoint[]
+  trainingPerformanceData: TrainingPerformanceData
   trendDays: number
   weeklyCalorieTarget: number
   showAllPerformanceLines: boolean

@@ -10,7 +10,7 @@ People tracking bodybuilding, weight training, body measurements, daily habits, 
 
 ## Product Purpose
 
-BodyBuild helps users record daily fitness data, manage training plans, review weekly progress, and keep personal profile targets in sync across local and server-backed storage. Success means the user can trust the data, update common records quickly, and understand what changed without hunting through dense screens.
+LiftLog helps users record daily fitness data, manage training plans, review weekly progress, and keep personal profile targets in sync across local and server-backed storage. Success means the user can trust the data, update common records quickly, and understand what changed without hunting through dense screens.
 
 ## Brand Personality
 

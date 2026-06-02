@@ -737,6 +737,6 @@ await ensureDatabaseSchema()
 await ensureDataFile()
 
 app.listen(port, bind, () => {
-  console.log(`Bodybuild tracker listening on http://${bind}:${port}`)
+  console.log(`LiftLog tracker listening on http://${bind}:${port}`)
   console.log(`Data file: ${dataFile}`)
 })

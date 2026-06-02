@@ -428,7 +428,7 @@ export function downloadBackup(payload: BackupPayload): void {
   const link = document.createElement('a')
   link.href = url
   const stamp = payload.exportedAt.replace(/[:.]/g, '-')
-  link.download = `bodybuild-backup-${stamp}.json`
+  link.download = `liftlog-backup-${stamp}.json`
   document.body.appendChild(link)
   link.click()
   link.remove()
@@ -441,7 +441,7 @@ function sanitizeFilenamePrefix(filenamePrefix: string): string {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
-    .slice(0, 120) || 'bodybuild-export'
+    .slice(0, 120) || 'liftlog-export'
 }
 
 export function downloadJson(payload: unknown, filenamePrefix: string): void {

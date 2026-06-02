@@ -3,13 +3,13 @@ import { ChartCard, ChartLegend, WeightTrendTooltip } from '../components/ChartC
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { roundMetric, buildWeightDelta, buildNeutralDelta, buildHigherIsBetterDelta } from '../lib/metrics'
 import { hasChartData } from '../lib/workout'
-import type { TrendPoint, DashboardStats, TrainingPerformancePoint } from '../lib/metrics'
+import type { TrendPoint, DashboardStats, TrainingPerformanceData, TrainingPerformancePoint, TrainingPerformanceSeries, TrainingPerformanceSetDetail } from '../lib/metrics'
 import type { RecommendationTone } from '../types'
 
 type DashboardTabProps = {
   dashboardStats: DashboardStats
   trendData: TrendPoint[]
-  trainingPerformanceData: TrainingPerformancePoint[]
+  trainingPerformanceData: TrainingPerformanceData
   trendDays: number
   weeklyCalorieTarget: number
   showAllPerformanceLines: boolean
@@ -44,47 +44,85 @@ function summarizeProteinMet(data: TrendPoint[]): string {
   return `蛋白质达标图表包含 ${points.length} 天记录，其中 ${metCount} 天达标，${points.length - metCount} 天未达标。`
 }
 
-function summarizeTrainingPerformance(data: TrainingPerformancePoint[], showAllLines: boolean): string {
-  const metrics: Array<[keyof Omit<TrainingPerformancePoint, 'date' | 'fullDate'>, string]> = showAllLines
-    ? [
-        ['benchPress', '卧推'],
-        ['chestPress', '胸推'],
-        ['pulldown', '下拉'],
-        ['row', '划船'],
-        ['squatOrLegPress', '深蹲/腿举'],
-        ['romanianDeadlift', '罗马尼亚硬拉'],
-      ]
-    : [
-        ['benchPress', '卧推'],
-        ['chestPress', '胸推'],
-      ]
-  const summaries = metrics
-    .map(([key, label]) => {
-      const points = data.filter((point) => typeof point[key] === 'number')
-      if (points.length === 0) return null
-      const last = points[points.length - 1]
-      return `${label}最近一次为 ${last[key]}，日期 ${last.fullDate}`
-    })
-    .filter((item): item is string => item !== null)
+const DEFAULT_TRAINING_SERIES_LIMIT = 5
 
-  return summaries.length > 0
-    ? `训练表现图表包含 ${summaries.join('；')}。`
-    : '训练表现图表暂无可读数据。'
+function visibleTrainingSeries(data: TrainingPerformanceData, showAllLines: boolean): TrainingPerformanceSeries[] {
+  return showAllLines ? data.series : data.series.slice(0, DEFAULT_TRAINING_SERIES_LIMIT)
 }
 
 function countTrendPoints(data: TrendPoint[], key: keyof TrendPoint): number {
   return data.filter((point) => typeof point[key] === 'number').length
 }
 
-function countTrainingPoints(data: TrainingPerformancePoint[]): number {
-  return data.filter((point) =>
-    typeof point.benchPress === 'number' ||
-    typeof point.chestPress === 'number' ||
-    typeof point.pulldown === 'number' ||
-    typeof point.row === 'number' ||
-    typeof point.squatOrLegPress === 'number' ||
-    typeof point.romanianDeadlift === 'number',
-  ).length
+function countTrainingPoints(data: TrainingPerformanceData): number {
+  return data.points.filter((point) => data.series.some((series) => typeof point[series.key] === 'number')).length
+}
+
+function formatTrainingDelta(delta: number | undefined): string {
+  if (delta === undefined) return '还没有上一条可对比'
+  if (Math.abs(delta) < 0.1) return '较上次持平'
+  return delta > 0 ? `较上次 +${delta}` : `较上次 ${delta}`
+}
+
+function formatTrainingSet(detail: TrainingPerformanceSetDetail): string {
+  return `${detail.weight}kg × ${detail.reps}次${detail.rir !== undefined ? ` · RIR ${detail.rir}` : ''}`
+}
+
+function summarizeTrainingPerformance(data: TrainingPerformanceData, series: TrainingPerformanceSeries[]): string {
+  if (series.length === 0) return '训练表现图表暂无可读数据。'
+  const summaries = series.slice(0, 4).map((item) => `${item.label}最近 ${item.latestValue}，${formatTrainingDelta(item.delta)}`)
+  const extra = data.series.length > series.length ? `，另有 ${data.series.length - series.length} 个动作未显示` : ''
+  return `训练表现图表包含 ${series.length} 个动作${extra}。${summaries.join('；')}。`
+}
+
+interface TrainingTooltipPayloadItem {
+  dataKey?: string | number
+  name?: string
+  value?: number
+  color?: string
+  payload?: TrainingPerformancePoint
+}
+
+function isTrainingSetDetail(value: unknown): value is TrainingPerformanceSetDetail {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      typeof (value as TrainingPerformanceSetDetail).weight === 'number' &&
+      typeof (value as TrainingPerformanceSetDetail).reps === 'number',
+  )
+}
+
+function TrainingPerformanceTooltip({ active, payload }: { active?: boolean; payload?: TrainingTooltipPayloadItem[] }) {
+  if (!active || !payload?.length) return null
+  const point = payload.find((item) => item.payload)?.payload
+  if (!point) return null
+  const rows = payload
+    .filter((item) => typeof item.value === 'number' && item.dataKey !== undefined)
+    .slice(0, 5)
+
+  return (
+    <div className="max-w-64 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs leading-5 shadow dark:border-slate-700 dark:bg-slate-900">
+      <p className="font-semibold text-slate-950 dark:text-slate-50">{point.fullDate}</p>
+      <div className="mt-1 grid gap-1">
+        {rows.map((item) => {
+          const key = String(item.dataKey)
+          const detail = point[`${key}Meta`]
+          return (
+            <div key={key} className="text-slate-700 dark:text-slate-200">
+              <div className="flex items-center gap-2">
+                {item.color ? <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} aria-hidden="true" /> : null}
+                <span className="min-w-0 truncate font-medium">{item.name}</span>
+              </div>
+              <div className="pl-4 text-slate-500 dark:text-slate-400">
+                估算 {item.value}
+                {isTrainingSetDetail(detail) ? ` · ${formatTrainingSet(detail)}` : ''}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 export function DashboardTab(props: DashboardTabProps) {
@@ -106,6 +144,12 @@ export function DashboardTab(props: DashboardTabProps) {
   const calorieTrendPoints = countTrendPoints(props.trendData, 'calories')
   const proteinTrendPoints = countTrendPoints(props.trendData, 'proteinMet')
   const trainingTrendPoints = countTrainingPoints(props.trainingPerformanceData)
+  const trainingSeries = visibleTrainingSeries(props.trainingPerformanceData, props.showAllPerformanceLines)
+  const canToggleTrainingSeries = props.trainingPerformanceData.series.length > DEFAULT_TRAINING_SERIES_LIMIT
+  const trainingEmptyMessage =
+    props.trainingPerformanceData.totalLoggedExercises > 0 && props.trainingPerformanceData.totalScoredExercises === 0
+      ? '已有训练动作，但还没有可计算的重量和次数。补齐本组重量、次数后，这里会显示动作表现。'
+      : '记录几次训练重量和次数后，这里会按真实动作显示估算表现值。'
   const reliableTrendCount = [
     weightTrendPoints >= 3,
     calorieTrendPoints >= 3,
@@ -326,47 +370,63 @@ export function DashboardTab(props: DashboardTabProps) {
         </ChartCard>
         <ChartCard
           title="训练表现是否维持"
-          description="估算最佳工作组，用来观察主项是否下滑。"
-          isEmpty={!hasChartData(props.trainingPerformanceData, ['benchPress', 'chestPress', 'pulldown', 'row', 'squatOrLegPress', 'romanianDeadlift'])}
-          emptyMessage="记录几次训练重量和次数后，这里会显示主项表现。"
-          chartSummary={summarizeTrainingPerformance(props.trainingPerformanceData, props.showAllPerformanceLines)}
+          description="按真实动作统计最佳工作组，观察自定义动作和主项是否下滑。"
+          isEmpty={trainingSeries.length === 0}
+          emptyMessage={trainingEmptyMessage}
+          chartSummary={summarizeTrainingPerformance(props.trainingPerformanceData, trainingSeries)}
           legend={
-            <ChartLegend
-              items={[
-                { label: '卧推', color: '#059669' },
-                { label: '胸推', color: '#2563eb' },
-                ...(props.showAllPerformanceLines
-                  ? [
-                      { label: '下拉', color: '#0891b2' },
-                      { label: '划船', color: '#f59e0b' },
-                      { label: '深蹲/腿举', color: '#0f766e' },
-                      { label: '罗马尼亚硬拉', color: '#e11d48' },
-                    ]
-                  : []),
-              ]}
-            />
+            <div className="grid gap-3">
+              <ChartLegend
+                items={trainingSeries.map((series) => ({ label: series.label, color: series.color }))}
+                note={props.trainingPerformanceData.series.length > trainingSeries.length ? `另有 ${props.trainingPerformanceData.series.length - trainingSeries.length} 个动作` : undefined}
+              />
+              <div className="grid gap-2 sm:grid-cols-2">
+                {trainingSeries.map((series) => (
+                  <div key={`summary-${series.key}`} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 dark:border-slate-700 dark:bg-slate-800">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: series.color }} aria-hidden="true" />
+                      <span className="truncate font-semibold text-slate-800 dark:text-slate-100">{series.label}</span>
+                    </div>
+                    <div className="mt-1 text-slate-600 dark:text-slate-300">
+                      最近 {series.latestValue} · {formatTrainingSet(series.latestSet)}
+                    </div>
+                    <div className="text-slate-500 dark:text-slate-400">
+                      历史最好 {series.bestValue}（{series.bestDate}） · {formatTrainingDelta(series.delta)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           }
           action={
-            <Button
-              variant="secondary"
-              onClick={props.onTogglePerformanceLines}
-              className="px-3 text-xs"
-            >
-              {props.showAllPerformanceLines ? '只看主要动作' : '显示全部动作'}
-            </Button>
+            canToggleTrainingSeries ? (
+              <Button
+                variant="secondary"
+                onClick={props.onTogglePerformanceLines}
+                className="px-3 text-xs"
+              >
+                {props.showAllPerformanceLines ? '只看常用动作' : '查看更多动作'}
+              </Button>
+            ) : null
           }
         >
-          <LineChart data={props.trainingPerformanceData}>
+          <LineChart data={props.trainingPerformanceData.points}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis />
-            <Tooltip />
-            <Line type="monotone" name="卧推" dataKey="benchPress" stroke="#059669" strokeWidth={2} dot={false} />
-            <Line type="monotone" name="胸推" dataKey="chestPress" stroke="#2563eb" strokeWidth={2} dot={false} />
-            {props.showAllPerformanceLines ? <Line type="monotone" name="下拉" dataKey="pulldown" stroke="#0891b2" strokeWidth={2} dot={false} /> : null}
-            {props.showAllPerformanceLines ? <Line type="monotone" name="划船" dataKey="row" stroke="#f59e0b" strokeWidth={2} dot={false} /> : null}
-            {props.showAllPerformanceLines ? <Line type="monotone" name="深蹲/腿举" dataKey="squatOrLegPress" stroke="#0f766e" strokeWidth={2} dot={false} /> : null}
-            {props.showAllPerformanceLines ? <Line type="monotone" name="罗马尼亚硬拉" dataKey="romanianDeadlift" stroke="#e11d48" strokeWidth={2} dot={false} /> : null}
+            <Tooltip content={<TrainingPerformanceTooltip />} />
+            {trainingSeries.map((series) => (
+              <Line
+                key={series.key}
+                type="monotone"
+                name={series.label}
+                dataKey={series.key}
+                stroke={series.color}
+                strokeWidth={2}
+                dot={false}
+                connectNulls
+              />
+            ))}
           </LineChart>
         </ChartCard>
       </div>

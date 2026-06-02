@@ -113,11 +113,11 @@ export async function exportAdminUserDataWithOptions({
     const ok = await writeToClipboard(buildExportSummaryText(scopedPayload))
     if (!ok) throw new Error('复制摘要失败，请检查浏览器剪贴板权限。')
   } else if (format === 'summary') {
-    downloadText(buildExportSummaryText(scopedPayload), `bodybuild-summary-${user.username}-${rangeLabel}`, scopedPayload.exportedAt)
+    downloadText(buildExportSummaryText(scopedPayload), `liftlog-summary-${user.username}-${rangeLabel}`, scopedPayload.exportedAt)
   } else if (format === 'csv') {
-    downloadCsv(buildExportCsvText(scopedPayload), `bodybuild-table-${user.username}-${rangeLabel}`, scopedPayload.exportedAt)
+    downloadCsv(buildExportCsvText(scopedPayload), `liftlog-table-${user.username}-${rangeLabel}`, scopedPayload.exportedAt)
   } else {
-    downloadJson(scopedPayload, `bodybuild-user-${user.username}-${rangeLabel}`)
+    downloadJson(scopedPayload, `liftlog-user-${user.username}-${rangeLabel}`)
   }
 
   const actionLabel = format === 'copySummary' ? '复制摘要' : format === 'summary' ? '导出摘要' : format === 'csv' ? '导出 CSV' : '导出'

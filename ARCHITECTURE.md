@@ -2,7 +2,7 @@
 
 ## 概述
 
-BodyBuild 是一个小范围多用户训练与饮食记录应用。前端是 Vite + React + TypeScript 单页面应用，后端是 Express 服务，数据通过 Prisma 写入 SQLite。生产构建会生成：
+LiftLog 是一个小范围多用户训练与饮食记录应用。前端是 Vite + React + TypeScript 单页面应用，后端是 Express 服务，数据通过 Prisma 写入 SQLite。生产构建会生成：
 
 - `dist/`：前端静态资源和 PWA Service Worker。
 - `dist-server/`：打包后的 Express 服务端入口。

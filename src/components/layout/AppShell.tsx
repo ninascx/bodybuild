@@ -77,7 +77,7 @@ export function AppShell<T extends string>({
                 <div className="flex min-w-0 items-center gap-2">
                   <img
                     src="/favicon.png"
-                    alt="BodyBuild"
+                    alt="LiftLog"
                     className="h-7 w-7 shrink-0 rounded-md sm:h-8 sm:w-8"
                     width={32}
                     height={32}

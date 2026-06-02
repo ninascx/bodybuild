@@ -51,15 +51,37 @@ export interface WeeklyCalorieBudget {
   averagePerRemainingDay: number
 }
 
+export interface TrainingPerformanceSetDetail {
+  weight: number
+  reps: number
+  rir?: number
+}
+
 export interface TrainingPerformancePoint {
   date: string
   fullDate: string
-  benchPress?: number
-  chestPress?: number
-  pulldown?: number
-  row?: number
-  squatOrLegPress?: number
-  romanianDeadlift?: number
+  [key: string]: string | number | TrainingPerformanceSetDetail | undefined
+}
+
+export interface TrainingPerformanceSeries {
+  key: string
+  label: string
+  color: string
+  count: number
+  latestDate: string
+  latestValue: number
+  latestSet: TrainingPerformanceSetDetail
+  previousValue?: number
+  delta?: number
+  bestValue: number
+  bestDate: string
+}
+
+export interface TrainingPerformanceData {
+  points: TrainingPerformancePoint[]
+  series: TrainingPerformanceSeries[]
+  totalLoggedExercises: number
+  totalScoredExercises: number
 }
 
 type DailyTargetMap = Record<DayKey, DailyTarget>
@@ -215,37 +237,132 @@ function bestSetScore(weight: number | undefined, reps: number | undefined): num
   return Math.round(weight * (1 + reps / 30) * 10) / 10
 }
 
-function performanceKey(name: string, id: string): keyof Omit<TrainingPerformancePoint, 'date' | 'fullDate'> | undefined {
-  const text = `${id} ${name}`.toLowerCase()
-  if (text.includes('bench') || name.includes('杠铃卧推')) return 'benchPress'
-  if (text.includes('chest-press') || text.includes('machine-chest') || name.includes('胸推')) return 'chestPress'
-  if (text.includes('pulldown') || name.includes('下拉') || name.includes('引体')) return 'pulldown'
-  if (text.includes('row') || name.includes('划船')) return 'row'
-  if (text.includes('squat') || text.includes('leg-press') || name.includes('深蹲') || name.includes('腿举')) return 'squatOrLegPress'
-  if (text.includes('romanian') || name.includes('罗马尼亚硬拉')) return 'romanianDeadlift'
-  return undefined
+const TRAINING_SERIES_COLORS = ['#059669', '#2563eb', '#0891b2', '#f59e0b', '#0f766e', '#e11d48', '#7c3aed', '#475569']
+
+type TrainingSeriesDraft = Omit<TrainingPerformanceSeries, 'color'> & {
+  values: number[]
 }
 
-export function buildTrainingPerformanceData(workoutLogs: WorkoutLog[], today: string, days = 60): TrainingPerformancePoint[] {
-  return getRecentWindow(workoutLogs, today, days).map((log) => {
+function normalizeExerciseName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ').toLowerCase()
+}
+
+function stableHash(value: string): string {
+  let hash = 5381
+  for (let index = 0; index < value.length; index++) {
+    hash = ((hash << 5) + hash) ^ value.charCodeAt(index)
+  }
+  return (hash >>> 0).toString(36)
+}
+
+function exercisePerformanceIdentity(id: string, name: string): string | undefined {
+  const cleanId = id.trim()
+  if (cleanId) return `id:${cleanId}`
+  const normalizedName = normalizeExerciseName(name)
+  return normalizedName ? `name:${normalizedName}` : undefined
+}
+
+function bestExerciseSet(sets: WorkoutLog['exercises'][number]['sets']): { score: number; detail: TrainingPerformanceSetDetail } | undefined {
+  return sets.reduce<{ score: number; detail: TrainingPerformanceSetDetail } | undefined>((best, set) => {
+    const score = bestSetScore(set.weight, set.reps)
+    if (score === undefined || set.weight === undefined || set.reps === undefined) return best
+    if (best && score <= best.score) return best
+    return {
+      score,
+      detail: {
+        weight: set.weight,
+        reps: set.reps,
+        rir: set.rir,
+      },
+    }
+  }, undefined)
+}
+
+export function buildTrainingPerformanceData(workoutLogs: WorkoutLog[], today: string, days = 60): TrainingPerformanceData {
+  const seriesDrafts = new Map<string, TrainingSeriesDraft>()
+  let totalLoggedExercises = 0
+  let totalScoredExercises = 0
+
+  const points = getRecentWindow(workoutLogs, today, days).map((log) => {
     const point: TrainingPerformancePoint = {
       date: log.date.slice(5),
       fullDate: log.date,
     }
 
     log.exercises.forEach((exercise) => {
-      const key = performanceKey(exercise.name, exercise.exerciseId)
-      if (!key) return
-      const best = Math.max(
-        ...exercise.sets.map((set) => bestSetScore(set.weight, set.reps) ?? 0),
-      )
-      if (best > 0) {
-        point[key] = Math.max(point[key] ?? 0, best)
+      totalLoggedExercises += 1
+      const identity = exercisePerformanceIdentity(exercise.exerciseId, exercise.name)
+      if (!identity) return
+      const best = bestExerciseSet(exercise.sets)
+      if (!best) return
+
+      totalScoredExercises += 1
+      const key = `exercise_${stableHash(identity)}`
+      const label = exercise.name.trim() || '未命名动作'
+      const existingValue = point[key]
+      if (typeof existingValue !== 'number' || best.score > existingValue) {
+        point[key] = best.score
+        point[`${key}Meta`] = best.detail
+      }
+
+      const draft = seriesDrafts.get(key)
+      if (!draft) {
+        seriesDrafts.set(key, {
+          key,
+          label,
+          count: 1,
+          latestDate: log.date,
+          latestValue: best.score,
+          latestSet: best.detail,
+          bestValue: best.score,
+          bestDate: log.date,
+          values: [best.score],
+        })
+        return
+      }
+
+      draft.count += 1
+      draft.values.push(best.score)
+      draft.label = label
+      draft.latestDate = log.date
+      draft.latestValue = best.score
+      draft.latestSet = best.detail
+      if (best.score > draft.bestValue) {
+        draft.bestValue = best.score
+        draft.bestDate = log.date
       }
     })
 
     return point
   })
+
+  const series = Array.from(seriesDrafts.values())
+    .map(({ values, ...draft }) => {
+      const previousValue = values.length >= 2 ? values[values.length - 2] : undefined
+      const delta = previousValue !== undefined ? Math.round((draft.latestValue - previousValue) * 10) / 10 : undefined
+      return {
+        ...draft,
+        previousValue,
+        delta,
+        color: '',
+      }
+    })
+    .sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count
+      if (b.latestDate !== a.latestDate) return b.latestDate.localeCompare(a.latestDate)
+      return a.label.localeCompare(b.label)
+    })
+    .map((seriesItem, index) => ({
+      ...seriesItem,
+      color: TRAINING_SERIES_COLORS[index % TRAINING_SERIES_COLORS.length],
+    }))
+
+  return {
+    points,
+    series,
+    totalLoggedExercises,
+    totalScoredExercises,
+  }
 }
 
 export function createWeeklySummary(

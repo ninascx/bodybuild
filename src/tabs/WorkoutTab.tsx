@@ -383,7 +383,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
       )}
 
       {completionToast && (
-        <div className="fixed left-1/2 top-20 z-50 min-w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 animate-[slideDown_0.3s_ease-out] rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-center dark:border-emerald-700/40 dark:bg-emerald-900/90">
+        <div className="motion-feedback fixed left-1/2 top-20 z-50 min-w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-center dark:border-emerald-700/40 dark:bg-emerald-900/90">
           <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">{completionToast}</p>
           {completionToast.includes('同步') ? (
             <p className="mt-0.5 text-xs text-emerald-800 dark:text-emerald-200">记录页训练完成度已更新为 100%</p>

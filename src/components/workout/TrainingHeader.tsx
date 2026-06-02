@@ -175,7 +175,7 @@ export function TrainingTimerFloat({
         <div
           className={`mt-3 rounded-lg border p-3 text-center ${
             restSeconds === 0
-              ? 'border-amber-400 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-900/30 [animation:rest-pulse_1s_ease-in-out_infinite]'
+              ? 'motion-rest-ready border-amber-400 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-900/30'
               : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800'
           }`}
         >

@@ -12,9 +12,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       manifest: {
-        name: '减脂增肌追踪',
-        short_name: '健身追踪',
-        description: '本地优先的个人减脂增肌追踪工具',
+        name: 'LiftLog',
+        short_name: 'LiftLog',
+        description: '本地优先的个人训练记录工具',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
