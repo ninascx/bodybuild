@@ -1458,6 +1458,7 @@ function App() {
       slowSave={slowSave}
       autoRetryEnabled={autoRetryEnabled}
       extraMenuItems={contentTab === 'daily' ? [
+        { label: '复制当前日期记录', onSelect: () => void copySelectedDateData() },
         { label: '导出此日', onSelect: () => openExportDialog('today') },
       ] : []}
       noticeMessage={noticeMessage}
@@ -1528,7 +1529,6 @@ function App() {
             onDateChange={handleDateChange}
             onUpdateDailyLog={updateDailyLog}
             onQuickAction={quickDailyAction}
-            onCopySelectedDate={() => void copySelectedDateData()}
             focusKey={dailyFocusKey}
             onFocusConsumed={() => setDailyFocusKey(undefined)}
           />

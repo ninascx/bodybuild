@@ -1,4 +1,4 @@
-import { Button, Card, DisclosurePanel } from '../components/ui'
+import { Card, DisclosurePanel } from '../components/ui'
 import { DateNavigator } from '../components/DateNavigator'
 import { QuickRecordSection } from '../components/QuickRecordSection'
 import { DailyCalendarPanel, MeasurementPanel } from '../components/daily/DailyRecordPanels'
@@ -29,7 +29,6 @@ type DailyRecordTabProps = {
   onDateChange: (date: string) => void
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
   onQuickAction: (patch: Partial<DailyLog>) => void
-  onCopySelectedDate: () => void
   focusKey?: DailyFocusKey
   onFocusConsumed?: () => void
 }
@@ -81,14 +80,11 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
     props.selectedLog.sleepHours === undefined
   return (
     <Card {...swipeHandlers} className="space-y-3 sm:space-y-4">
-      <section className="grid gap-3 rounded-lg border border-teal-200 bg-cyan-50/70 p-3 dark:border-cyan-700/40 dark:bg-cyan-950/30 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+      <section className="rounded-lg border border-teal-200 bg-cyan-50/70 p-3 dark:border-cyan-700/40 dark:bg-cyan-950/30">
         <div className="min-w-0">
           <p className="mb-2 text-sm font-semibold text-slate-950 dark:text-slate-50">记录日期</p>
           <DateNavigator selectedDate={props.selectedDate} today={props.today} onChange={props.onDateChange} />
         </div>
-        <Button className="w-full px-4 sm:w-auto" onClick={props.onCopySelectedDate}>
-          复制此日
-        </Button>
       </section>
 
       <QuickRecordSection

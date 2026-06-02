@@ -136,27 +136,21 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
               step={field.step}
               kind={field.kind}
               range={field.range}
+              helper={field.labelNote}
               labelAction={
-                <div className="flex min-w-0 items-center gap-2">
-                  {field.labelNote ? (
-                    <span className="min-w-0 truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                      {field.labelNote}
-                    </span>
-                  ) : null}
-                  <QuickAdjustButtons
-                    label={field.label}
-                    stepLabel={field.quickStepLabel}
-                    disabled={field.value === undefined}
-                    onDecrease={() => {
-                      if (field.value === undefined) return
-                      props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value - field.quickStep, field)))
-                    }}
-                    onIncrease={() => {
-                      if (field.value === undefined) return
-                      props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value + field.quickStep, field)))
-                    }}
-                  />
-                </div>
+                <QuickAdjustButtons
+                  label={field.label}
+                  stepLabel={field.quickStepLabel}
+                  disabled={field.value === undefined}
+                  onDecrease={() => {
+                    if (field.value === undefined) return
+                    props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value - field.quickStep, field)))
+                  }}
+                  onIncrease={() => {
+                    if (field.value === undefined) return
+                    props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value + field.quickStep, field)))
+                  }}
+                />
               }
               onChange={(value) => props.onUpdateDailyLog(field.patch(value))}
             />
