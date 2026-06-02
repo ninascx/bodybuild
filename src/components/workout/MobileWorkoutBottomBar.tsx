@@ -14,9 +14,6 @@ type MobileWorkoutBottomBarProps = {
   keyboardHeight: number
   bottomNextLabel: string
   bottomNextDisabled: boolean
-  bottomPrimaryLabel: string
-  bottomPrimaryTitle: string
-  bottomPrimaryDisabled: boolean
   bottomFinishLabel: string
   bottomFinishTitle: string
   bottomCompletionHint: string
@@ -25,7 +22,6 @@ type MobileWorkoutBottomBarProps = {
   quickFillDisabled: boolean
   onPreviousExercise: () => void
   onNext: () => void
-  onPrimary: () => void
   onFinish: () => void
   onQuickFill: () => void
   onStartRest: () => void
@@ -50,9 +46,6 @@ export function MobileWorkoutBottomBar({
   keyboardHeight,
   bottomNextLabel,
   bottomNextDisabled,
-  bottomPrimaryLabel,
-  bottomPrimaryTitle,
-  bottomPrimaryDisabled,
   bottomFinishLabel,
   bottomFinishTitle,
   bottomCompletionHint,
@@ -61,7 +54,6 @@ export function MobileWorkoutBottomBar({
   quickFillDisabled,
   onPreviousExercise,
   onNext,
-  onPrimary,
   onFinish,
   onQuickFill,
   onStartRest,
@@ -191,9 +183,9 @@ export function MobileWorkoutBottomBar({
               </Button>
             </div>
 
-            <div className="grid grid-cols-[1fr_0.72fr] gap-2">
-              <Button className="min-h-12 px-3 text-base font-semibold" data-pressable="true" onClick={onPrimary} disabled={bottomPrimaryDisabled} title={bottomPrimaryTitle}>
-                {bottomPrimaryLabel}
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="secondary" className="min-h-12 whitespace-nowrap px-2 text-sm" onClick={onPreviousExercise} disabled={!canGoPrevious}>
+                上一动作
               </Button>
               <Button variant="secondary" className="min-h-12 whitespace-nowrap px-2 text-sm" onClick={onNext} disabled={bottomNextDisabled}>
                 {bottomNextLabel}

@@ -27,6 +27,7 @@ type MobileCurrentExerciseViewProps = {
   onJumpToNextIncomplete: () => void
   onUpdateSet: (exerciseIndex: number, setIndex: number, patch: Partial<ExerciseSetLog>) => void
   onAddSet: (exerciseIndex: number) => void
+  onDeleteLastSet: (exerciseIndex: number) => void
   onAddExercise: () => void
   onStartRest: () => void
   onSkipRest: () => void
@@ -55,6 +56,7 @@ export function MobileCurrentExerciseView({
   onJumpToNextIncomplete,
   onUpdateSet,
   onAddSet,
+  onDeleteLastSet,
   onAddExercise,
   onStartRest,
   onSkipRest,
@@ -102,13 +104,8 @@ export function MobileCurrentExerciseView({
     shouldSuggestNextExercise,
     currentSetActionDisabled,
     currentSetActionLabel,
-    bottomPrimaryLabel,
-    bottomPrimaryTitle,
-    bottomPrimaryDisabled,
     bottomFinishLabel,
     bottomFinishTitle,
-    bottomNextLabel,
-    bottomNextDisabled,
     bottomCompletionHint,
     currentSetStatus,
     keyboardHeight,
@@ -116,15 +113,31 @@ export function MobileCurrentExerciseView({
     updateCurrentSet,
     applyPatchToCurrentSet,
     handleCurrentSetAction,
-    handleBottomPrimaryAction,
     handleBottomFinishAction,
-    handleBottomNextAction,
     applyPreviousRecordToEmptySets,
     applyCurrentSetToEmptySets,
     goToPreviousExercise,
     goToSuggestedOrNextIncomplete,
     goToNextIncompleteSet,
   } = session
+  const totalSets = exercise?.sets.length ?? 0
+
+  function handleAddCurrentExerciseSet() {
+    if (!exercise) return
+    onAddSet(currentExerciseIndex)
+    setCurrentSetIndex(exercise.sets.length)
+  }
+
+  function handleDeleteCurrentExerciseLastSet() {
+    if (!exercise || exercise.sets.length <= 1) return
+    setCurrentSetIndex(Math.min(safeCurrentSetIndex, exercise.sets.length - 2))
+    onDeleteLastSet(currentExerciseIndex)
+  }
+
+  function handleGoToNextExercise() {
+    if (currentExerciseIndex >= workout.exercises.length - 1) return
+    onJumpToExercise(currentExerciseIndex + 1)
+  }
 
   if (!exercise) {
     return (
@@ -169,6 +182,7 @@ export function MobileCurrentExerciseView({
             key={`${exercise.exerciseId}-${exercise.name}-${safeCurrentSetIndex}`}
             currentSet={currentSet}
             setIndex={safeCurrentSetIndex}
+            totalSets={totalSets}
             targetRange={targetRange}
             targetRepOptions={targetRepOptions}
             previousSameSetSummary={previousSameSetSummary}
@@ -193,7 +207,8 @@ export function MobileCurrentExerciseView({
             onCopyPrevious={() => applyPatchToCurrentSet(copyPreviousPatch)}
             onCopyRecord={() => applyPatchToCurrentSet(copyRecordPatch)}
             onAddExercise={onAddExercise}
-            onAddSet={() => onAddSet(currentExerciseIndex)}
+            onAddSet={handleAddCurrentExerciseSet}
+            onDeleteLastSet={handleDeleteCurrentExerciseLastSet}
             onApplyCurrentSetToEmptySets={applyCurrentSetToEmptySets}
             onApplyPreviousRecordToEmptySets={applyPreviousRecordToEmptySets}
             onNextIncompleteSet={goToNextIncompleteSet}
@@ -225,11 +240,8 @@ export function MobileCurrentExerciseView({
         restSeconds={restSeconds}
         workoutSummary={workoutSummary}
         keyboardHeight={keyboardHeight}
-        bottomNextLabel={bottomNextLabel}
-        bottomNextDisabled={bottomNextDisabled}
-        bottomPrimaryLabel={bottomPrimaryLabel}
-        bottomPrimaryTitle={bottomPrimaryTitle}
-        bottomPrimaryDisabled={bottomPrimaryDisabled}
+        bottomNextLabel="下一动作"
+        bottomNextDisabled={currentExerciseIndex >= workout.exercises.length - 1}
         bottomFinishLabel={bottomFinishLabel}
         bottomFinishTitle={bottomFinishTitle}
         bottomCompletionHint={bottomCompletionHint}
@@ -237,8 +249,7 @@ export function MobileCurrentExerciseView({
         quickFillLabel={quickFillLabel}
         quickFillDisabled={!quickFillPatch || !currentSet}
         onPreviousExercise={goToPreviousExercise}
-        onNext={handleBottomNextAction}
-        onPrimary={handleBottomPrimaryAction}
+        onNext={handleGoToNextExercise}
         onFinish={handleBottomFinishAction}
         onQuickFill={() => applyPatchToCurrentSet(quickFillPatch)}
         onStartRest={onStartRest}

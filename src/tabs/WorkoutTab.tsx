@@ -216,6 +216,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
               onJumpToNextIncomplete={jumpToNextIncomplete}
               onUpdateSet={handleUpdateSet}
               onAddSet={props.onAddSet}
+              onDeleteLastSet={props.onDeleteLastSet}
               onAddExercise={props.onAddExercise}
               onStartRest={handleStartRest}
               onSkipRest={handleSkipRest}

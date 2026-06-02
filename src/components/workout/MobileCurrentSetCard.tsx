@@ -8,6 +8,7 @@ import { RirSelector, TargetRepButtons, WEIGHT_STEP_KG, WeightQuickSelect, Weigh
 type MobileCurrentSetCardProps = {
   currentSet: ExerciseSetLog | undefined
   setIndex: number
+  totalSets: number
   targetRange: TargetRepRange | null
   targetRepOptions: number[]
   previousSameSetSummary: string | null
@@ -33,6 +34,7 @@ type MobileCurrentSetCardProps = {
   onCopyRecord: () => void
   onAddExercise: () => void
   onAddSet: () => void
+  onDeleteLastSet: () => void
   onApplyCurrentSetToEmptySets: () => void
   onApplyPreviousRecordToEmptySets: () => void
   onNextIncompleteSet: () => void
@@ -42,6 +44,7 @@ type MobileCurrentSetCardProps = {
 export function MobileCurrentSetCard({
   currentSet,
   setIndex,
+  totalSets,
   targetRange,
   targetRepOptions,
   previousSameSetSummary,
@@ -67,6 +70,7 @@ export function MobileCurrentSetCard({
   onCopyRecord,
   onAddExercise,
   onAddSet,
+  onDeleteLastSet,
   onApplyCurrentSetToEmptySets,
   onApplyPreviousRecordToEmptySets,
   onNextIncompleteSet,
@@ -87,6 +91,18 @@ export function MobileCurrentSetCard({
           第 {setIndex + 1} 组 {targetRange ? `· 目标 ${formatTargetRepRange(targetRange)}` : ''}
         </p>
         {currentSetComplete ? <Badge tone="positive">已填</Badge> : <span className="text-xs font-medium text-slate-500 dark:text-slate-400">待填</span>}
+      </div>
+
+      <div className="mt-1.5 flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-2 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">共 {totalSets} 组</span>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={onDeleteLastSet} disabled={totalSets <= 1}>
+            -组
+          </Button>
+          <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={onAddSet}>
+            +组
+          </Button>
+        </div>
       </div>
 
       {previousSameSetSummary ? (
