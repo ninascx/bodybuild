@@ -136,10 +136,7 @@ export function MobileWorkoutBottomBar({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="secondary" className="px-3" onClick={onPreviousExercise} disabled={!canGoPrevious}>
-                  上一动作
-                </Button>
+              <div className="grid gap-2">
                 <Button variant="secondary" className="px-3" onClick={onFinish} title={bottomFinishTitle}>
                   {bottomFinishLabel}
                 </Button>
