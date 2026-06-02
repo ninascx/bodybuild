@@ -101,11 +101,17 @@ h1,
 
 html {
   min-width: 320px;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 button,
