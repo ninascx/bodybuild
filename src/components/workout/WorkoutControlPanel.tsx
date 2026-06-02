@@ -47,7 +47,9 @@ export function WorkoutControlPanel({
 }) {
   const hasWorkout = Boolean(selectedWorkout)
   const recommendedId = `builtin-${getDayKey(selectedDate)}`
-  const canStartSelectedTemplate = Boolean(selectedTemplate && selectedTemplate.exercises.length > 0)
+  const canStartSelectedTemplate = Boolean(
+    selectedTemplate && (selectedTemplate.exercises.length > 0 || (selectedTemplate.cardio ?? []).length > 0),
+  )
 
   const syncBadge: { text: string; tone: 'positive' | 'warning' | 'danger' } =
     syncState === 'synced'

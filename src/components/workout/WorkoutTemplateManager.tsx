@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ExercisePlan, WorkoutLog, WorkoutTemplate } from '../../types'
+import type { CardioPlan, ExercisePlan, WorkoutLog, WorkoutTemplate } from '../../types'
 import { Button, DisclosurePanel, EmptyState, Field, TextInput } from '../ui'
 import { FormStatusStack } from '../FormPanel'
 import { CustomTemplateCard } from './CustomTemplateCard'
@@ -18,6 +18,9 @@ export function WorkoutTemplateManager({
   onUpdateTemplateExercise,
   onAddTemplateExercise,
   onDeleteTemplateExercise,
+  onUpdateTemplateCardio,
+  onAddTemplateCardio,
+  onDeleteTemplateCardio,
   onApplyTemplate,
   onDeleteTemplate,
   onExportToken,
@@ -32,6 +35,9 @@ export function WorkoutTemplateManager({
   onUpdateTemplateExercise: (templateId: string, exerciseIndex: number, patch: Partial<ExercisePlan>) => void
   onAddTemplateExercise: (templateId: string) => void
   onDeleteTemplateExercise: (templateId: string, exerciseIndex: number) => void
+  onUpdateTemplateCardio: (templateId: string, cardioIndex: number, patch: Partial<CardioPlan>) => void
+  onAddTemplateCardio: (templateId: string) => void
+  onDeleteTemplateCardio: (templateId: string, cardioIndex: number) => void
   onApplyTemplate: (template: WorkoutTemplate) => void
   onDeleteTemplate: (templateId: string) => void
   onExportToken: () => Promise<{ token: string; count: number }>
@@ -108,7 +114,11 @@ export function WorkoutTemplateManager({
     >
         <div className="grid gap-2 sm:grid-cols-[auto_auto] sm:justify-start">
           <Button onClick={onCreateTemplate}>新建模板</Button>
-          <Button variant="secondary" onClick={onSaveCurrent} disabled={!selectedWorkout || selectedWorkout.exercises.length === 0}>
+          <Button
+            variant="secondary"
+            onClick={onSaveCurrent}
+            disabled={!selectedWorkout || (selectedWorkout.exercises.length === 0 && (selectedWorkout.cardio ?? []).length === 0)}
+          >
             从当前训练保存为模板
           </Button>
         </div>
@@ -177,6 +187,9 @@ export function WorkoutTemplateManager({
               onUpdateTemplateExercise={onUpdateTemplateExercise}
               onAddTemplateExercise={onAddTemplateExercise}
               onDeleteTemplateExercise={onDeleteTemplateExercise}
+              onUpdateTemplateCardio={onUpdateTemplateCardio}
+              onAddTemplateCardio={onAddTemplateCardio}
+              onDeleteTemplateCardio={onDeleteTemplateCardio}
               onApplyTemplate={onApplyTemplate}
               onDeleteTemplate={onDeleteTemplate}
             />
@@ -204,6 +217,9 @@ export function WorkoutTemplateManager({
             onUpdateTemplateExercise={onUpdateTemplateExercise}
             onAddTemplateExercise={onAddTemplateExercise}
             onDeleteTemplateExercise={onDeleteTemplateExercise}
+            onUpdateTemplateCardio={onUpdateTemplateCardio}
+            onAddTemplateCardio={onAddTemplateCardio}
+            onDeleteTemplateCardio={onDeleteTemplateCardio}
             onApplyTemplate={onApplyTemplate}
             onDeleteTemplate={onDeleteTemplate}
           />

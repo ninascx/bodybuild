@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { addDays, parseDateInput } from '../lib/dates'
+import { isCardioLogMeaningful } from '../lib/workout'
 import type { DailyLog, WorkoutLog } from '../types'
 import { Button } from './ui'
 
@@ -28,6 +29,7 @@ function hasDailyContent(log: DailyLog | undefined): boolean {
 
 function hasWorkoutContent(workout: WorkoutLog | undefined): boolean {
   if (!workout) return false
+  if ((workout.cardio ?? []).some(isCardioLogMeaningful)) return true
   if (!Array.isArray(workout.exercises) || workout.exercises.length === 0) return false
   return workout.exercises.some((exercise) =>
     exercise.sets?.some((set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined),

@@ -35,9 +35,12 @@ export function TrainingHeader({
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
         <div className="rounded-md border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800">
-          <p className="text-xs text-slate-500 dark:text-slate-400">已填组数</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {workoutSummary.cardioCount > 0 ? '已填组数 / 有氧' : '已填组数'}
+          </p>
           <p className="mt-0.5 font-semibold text-slate-950 dark:text-slate-50">
             {workoutSummary.filledSets}/{workoutSummary.totalSets}
+            {workoutSummary.cardioCount > 0 ? ` · ${workoutSummary.cardioCount}` : ''}
           </p>
         </div>
         <div className="rounded-md border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800">
@@ -47,9 +50,12 @@ export function TrainingHeader({
           </p>
         </div>
         <div className="rounded-md border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800">
-          <p className="text-xs text-slate-500 dark:text-slate-400">训练量</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {workoutSummary.cardioDurationMin > 0 ? '训练量 / 有氧' : '训练量'}
+          </p>
           <p className="mt-0.5 font-semibold text-slate-950 dark:text-slate-50">
             {Math.round(workoutSummary.totalVolume)} kg
+            {workoutSummary.cardioDurationMin > 0 ? ` · ${workoutSummary.cardioDurationMin} min` : ''}
           </p>
         </div>
       </div>

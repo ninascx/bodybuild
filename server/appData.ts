@@ -11,7 +11,7 @@ import crypto from 'node:crypto'
 
 import { dailyTargets, userProfile, workoutPlans } from '../src/data/plans'
 import { defaultUserPreference, mergeUserPreference } from '../src/lib/userPreferences'
-import type { DailyLog, DailyTarget, DayKey, ExerciseLog, ExercisePlan, UserPlanData, UserPreference, UserProfile, WorkoutLog, WorkoutPlan, WorkoutTemplate } from '../src/types'
+import type { CardioLog, CardioPlan, DailyLog, DailyTarget, DayKey, ExerciseLog, ExercisePlan, UserPlanData, UserPreference, UserProfile, WorkoutLog, WorkoutPlan, WorkoutTemplate } from '../src/types'
 import { prisma } from './db'
 
 interface AppData {
@@ -79,6 +79,7 @@ export function toClientWorkoutLog(row: DbWorkoutLog): WorkoutLog {
     date: row.date,
     workoutName: row.workoutName,
     exercises: parseJson<ExerciseLog[]>(row.exercisesJson, []),
+    cardio: parseJson<CardioLog[]>(row.cardioJson, []),
     notes: row.notes ?? undefined,
   }
 }
@@ -90,6 +91,7 @@ export function toClientWorkoutTemplate(row: DbWorkoutTemplate): WorkoutTemplate
     focus: row.focus,
     category: row.category,
     exercises: parseJson<ExercisePlan[]>(row.exercisesJson, []),
+    cardio: parseJson<CardioPlan[]>(row.cardioJson, []),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     isBuiltin: row.isBuiltin,
@@ -162,6 +164,7 @@ function workoutLogWriteData(userId: string, log: WorkoutLog) {
     date: log.date,
     workoutName: log.workoutName,
     exercisesJson: toJson(log.exercises),
+    cardioJson: toJson(log.cardio ?? []),
     notes: log.notes ?? null,
   }
 }
@@ -174,6 +177,7 @@ function workoutTemplateWriteData(userId: string, template: WorkoutTemplate) {
     focus: template.focus,
     category: template.category,
     exercisesJson: toJson(template.exercises),
+    cardioJson: toJson(template.cardio ?? []),
     isBuiltin: false,
   }
 }
@@ -230,6 +234,21 @@ function sanitizeExercise(exercise: unknown): ExercisePlan | null {
   }
 }
 
+function sanitizeCardioPlan(cardio: unknown): CardioPlan | null {
+  if (typeof cardio !== 'object' || cardio === null) return null
+  const value = cardio as Partial<CardioPlan>
+  if (typeof value.mode !== 'string' || !value.mode.trim()) return null
+  const durationMin = typeof value.durationMin === 'number' && Number.isFinite(value.durationMin) && value.durationMin > 0
+    ? value.durationMin
+    : undefined
+  return {
+    id: typeof value.id === 'string' && value.id.trim() ? value.id : createServerId('template-cardio'),
+    mode: value.mode.trim(),
+    ...(durationMin !== undefined ? { durationMin } : {}),
+    note: typeof value.note === 'string' && value.note.trim() ? value.note.trim() : undefined,
+  }
+}
+
 function sanitizeTemplate(template: unknown): WorkoutTemplate | null {
   if (typeof template !== 'object' || template === null) return null
   const value = template as Partial<WorkoutTemplate>
@@ -238,7 +257,10 @@ function sanitizeTemplate(template: unknown): WorkoutTemplate | null {
   const exercises = Array.isArray(value.exercises)
     ? value.exercises.map(sanitizeExercise).filter((exercise): exercise is ExercisePlan => exercise !== null)
     : []
-  if (exercises.length === 0) return null
+  const cardio = Array.isArray(value.cardio)
+    ? value.cardio.map(sanitizeCardioPlan).filter((item): item is CardioPlan => item !== null)
+    : []
+  if (exercises.length === 0 && cardio.length === 0) return null
   const now = new Date().toISOString()
   return {
     id: typeof value.id === 'string' && value.id.trim() ? value.id : createServerId('template'),
@@ -246,6 +268,7 @@ function sanitizeTemplate(template: unknown): WorkoutTemplate | null {
     focus: typeof value.focus === 'string' && value.focus.trim() ? value.focus.trim() : '自定义',
     category: typeof value.category === 'string' && value.category.trim() ? value.category.trim() : '自定义',
     exercises,
+    cardio,
     createdAt: typeof value.createdAt === 'string' ? value.createdAt : now,
     updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : now,
     isBuiltin: false,
@@ -260,6 +283,10 @@ function cloneImportedTemplate(template: WorkoutTemplate): WorkoutTemplate {
     exercises: template.exercises.map((exercise) => ({
       ...exercise,
       id: createServerId('template-exercise'),
+    })),
+    cardio: (template.cardio ?? []).map((cardio) => ({
+      ...cardio,
+      id: createServerId('template-cardio'),
     })),
     createdAt: now,
     updatedAt: now,
@@ -539,6 +566,7 @@ function workoutPlanData(userId: string, plan: WorkoutPlan) {
     name: plan.name,
     focus: plan.focus,
     exercisesJson: toJson(plan.exercises),
+    cardioJson: toJson(plan.cardio ?? []),
   }
 }
 
@@ -564,6 +592,7 @@ export function toClientWorkoutPlan(row: DbWorkoutPlan): WorkoutPlan {
     name: row.name,
     focus: row.focus,
     exercises: parseJson<ExercisePlan[]>(row.exercisesJson, []),
+    cardio: parseJson<CardioPlan[]>(row.cardioJson, []),
   }
 }
 

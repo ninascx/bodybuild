@@ -211,6 +211,7 @@ export function getBuiltinTemplates(): WorkoutTemplate[] {
     focus: plan.focus,
     category: '内置计划',
     exercises: plan.exercises,
+    cardio: plan.cardio,
     createdAt: now,
     updatedAt: now,
     isBuiltin: true,

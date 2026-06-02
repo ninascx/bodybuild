@@ -1,4 +1,4 @@
-import type { DailyLog, DayKey, ExerciseLog, ExercisePlan, ExerciseSetLog, WorkoutLog, WorkoutPlan, WorkoutTemplate } from '../types'
+import type { CardioLog, CardioPlan, DailyLog, DayKey, ExerciseLog, ExercisePlan, ExerciseSetLog, WorkoutLog, WorkoutPlan, WorkoutTemplate } from '../types'
 import { workoutPlans, getBuiltinTemplates } from '../data/plans'
 import { getDayKey } from './dates'
 import { createId } from './ids'
@@ -15,6 +15,7 @@ export type WorkoutTemplateOption = {
   focus: string
   source: 'builtin' | 'custom'
   exercises: ExercisePlan[]
+  cardio?: CardioPlan[]
 }
 
 export type WorkoutSummary = {
@@ -23,6 +24,8 @@ export type WorkoutSummary = {
   totalSets: number
   completionPercent: number
   totalVolume: number
+  cardioCount: number
+  cardioDurationMin: number
 }
 
 export type TargetRepRange = {
@@ -90,6 +93,12 @@ export function createWorkoutFromTemplate(date: string, template: WorkoutTemplat
         sets: Array.from({ length: setCount }, () => ({})),
       }
     }),
+    cardio: (template.cardio ?? []).map((cardio) => ({
+      id: cardio.id,
+      mode: cardio.mode,
+      durationMin: cardio.durationMin,
+      notes: cardio.note,
+    })),
   }
 }
 
@@ -101,6 +110,7 @@ export function createWorkoutFromPlan(date: string, planOverride?: WorkoutPlan):
     focus: plan.focus,
     source: 'builtin',
     exercises: plan.exercises,
+    cardio: plan.cardio,
   })
 }
 
@@ -112,6 +122,7 @@ export function builtinTemplateOptions(plans?: Record<DayKey, WorkoutPlan>): Wor
     focus: template.focus,
     source: 'builtin',
     exercises: template.exercises,
+    cardio: template.cardio,
   }))
 }
 
@@ -122,6 +133,7 @@ export function builtinTemplatesFromPlans(plans: Record<DayKey, WorkoutPlan>): W
     focus: plan.focus,
     category: '内置计划',
     exercises: plan.exercises,
+    cardio: plan.cardio,
     createdAt: '',
     updatedAt: '',
     isBuiltin: true,
@@ -135,12 +147,23 @@ export function customTemplateToOption(template: WorkoutTemplate): WorkoutTempla
     focus: template.focus,
     source: 'custom',
     exercises: template.exercises,
+    cardio: template.cardio,
   }
+}
+
+export function isCardioLogMeaningful(cardio: CardioLog): boolean {
+  return Boolean(
+    cardio.mode.trim() ||
+    cardio.durationMin !== undefined ||
+    cardio.intensity?.trim() ||
+    cardio.notes?.trim(),
+  )
 }
 
 export function hasWorkoutContent(workout: WorkoutLog | undefined): boolean {
   if (!workout) return false
   if (workout.notes?.trim()) return true
+  if ((workout.cardio ?? []).some(isCardioLogMeaningful)) return true
   return workout.exercises.some(
     (exercise) =>
       exercise.name.trim() ||
@@ -148,6 +171,22 @@ export function hasWorkoutContent(workout: WorkoutLog | undefined): boolean {
       exercise.notes?.trim() ||
       exercise.sets.some((set) => set.weight !== undefined || set.reps !== undefined || set.rir !== undefined),
   )
+}
+
+export function createBlankCardioPlan(): CardioPlan {
+  return {
+    id: createId('template-cardio'),
+    mode: '跑步机',
+    durationMin: 20,
+  }
+}
+
+export function createBlankCardioLog(): CardioLog {
+  return {
+    id: createId('cardio'),
+    mode: '跑步机',
+    durationMin: 20,
+  }
 }
 
 export function createBlankExercise(): ExerciseLog {
@@ -161,6 +200,16 @@ export function createBlankExercise(): ExerciseLog {
 
 export function newTemplateFromWorkout(workout: WorkoutLog): WorkoutTemplate {
   const now = new Date().toISOString()
+  const cardio = (workout.cardio ?? [])
+    .filter(isCardioLogMeaningful)
+    .map((cardio) => ({
+      id: createId('template-cardio'),
+      mode: cardio.mode || '有氧',
+      durationMin: cardio.durationMin,
+      note: [cardio.intensity ? `强度：${cardio.intensity}` : null, cardio.notes?.trim() || null]
+        .filter((value): value is string => value !== null)
+        .join('；') || undefined,
+    }))
   return {
     id: createId('template'),
     name: `${workout.workoutName || '自定义训练'} 模板`,
@@ -173,7 +222,10 @@ export function newTemplateFromWorkout(workout: WorkoutLog): WorkoutTemplate {
           prescription: exercise.target || '3 组 × 8-12 次',
           note: exercise.notes,
         }))
-      : [{ id: createId('template-exercise'), name: '新动作', prescription: '3 组 × 8-12 次' }],
+      : cardio.length > 0
+        ? []
+        : [{ id: createId('template-exercise'), name: '新动作', prescription: '3 组 × 8-12 次' }],
+    cardio,
     createdAt: now,
     updatedAt: now,
   }
@@ -187,6 +239,8 @@ export function summarizeWorkout(workout: WorkoutLog | undefined): WorkoutSummar
       totalSets: 0,
       completionPercent: 0,
       totalVolume: 0,
+      cardioCount: 0,
+      cardioDurationMin: 0,
     }
   }
 
@@ -211,6 +265,8 @@ export function summarizeWorkout(workout: WorkoutLog | undefined): WorkoutSummar
     totalSets,
     completionPercent: totalSets ? Math.round((filledSets / totalSets) * 100) : 0,
     totalVolume,
+    cardioCount: (workout.cardio ?? []).filter(isCardioLogMeaningful).length,
+    cardioDurationMin: (workout.cardio ?? []).reduce((sum, cardio) => sum + (cardio.durationMin ?? 0), 0),
   }
 }
 
@@ -281,16 +337,27 @@ export function buildDailyCopyText({
         })
         .filter((value): value is string => value !== null)
     : []
+  const cardioLines = (workout?.cardio ?? [])
+    .filter(isCardioLogMeaningful)
+    .map((cardio) => {
+      const parts = [
+        cardio.durationMin !== undefined ? `${cardio.durationMin}min` : null,
+        cardio.intensity?.trim() ? `强度${cardio.intensity.trim()}` : null,
+        cardio.notes?.trim() ? `备注：${cardio.notes.trim()}` : null,
+      ].filter((value): value is string => value !== null)
+      return `${cardio.mode || '有氧'}${parts.length ? `：${parts.join('；')}` : ''}`
+    })
 
   const sections: string[] = []
   sections.push(`【${date} ${dayName} 健身记录】`)
   if (recordLines.length > 0) {
     sections.push('', '实际记录', ...recordLines)
   }
-  if (workout?.workoutName?.trim() || workoutLines.length > 0) {
+  if (workout?.workoutName?.trim() || workoutLines.length > 0 || cardioLines.length > 0) {
     sections.push('', '训练记录')
     if (workout?.workoutName?.trim()) sections.push(`训练名称：${workout.workoutName.trim()}`)
     if (workoutLines.length > 0) sections.push(...workoutLines)
+    if (cardioLines.length > 0) sections.push('有氧：', ...cardioLines.map((line) => `- ${line}`))
   }
 
   return sections.join('\n')

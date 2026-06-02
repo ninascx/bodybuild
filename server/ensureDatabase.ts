@@ -70,6 +70,7 @@ const statements = [
     "name" TEXT NOT NULL,
     "focus" TEXT NOT NULL,
     "exercisesJson" TEXT NOT NULL DEFAULT '[]',
+    "cardioJson" TEXT NOT NULL DEFAULT '[]',
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
     CONSTRAINT "WorkoutPlan_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -82,6 +83,7 @@ const statements = [
     "focus" TEXT NOT NULL,
     "category" TEXT NOT NULL,
     "exercisesJson" TEXT NOT NULL DEFAULT '[]',
+    "cardioJson" TEXT NOT NULL DEFAULT '[]',
     "isBuiltin" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
@@ -126,6 +128,7 @@ const statements = [
     "date" TEXT NOT NULL,
     "workoutName" TEXT NOT NULL,
     "exercisesJson" TEXT NOT NULL DEFAULT '[]',
+    "cardioJson" TEXT NOT NULL DEFAULT '[]',
     "notes" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
@@ -215,6 +218,17 @@ async function ensureUserPreferenceRuleColumns(): Promise<void> {
   }
 }
 
+async function ensureJsonColumns(table: string, columns: string[]): Promise<void> {
+  const existingColumns = await prisma.$queryRawUnsafe<TableColumn[]>(`PRAGMA table_info("${table}")`)
+  const columnNames = new Set(existingColumns.map((column) => column.name))
+
+  for (const column of columns) {
+    if (!columnNames.has(column)) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "${table}" ADD COLUMN "${column}" TEXT NOT NULL DEFAULT '[]'`)
+    }
+  }
+}
+
 export async function ensureDatabaseSchema(): Promise<void> {
   for (const [index, statement] of statements.entries()) {
     await prisma.$executeRawUnsafe(statement)
@@ -226,6 +240,15 @@ export async function ensureDatabaseSchema(): Promise<void> {
     }
     if (statement.includes('CREATE TABLE IF NOT EXISTS "UserPreference"')) {
       await ensureUserPreferenceRuleColumns()
+    }
+    if (statement.includes('CREATE TABLE IF NOT EXISTS "WorkoutPlan"')) {
+      await ensureJsonColumns('WorkoutPlan', ['cardioJson'])
+    }
+    if (statement.includes('CREATE TABLE IF NOT EXISTS "WorkoutTemplate"')) {
+      await ensureJsonColumns('WorkoutTemplate', ['cardioJson'])
+    }
+    if (statement.includes('CREATE TABLE IF NOT EXISTS "WorkoutLog"')) {
+      await ensureJsonColumns('WorkoutLog', ['cardioJson'])
     }
   }
 }

@@ -111,22 +111,41 @@ export function TodayDetailsPanels({
 
           <TodayDetailSection>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <SectionHeader title="训练动作" />
+              <SectionHeader title="训练安排" />
               <span className="text-sm text-slate-600 dark:text-slate-400">{plan.name}</span>
             </div>
-            {plan.exercises.length === 0 ? (
-              <EmptyState title="休息日" message="无训练动作，专注吃好、睡好、走走。" />
+            {plan.exercises.length === 0 && (plan.cardio ?? []).length === 0 ? (
+              <EmptyState title="休息日" message="无训练动作或有氧，专注吃好、睡好、走走。" />
             ) : (
-              <div className="mt-4 grid gap-2 md:grid-cols-2">
-                {plan.exercises.map((exercise, index) => (
-                  <div key={exercise.id} className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                    <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">
-                      {index + 1}. {exercise.name}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{exercise.prescription}</p>
-                    {exercise.note ? <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">{exercise.note}</p> : null}
+              <div className="mt-4 grid gap-3">
+                {plan.exercises.length > 0 ? (
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {plan.exercises.map((exercise, index) => (
+                      <div key={exercise.id} className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                        <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">
+                          {index + 1}. {exercise.name}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{exercise.prescription}</p>
+                        {exercise.note ? <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">{exercise.note}</p> : null}
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : null}
+                {(plan.cardio ?? []).length > 0 ? (
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {(plan.cardio ?? []).map((cardio, index) => (
+                      <div key={cardio.id} className="rounded-lg border border-cyan-100 bg-cyan-50 p-3 dark:border-cyan-900/50 dark:bg-cyan-950/30">
+                        <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">
+                          有氧 {index + 1}. {cardio.mode}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                          {cardio.durationMin ? `${cardio.durationMin} min` : '未设置时长'}
+                        </p>
+                        {cardio.note ? <p className="mt-1 text-xs text-cyan-800 dark:text-cyan-200">{cardio.note}</p> : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             )}
           </TodayDetailSection>

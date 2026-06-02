@@ -2,6 +2,7 @@ import type { AdjustmentRecommendation, DailyLog, DailyTarget, DayKey, Recommend
 import { addDays, getDayKey, getRecentWindow, sortByDateAsc, sortByDateDesc } from './dates'
 import { logsForWeek, type DashboardStats } from './metrics'
 import { mergeUserPreference } from './userPreferences'
+import { isCardioLogMeaningful } from './workout'
 
 type DailyTargetMap = Record<DayKey, DailyTarget>
 
@@ -42,7 +43,7 @@ function round(value: number | undefined, digits = 1): number | undefined {
 function isTrainingLogged(log: Partial<DailyLog> | undefined, workout: WorkoutLog | undefined, target: DailyTarget): boolean {
   if (!target.isTrainingDay) return true
   if (log?.trained !== undefined || log?.workoutCompletion !== undefined) return true
-  return (workout?.exercises.length ?? 0) > 0
+  return (workout?.exercises.length ?? 0) > 0 || (workout?.cardio ?? []).some(isCardioLogMeaningful)
 }
 
 function recentTrainingCompletion(logs: DailyLog[], endDate: string, targets: DailyTargetMap, days: number): number | undefined {

@@ -70,6 +70,7 @@ for (const template of customTemplates) {
       focus: template.focus,
       category: template.category,
       exercisesJson: JSON.stringify(template.exercises ?? []),
+      cardioJson: JSON.stringify(template.cardio ?? []),
       isBuiltin: false,
     },
     update: {
@@ -78,6 +79,7 @@ for (const template of customTemplates) {
       focus: template.focus,
       category: template.category,
       exercisesJson: JSON.stringify(template.exercises ?? []),
+      cardioJson: JSON.stringify(template.cardio ?? []),
       isBuiltin: false,
     },
   })

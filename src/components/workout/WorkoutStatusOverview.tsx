@@ -53,7 +53,12 @@ export function WorkoutStatusOverview({
       meta={
         !restDay && selectedWorkout ? (
           <MetricGrid className="lg:grid-cols-4">
-            <InsightCard title="动作" value={workoutSummary.exerciseCount} message="个" tone="neutral" />
+            <InsightCard
+              title={workoutSummary.cardioCount > 0 ? '动作 / 有氧' : '动作'}
+              value={workoutSummary.cardioCount > 0 ? `${workoutSummary.exerciseCount} / ${workoutSummary.cardioCount}` : workoutSummary.exerciseCount}
+              message={workoutSummary.cardioDurationMin > 0 ? `${workoutSummary.cardioDurationMin} min` : '个'}
+              tone="neutral"
+            />
             <InsightCard title="完成组" value={`${workoutSummary.filledSets}/${workoutSummary.totalSets}`} tone={workoutSummary.filledSets > 0 ? 'positive' : 'neutral'} />
             <InsightCard title="完成率" value={`${workoutSummary.completionPercent}%`} tone={workoutSummary.completionPercent === 100 ? 'positive' : 'warning'} />
             <InsightCard title="训练量" value={`${Math.round(workoutSummary.totalVolume)} kg`} tone="neutral" />

@@ -18,7 +18,11 @@ function clonePlanData(data: UserPlanData): UserPlanData {
     workoutPlans: Object.fromEntries(
       planDays.map((day) => {
         const plan = data.workoutPlans[day]
-        return [day, { ...plan, exercises: plan.exercises.map((exercise) => ({ ...exercise })) }]
+        return [day, {
+          ...plan,
+          exercises: plan.exercises.map((exercise) => ({ ...exercise })),
+          cardio: (plan.cardio ?? []).map((cardio) => ({ ...cardio })),
+        }]
       }),
     ) as Record<DayKey, WorkoutPlan>,
   }
@@ -29,6 +33,7 @@ function cloneWorkoutPlanForDay(plan: WorkoutPlan, day: DayKey): WorkoutPlan {
     ...plan,
     day,
     exercises: plan.exercises.map((exercise) => ({ ...exercise })),
+    cardio: (plan.cardio ?? []).map((cardio) => ({ ...cardio })),
   }
 }
 
@@ -38,13 +43,14 @@ function restPlanForDay(day: DayKey): WorkoutPlan {
     name: '休息日',
     focus: '恢复',
     exercises: [],
+    cardio: [],
   }
 }
 
 function buildPlanCatalog(data: UserPlanData): WorkoutPlan[] {
   return planDays
     .map((day) => data.workoutPlans[day])
-    .filter((plan) => plan.exercises.length > 0)
+    .filter((plan) => plan.exercises.length > 0 || (plan.cardio ?? []).length > 0)
     .map((plan) => cloneWorkoutPlanForDay(plan, plan.day))
 }
 
@@ -70,6 +76,10 @@ export function PlanTab({ planData, onSave }: PlanTabProps) {
   )
   const totalExerciseCount = useMemo(
     () => Object.values(draft.workoutPlans).reduce((sum, plan) => sum + plan.exercises.length, 0),
+    [draft.workoutPlans],
+  )
+  const totalCardioCount = useMemo(
+    () => Object.values(draft.workoutPlans).reduce((sum, plan) => sum + (plan.cardio ?? []).length, 0),
     [draft.workoutPlans],
   )
 
@@ -154,7 +164,7 @@ export function PlanTab({ planData, onSave }: PlanTabProps) {
         <MetricGrid className="lg:grid-cols-3">
           <InsightCard title="训练日" value={`${trainingDayCount} 天`} message="每周安排" tone={trainingDayCount > 0 ? 'positive' : 'neutral'} />
           <InsightCard title="动作总数" value={totalExerciseCount} message="来自已关联计划" tone="neutral" />
-          <InsightCard title="可关联计划" value={planCatalog.length} message="从当前周训练计划生成" tone={planCatalog.length > 0 ? 'positive' : 'warning'} />
+          <InsightCard title="有氧项" value={totalCardioCount} message="来自已关联计划" tone={totalCardioCount > 0 ? 'positive' : 'neutral'} />
         </MetricGrid>
       </FormPanel>
 

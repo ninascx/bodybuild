@@ -1,6 +1,7 @@
 import type { UserExportPayload } from './storage'
 import { addDays, endOfWeekSaturday, isDateInRange, startOfWeekSunday } from './dates'
-import type { DailyLog, ExerciseLog, ExerciseSetLog, WorkoutLog } from '../types'
+import type { CardioLog, DailyLog, ExerciseLog, ExerciseSetLog, WorkoutLog } from '../types'
+import { isCardioLogMeaningful } from './workout'
 
 export type ExportRangePreset = 'today' | 'thisWeek' | 'last7' | 'last30' | 'thisMonth' | 'all' | 'custom'
 export type ExportFormat = 'json' | 'summary' | 'copySummary' | 'csv'
@@ -129,16 +130,33 @@ function compactExercise(exercise: ExerciseLog): ExerciseLog | null {
   }
 }
 
+function compactCardio(cardio: CardioLog): CardioLog | null {
+  if (!isCardioLogMeaningful(cardio)) return null
+  const intensity = cardio.intensity?.trim()
+  const notes = cardio.notes?.trim()
+  return {
+    id: cardio.id,
+    mode: cardio.mode,
+    ...(cardio.durationMin !== undefined ? { durationMin: cardio.durationMin } : {}),
+    ...(intensity ? { intensity } : {}),
+    ...(notes ? { notes } : {}),
+  }
+}
+
 export function compactWorkoutLog(workout: WorkoutLog): WorkoutLog | null {
   const exercises = workout.exercises
     .map(compactExercise)
     .filter((exercise): exercise is ExerciseLog => exercise !== null)
+  const cardio = (workout.cardio ?? [])
+    .map(compactCardio)
+    .filter((item): item is CardioLog => item !== null)
   const notes = workout.notes?.trim()
-  if (exercises.length === 0 && !notes) return null
+  if (exercises.length === 0 && cardio.length === 0 && !notes) return null
   return {
     date: workout.date,
     workoutName: workout.workoutName,
     exercises,
+    ...(cardio.length ? { cardio } : {}),
     ...(notes ? { notes } : {}),
   }
 }
@@ -238,6 +256,15 @@ export function buildExportSummaryText(payload: ScopedExportPayload): string {
           currentWorkoutLines.push(`  - ${exercise.name}：${parts.join('；')}`)
         }
       }
+      for (const cardio of workout.cardio ?? []) {
+        if (!isCardioLogMeaningful(cardio)) continue
+        const cardioParts = [
+          cardio.durationMin !== undefined ? `${cardio.durationMin}min` : null,
+          cardio.intensity?.trim() ? `强度：${cardio.intensity.trim()}` : null,
+          cardio.notes?.trim() ? `备注：${cardio.notes.trim()}` : null,
+        ].filter((item): item is string => item !== null)
+        currentWorkoutLines.push(`  - 有氧 ${cardio.mode || '未命名'}${cardioParts.length ? `：${cardioParts.join('；')}` : ''}`)
+      }
       const workoutNotes = workout.notes?.trim()
       if (currentWorkoutLines.length || workoutNotes) {
         workoutLines.push(`- ${workout.date}：${workout.workoutName}`)
@@ -254,7 +281,7 @@ export function buildExportSummaryText(payload: ScopedExportPayload): string {
   if (payload.workoutTemplates?.length) {
     lines.push('', '训练模板')
     for (const template of payload.workoutTemplates) {
-      lines.push(`- ${template.name}：${template.exercises.length} 个动作`)
+      lines.push(`- ${template.name}：${template.exercises.length} 个动作，${(template.cardio ?? []).length} 个有氧`)
     }
   }
 
@@ -289,10 +316,16 @@ type WorkoutSetCsvRow = {
   set: ExerciseSetLog
   index: number
 }
+type WorkoutCardioCsvField = Exclude<keyof CardioLog, 'id'>
+type WorkoutCardioCsvRow = {
+  workout: WorkoutLog
+  cardio: CardioLog
+}
 
 export type ExportContentStats = {
   csvDailyRows: number
   csvWorkoutSets: number
+  csvWorkoutCardioRows: number
   summaryDailyLogs: number
   summaryWorkoutLogs: number
   workoutTemplates: number
@@ -320,6 +353,7 @@ const dailyCsvFields: DailyCsvField[] = [
 ]
 
 const workoutSetCsvFields: WorkoutSetCsvField[] = ['weight', 'reps', 'rir']
+const workoutCardioCsvFields: WorkoutCardioCsvField[] = ['mode', 'durationMin', 'intensity', 'notes']
 
 function hasCsvValue(value: string | number | boolean | undefined): boolean {
   return value !== undefined && value !== ''
@@ -346,6 +380,14 @@ function getCsvWorkoutSetRows(logs: ScopedExportPayload['workoutLogs']): Workout
   ) ?? []
 }
 
+function getCsvWorkoutCardioRows(logs: ScopedExportPayload['workoutLogs']): WorkoutCardioCsvRow[] {
+  return logs?.flatMap((workout) =>
+    (workout.cardio ?? [])
+      .filter(isCardioLogMeaningful)
+      .map((cardio) => ({ workout, cardio })),
+  ) ?? []
+}
+
 function getSummaryDailyCount(logs: ScopedExportPayload['dailyLogs']): number {
   return logs?.filter((log) => buildDailySummaryFields(log).length > 0).length ?? 0
 }
@@ -354,6 +396,7 @@ function getSummaryWorkoutCount(logs: ScopedExportPayload['workoutLogs']): numbe
   return logs?.filter(
     (workout) =>
       Boolean(workout.notes?.trim()) ||
+      (workout.cardio ?? []).some(isCardioLogMeaningful) ||
       workout.exercises.some(
         (exercise) =>
           Boolean(exercise.notes?.trim()) ||
@@ -372,17 +415,19 @@ export function buildExportContentStats(
 ): ExportContentStats {
   const csvDailyRows = getCsvDailyRows(payload.dailyLogs).length
   const csvWorkoutSets = getCsvWorkoutSetRows(payload.workoutLogs).length
+  const csvWorkoutCardioRows = getCsvWorkoutCardioRows(payload.workoutLogs).length
   const workoutTemplates = payload.exportScope.workoutTemplateCount
   const summaryDailyLogs = getSummaryDailyCount(payload.dailyLogs)
   const summaryWorkoutLogs = getSummaryWorkoutCount(payload.workoutLogs)
   return {
     csvDailyRows,
     csvWorkoutSets,
+    csvWorkoutCardioRows,
     summaryDailyLogs,
     summaryWorkoutLogs,
     workoutTemplates,
     nonRecordSections: nonRecordSectionCount,
-    csvAvailable: csvDailyRows > 0 || csvWorkoutSets > 0 || workoutTemplates > 0,
+    csvAvailable: csvDailyRows > 0 || csvWorkoutSets > 0 || csvWorkoutCardioRows > 0 || workoutTemplates > 0,
     summaryAvailable: summaryDailyLogs > 0 || summaryWorkoutLogs > 0 || workoutTemplates > 0 || nonRecordSectionCount > 0,
   }
 }
@@ -391,7 +436,7 @@ export function buildExportResultSummary(payload: ScopedExportPayload, format: E
   const stats = buildExportContentStats(payload)
   const extra = stats.nonRecordSections > 0 ? `，其他 ${stats.nonRecordSections} 项` : ''
   if (format === 'csv') {
-    return `每日行 ${stats.csvDailyRows} 条，训练组 ${stats.csvWorkoutSets} 条，模板 ${stats.workoutTemplates} 个`
+    return `每日行 ${stats.csvDailyRows} 条，训练组 ${stats.csvWorkoutSets} 条，有氧 ${stats.csvWorkoutCardioRows} 条，模板 ${stats.workoutTemplates} 个`
   }
   if (format === 'summary' || format === 'copySummary') {
     return `每日 ${stats.summaryDailyLogs} 条，训练 ${stats.summaryWorkoutLogs} 条，模板 ${stats.workoutTemplates} 个${extra}`
@@ -412,6 +457,22 @@ export function buildExportCsvText(payload: ScopedExportPayload): string {
       lines.push(csvRow(['date', ...activeDailyFields]))
       for (const log of dailyRows) {
         lines.push(csvRow([log.date, ...activeDailyFields.map((field) => log[field])]))
+      }
+    }
+    const cardioRows = getCsvWorkoutCardioRows(payload.workoutLogs)
+    const activeCardioFields = workoutCardioCsvFields.filter((field) =>
+      cardioRows.some((row) => hasCsvValue(row.cardio[field])),
+    )
+    if (cardioRows.length > 0 && activeCardioFields.length > 0) {
+      if (lines.length) lines.push('')
+      lines.push('workout_cardio')
+      lines.push(csvRow(['date', 'workoutName', ...activeCardioFields]))
+      for (const row of cardioRows) {
+        lines.push(csvRow([
+          row.workout.date,
+          row.workout.workoutName,
+          ...activeCardioFields.map((field) => row.cardio[field]),
+        ]))
       }
     }
   }
@@ -440,9 +501,9 @@ export function buildExportCsvText(payload: ScopedExportPayload): string {
   if (payload.workoutTemplates?.length) {
     if (lines.length) lines.push('')
     lines.push('workout_templates')
-    lines.push(csvRow(['templateName', 'focus', 'exerciseCount']))
+    lines.push(csvRow(['templateName', 'focus', 'exerciseCount', 'cardioCount']))
     for (const template of payload.workoutTemplates) {
-      lines.push(csvRow([template.name, template.focus, template.exercises.length]))
+      lines.push(csvRow([template.name, template.focus, template.exercises.length, (template.cardio ?? []).length]))
     }
   }
 

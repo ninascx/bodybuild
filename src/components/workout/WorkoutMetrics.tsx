@@ -1,12 +1,19 @@
 import type { WorkoutSummary } from '../../lib/workout'
 
 export function WorkoutMetrics({ summary }: { summary: WorkoutSummary }) {
+  const activityValue = summary.cardioCount > 0
+    ? `${summary.exerciseCount} / ${summary.cardioCount}`
+    : `${summary.exerciseCount}`
+
   return (
     <div className="mt-5 hidden grid-cols-2 gap-2 sm:grid sm:grid-cols-4">
-      <WorkoutMetric label="动作数" value={`${summary.exerciseCount}`} />
+      <WorkoutMetric label={summary.cardioCount > 0 ? '动作 / 有氧' : '动作数'} value={activityValue} />
       <WorkoutMetric label="已填组数" value={`${summary.filledSets}/${summary.totalSets}`} />
       <WorkoutMetric label="记录进度" value={`${summary.completionPercent}%`} />
-      <WorkoutMetric label="本次训练量" value={`${Math.round(summary.totalVolume)} kg`} />
+      <WorkoutMetric
+        label={summary.cardioDurationMin > 0 ? '训练量 / 有氧' : '本次训练量'}
+        value={summary.cardioDurationMin > 0 ? `${Math.round(summary.totalVolume)} kg · ${summary.cardioDurationMin} min` : `${Math.round(summary.totalVolume)} kg`}
+      />
     </div>
   )
 }

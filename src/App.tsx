@@ -8,6 +8,7 @@ import {
   buildDailyCopyText,
   builtinTemplateOptions,
   builtinTemplatesFromPlans,
+  createBlankCardioPlan,
   createBlankExercise,
   createWorkoutFromPlan,
   createWorkoutFromTemplate,
@@ -61,7 +62,7 @@ import {
 import { defaultUserPreference, mergeUserPreference } from './lib/userPreferences'
 import { buildExportCsvText, buildExportResultSummary, buildExportSummaryText, buildScopedExportPayload, type ExportFormat, type ExportOptions, type ExportRangePreset } from './lib/exportPayload'
 import { createId } from './lib/ids'
-import type { AdjustmentRecommendation, DailyLog, DayKey, ExerciseLog, ExercisePlan, ExerciseSetLog, RecommendationTone, UserPlanData, UserPreference, UserProfile, WeeklySummary, WorkoutLog, WorkoutPlan, WorkoutTemplate } from './types'
+import type { AdjustmentRecommendation, CardioPlan, DailyLog, DayKey, ExerciseLog, ExercisePlan, ExerciseSetLog, RecommendationTone, UserPlanData, UserPreference, UserProfile, WeeklySummary, WorkoutLog, WorkoutPlan, WorkoutTemplate } from './types'
 import { LoadingBlock } from './components/ui'
 import { useColorScheme } from './hooks/useColorScheme'
 import { useConfirm } from './components/ConfirmDialog'
@@ -862,8 +863,11 @@ function App() {
 
   function finishSelectedWorkout() {
     const nextLogs = upsertByDate(dailyLogs, selectedDate, { trained: true, workoutCompletion: 100 })
+    const selectedTemplateHasContent = Boolean(
+      selectedTemplate && (selectedTemplate.exercises.length > 0 || (selectedTemplate.cardio ?? []).length > 0),
+    )
     const nextWorkoutLogs =
-      selectedWorkout || !selectedTemplate || selectedTemplate.exercises.length === 0
+      selectedWorkout || !selectedTemplateHasContent || !selectedTemplate
         ? workoutLogs
         : upsertByDate(workoutLogs, selectedDate, createWorkoutFromTemplate(selectedDate, selectedTemplate))
     schedulePersist({ dailyLogs: nextLogs, workoutLogs: nextWorkoutLogs, workoutTemplates }, true)
@@ -907,8 +911,8 @@ function App() {
 
   async function replaceWorkoutFromTemplate(template: WorkoutTemplateOption | undefined) {
     if (!template) return
-    if (template.exercises.length === 0) {
-      setNoticeMessage('这是休息日模板，没有训练动作可填入。如需自由训练，请点「空白训练」。')
+    if (template.exercises.length === 0 && (template.cardio ?? []).length === 0) {
+      setNoticeMessage('这是休息日模板，没有训练动作或有氧可填入。如需自由训练，请点「空白训练」。')
       return
     }
     if (hasWorkoutContent(selectedWorkout)) {
@@ -928,6 +932,7 @@ function App() {
       date: selectedDate,
       workoutName: '自定义训练',
       exercises: [],
+      cardio: [],
     }
   }
 
@@ -1059,7 +1064,7 @@ function App() {
       [day]: {
         ...dailyTargetsByDay[day],
         workoutName: nextPlan.name,
-        isTrainingDay: nextPlan.exercises.length > 0,
+        isTrainingDay: nextPlan.exercises.length > 0 || (nextPlan.cardio ?? []).length > 0,
       },
     }
     schedulePlanPersist({ dailyTargets: nextTargets, workoutPlans: nextPlans }, immediate)
@@ -1073,6 +1078,7 @@ function App() {
       focus: '自定义',
       category: '自定义',
       exercises: [{ id: createId('template-exercise'), name: '新动作', prescription: '3 组 × 8-12 次' }],
+      cardio: [],
       createdAt: now,
       updatedAt: now,
       isBuiltin: false,
@@ -1091,6 +1097,7 @@ function App() {
         name: patch.name ?? plan.name,
         focus: patch.focus ?? plan.focus,
         exercises: patch.exercises ?? plan.exercises,
+        cardio: patch.cardio ?? plan.cardio,
       })
       return
     }
@@ -1175,7 +1182,7 @@ function App() {
     const builtinDay = builtinTemplateIdToDay(templateId)
     if (builtinDay !== null) {
       const plan = workoutPlansByDay[builtinDay]
-      if (plan.exercises.length <= 1) return
+      if (plan.exercises.length <= 1 && (plan.cardio ?? []).length === 0) return
       const ok = await confirm({
         title: '删除内置模板动作？',
         message: '会从对应星期的训练计划中删除这个动作；已有训练记录不受影响。',
@@ -1200,13 +1207,109 @@ function App() {
     })
     if (!ok) return
     const nextTemplates = workoutTemplates.map((template) => {
-      if (template.id !== templateId || template.exercises.length <= 1) return template
+      if (template.id !== templateId || (template.exercises.length <= 1 && (template.cardio ?? []).length === 0)) return template
       return {
         ...template,
         exercises: template.exercises.filter((_, index) => index !== exerciseIndex),
         updatedAt: new Date().toISOString(),
       }
     })
+    setWorkoutTemplates(nextTemplates)
+    persistTemplates(nextTemplates, true)
+  }
+
+  function updateTemplateCardio(templateId: string, cardioIndex: number, patch: Partial<CardioPlan>) {
+    const builtinDay = builtinTemplateIdToDay(templateId)
+    if (builtinDay !== null) {
+      const plan = workoutPlansByDay[builtinDay]
+      const cardio = plan.cardio ?? []
+      if (!cardio[cardioIndex]) return
+      persistBuiltinTemplate(builtinDay, {
+        ...plan,
+        cardio: cardio.map((item, index) => (index === cardioIndex ? { ...item, ...patch } : item)),
+      })
+      return
+    }
+
+    const target = workoutTemplates.find((template) => template.id === templateId)
+    if (!target || target.isBuiltin) return
+    const nextTemplates = workoutTemplates.map((template) => {
+      if (template.id !== templateId) return template
+      const cardio = template.cardio ?? []
+      return {
+        ...template,
+        cardio: cardio.map((item, index) => (index === cardioIndex ? { ...item, ...patch } : item)),
+        updatedAt: new Date().toISOString(),
+      }
+    })
+    setWorkoutTemplates(nextTemplates)
+    persistTemplates(nextTemplates)
+  }
+
+  function addTemplateCardio(templateId: string) {
+    const builtinDay = builtinTemplateIdToDay(templateId)
+    if (builtinDay !== null) {
+      const plan = workoutPlansByDay[builtinDay]
+      persistBuiltinTemplate(builtinDay, {
+        ...plan,
+        cardio: [...(plan.cardio ?? []), createBlankCardioPlan()],
+      }, true)
+      return
+    }
+
+    const target = workoutTemplates.find((template) => template.id === templateId)
+    if (!target || target.isBuiltin) return
+    const nextTemplates = workoutTemplates.map((template) =>
+      template.id === templateId
+        ? {
+            ...template,
+            cardio: [...(template.cardio ?? []), createBlankCardioPlan()],
+            updatedAt: new Date().toISOString(),
+          }
+        : template,
+    )
+    setWorkoutTemplates(nextTemplates)
+    persistTemplates(nextTemplates, true)
+  }
+
+  async function deleteTemplateCardio(templateId: string, cardioIndex: number) {
+    const builtinDay = builtinTemplateIdToDay(templateId)
+    if (builtinDay !== null) {
+      const plan = workoutPlansByDay[builtinDay]
+      const cardio = plan.cardio ?? []
+      if (!cardio[cardioIndex]) return
+      const ok = await confirm({
+        title: '删除内置模板有氧？',
+        message: '会从对应星期的训练计划中删除这个有氧项；已有训练记录不受影响。',
+        confirmLabel: '删除',
+        tone: 'danger',
+      })
+      if (!ok) return
+      persistBuiltinTemplate(builtinDay, {
+        ...plan,
+        cardio: cardio.filter((_, index) => index !== cardioIndex),
+      }, true)
+      return
+    }
+
+    const target = workoutTemplates.find((template) => template.id === templateId)
+    if (!target || target.isBuiltin) return
+    const ok = await confirm({
+      title: '删除模板有氧？',
+      message: '只删除模板里的这个有氧项；已有训练记录不受影响。',
+      confirmLabel: '删除',
+      tone: 'danger',
+    })
+    if (!ok) return
+    const nextTemplates = workoutTemplates.map((template) =>
+      template.id === templateId
+        ? {
+            ...template,
+            cardio: (template.cardio ?? []).filter((_, index) => index !== cardioIndex),
+            updatedAt: new Date().toISOString(),
+          }
+        : template,
+    )
     setWorkoutTemplates(nextTemplates)
     persistTemplates(nextTemplates, true)
   }
@@ -1243,8 +1346,8 @@ function App() {
   }
 
   function saveCurrentWorkoutAsTemplate() {
-    if (!selectedWorkout || selectedWorkout.exercises.length === 0) {
-      setNoticeMessage('当前没有可保存的训练动作。')
+    if (!selectedWorkout || (selectedWorkout.exercises.length === 0 && (selectedWorkout.cardio ?? []).length === 0)) {
+      setNoticeMessage('当前没有可保存的训练动作或有氧。')
       return
     }
     const nextTemplates = [...workoutTemplates, newTemplateFromWorkout(selectedWorkout)]
@@ -1574,6 +1677,9 @@ function App() {
             onUpdateTemplateExercise={updateTemplateExercise}
             onAddTemplateExercise={addTemplateExercise}
             onDeleteTemplateExercise={deleteTemplateExercise}
+            onUpdateTemplateCardio={updateTemplateCardio}
+            onAddTemplateCardio={addTemplateCardio}
+            onDeleteTemplateCardio={deleteTemplateCardio}
             onDeleteTemplate={deleteTemplate}
             onExportTemplateToken={exportTemplateToken}
             onImportTemplateToken={importTemplateToken}

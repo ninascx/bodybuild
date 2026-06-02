@@ -39,11 +39,19 @@ export interface ExercisePlan {
   note?: string
 }
 
+export interface CardioPlan {
+  id: string
+  mode: string
+  durationMin?: number
+  note?: string
+}
+
 export interface WorkoutPlan {
   day: DayKey
   name: string
   focus: string
   exercises: ExercisePlan[]
+  cardio?: CardioPlan[]
 }
 
 export interface UserPlanData {
@@ -71,6 +79,7 @@ export interface WorkoutTemplate {
   focus: string
   category: string
   exercises: ExercisePlan[]
+  cardio?: CardioPlan[]
   createdAt: string
   updatedAt: string
   isBuiltin?: boolean
@@ -109,10 +118,19 @@ export interface ExerciseLog {
   notes?: string
 }
 
+export interface CardioLog {
+  id: string
+  mode: string
+  durationMin?: number
+  intensity?: string
+  notes?: string
+}
+
 export interface WorkoutLog {
   date: string
   workoutName: string
   exercises: ExerciseLog[]
+  cardio?: CardioLog[]
   notes?: string
 }
 

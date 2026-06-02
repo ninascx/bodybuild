@@ -97,6 +97,7 @@ model WorkoutPlan {
   name          String
   focus         String
   exercisesJson String   @default("[]")
+  cardioJson    String   @default("[]")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -112,6 +113,7 @@ model WorkoutTemplate {
   focus         String
   category      String
   exercisesJson String   @default("[]")
+  cardioJson    String   @default("[]")
   isBuiltin     Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -164,6 +166,7 @@ model WorkoutLog {
   date          String
   workoutName   String
   exercisesJson String   @default("[]")
+  cardioJson    String   @default("[]")
   notes         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

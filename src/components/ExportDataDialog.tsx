@@ -251,6 +251,7 @@ export function ExportDataDialog({
     ? [
         { label: `每日行 ${exportStats.csvDailyRows}`, active: exportStats.csvDailyRows > 0 },
         { label: `训练组 ${exportStats.csvWorkoutSets}`, active: exportStats.csvWorkoutSets > 0 },
+        { label: `有氧 ${exportStats.csvWorkoutCardioRows}`, active: exportStats.csvWorkoutCardioRows > 0 },
         { label: `模板 ${exportStats.workoutTemplates}`, active: exportStats.workoutTemplates > 0 },
       ]
     : [
@@ -473,7 +474,7 @@ export function ExportDataDialog({
                         const setCount = countPreviewSets(workout, activeOutputFormat)
                         return (
                           <p key={`workout-${workout.date}`} className="rounded-md bg-slate-50 px-3 py-2 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                            {workout.date} · {workout.workoutName} · {workout.exercises.length} 动作 · {setCount} 组
+                            {workout.date} · {workout.workoutName} · {workout.exercises.length} 动作 · {setCount} 组 · {(workout.cardio ?? []).length} 有氧
                           </p>
                         )
                       })}

@@ -20,7 +20,7 @@ import {
   getWorkoutRecordBadge,
   getWorkoutStatusView,
 } from '../components/workout/workoutStatusModel'
-import type { ExerciseLog, ExercisePlan, WorkoutLog, WorkoutTemplate } from '../types'
+import type { CardioPlan, ExerciseLog, ExercisePlan, WorkoutLog, WorkoutTemplate } from '../types'
 import type { PreviousExerciseRecord } from '../lib/metrics'
 import type { SyncState } from '../lib/storage'
 import type { WorkoutSummary, WorkoutTemplateOption } from '../lib/workout'
@@ -32,6 +32,7 @@ function templateToOption(template: WorkoutTemplate): WorkoutTemplateOption {
     focus: template.focus,
     source: template.isBuiltin ? 'builtin' : 'custom',
     exercises: template.exercises,
+    cardio: template.cardio,
   }
 }
 
@@ -74,6 +75,9 @@ type WorkoutTabProps = {
   onUpdateTemplateExercise: (templateId: string, exerciseIndex: number, patch: Partial<ExercisePlan>) => void
   onAddTemplateExercise: (templateId: string) => void
   onDeleteTemplateExercise: (templateId: string, exerciseIndex: number) => void
+  onUpdateTemplateCardio: (templateId: string, cardioIndex: number, patch: Partial<CardioPlan>) => void
+  onAddTemplateCardio: (templateId: string) => void
+  onDeleteTemplateCardio: (templateId: string, cardioIndex: number) => void
   onDeleteTemplate: (id: string) => void
   onExportTemplateToken: () => Promise<{ token: string; count: number }>
   onImportTemplateToken: (token: string) => Promise<{ importedCount: number }>
@@ -366,6 +370,9 @@ export function WorkoutTab(props: WorkoutTabProps) {
             onUpdateTemplateExercise={props.onUpdateTemplateExercise}
             onAddTemplateExercise={props.onAddTemplateExercise}
             onDeleteTemplateExercise={props.onDeleteTemplateExercise}
+            onUpdateTemplateCardio={props.onUpdateTemplateCardio}
+            onAddTemplateCardio={props.onAddTemplateCardio}
+            onDeleteTemplateCardio={props.onDeleteTemplateCardio}
             onApplyTemplate={(template) => props.onApplyTemplate(templateToOption(template))}
             onDeleteTemplate={props.onDeleteTemplate}
             onExportToken={props.onExportTemplateToken}

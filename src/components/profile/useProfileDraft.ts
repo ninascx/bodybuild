@@ -26,7 +26,11 @@ function clonePlanData(data: UserPlanData): UserPlanData {
     workoutPlans: Object.fromEntries(
       profileDays.map((day) => {
         const plan = data.workoutPlans[day]
-        return [day, { ...plan, exercises: plan.exercises.map((exercise) => ({ ...exercise })) }]
+        return [day, {
+          ...plan,
+          exercises: plan.exercises.map((exercise) => ({ ...exercise })),
+          cardio: (plan.cardio ?? []).map((cardio) => ({ ...cardio })),
+        }]
       }),
     ) as Record<DayKey, WorkoutPlan>,
   }
@@ -49,6 +53,7 @@ function cloneWorkoutPlanForDay(plan: WorkoutPlan, day: DayKey): WorkoutPlan {
     ...plan,
     day,
     exercises: plan.exercises.map((exercise) => ({ ...exercise })),
+    cardio: (plan.cardio ?? []).map((cardio) => ({ ...cardio })),
   }
 }
 
@@ -58,7 +63,12 @@ function restPlanForDay(day: DayKey): WorkoutPlan {
     name: '休息日',
     focus: '恢复',
     exercises: [],
+    cardio: [],
   }
+}
+
+function hasPlanActivity(plan: WorkoutPlan): boolean {
+  return plan.exercises.length > 0 || (plan.cardio ?? []).length > 0
 }
 
 export function useProfileDraft({ preference, planData, onDraftChange }: UseProfileDraftParams) {
@@ -178,10 +188,10 @@ export function useProfileDraft({ preference, planData, onDraftChange }: UseProf
       const base = currentDraft ?? { preference: preferenceDraft, planData: planDraft }
       const current = base.planData
       const sourcePlan =
-        current.workoutPlans[day].exercises.length > 0
+        hasPlanActivity(current.workoutPlans[day])
           ? current.workoutPlans[day]
-          : Object.values(current.workoutPlans).find((plan) => plan.exercises.length > 0) ??
-            Object.values(planData.workoutPlans).find((plan) => plan.exercises.length > 0)
+          : Object.values(current.workoutPlans).find(hasPlanActivity) ??
+            Object.values(planData.workoutPlans).find(hasPlanActivity)
       const nextPlan = willEnable && sourcePlan
         ? cloneWorkoutPlanForDay(sourcePlan, day)
         : restPlanForDay(day)

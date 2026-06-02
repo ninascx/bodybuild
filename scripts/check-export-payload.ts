@@ -28,6 +28,7 @@ const fixture: UserExportPayload = {
           sets: [{}],
         },
       ],
+      cardio: [{ id: 'cardio-1', mode: '跑步机', durationMin: 25, intensity: '中', notes: '坡度 5' }],
     },
     {
       date: '2026-05-28',
@@ -81,6 +82,7 @@ assert.match(summary, /训练饮食记录摘要/)
 assert.match(summary, /内容：每日记录、训练记录/)
 assert.match(summary, /2026-05-20：80kg，2200kcal/)
 assert.match(summary, /卧推：1\. 80kg x 8次；2\. RIR2/)
+assert.match(summary, /有氧 跑步机：25min；强度：中；备注：坡度 5/)
 const csv = buildExportCsvText(slim)
 assert.match(csv, /daily_logs\n/)
 assert.match(csv, /date,morningWeightKg,calories,notes/)
@@ -89,7 +91,9 @@ assert.match(csv, /2026-05-28,,,"manual check, ""ok"""/)
 assert.match(csv, /workout_sets\n/)
 assert.match(csv, /2026-05-20,推,卧推,1,80,8,/)
 assert.match(csv, /2026-05-20,推,卧推,2,,,2/)
-assert.equal(buildExportResultSummary(slim, 'csv'), '每日行 2 条，训练组 2 条，模板 0 个')
+assert.match(csv, /workout_cardio\n/)
+assert.match(csv, /2026-05-20,推,跑步机,25,中,坡度 5/)
+assert.equal(buildExportResultSummary(slim, 'csv'), '每日行 2 条，训练组 2 条，有氧 1 条，模板 0 个')
 assert.equal(buildExportResultSummary(slim, 'summary'), '每日 2 条，训练 1 条，模板 0 个')
 
 const repsOnlyCsv = buildExportCsvText({

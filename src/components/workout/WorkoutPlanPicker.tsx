@@ -22,6 +22,10 @@ export function WorkoutPlanPicker({
   onApplyTemplate: (template: WorkoutTemplateOption) => void
   onApplyRecommended: () => void
 }) {
+  const selectedHasContent = Boolean(
+    selectedTemplate && (selectedTemplate.exercises.length > 0 || (selectedTemplate.cardio ?? []).length > 0),
+  )
+
   return (
     <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto] lg:items-end">
       <label className="grid min-w-0 gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -50,7 +54,7 @@ export function WorkoutPlanPicker({
       </label>
       {showActions ? (
         <>
-          <Button variant="secondary" onClick={() => selectedTemplate && onApplyTemplate(selectedTemplate)} disabled={!selectedTemplate || selectedTemplate.exercises.length === 0}>
+          <Button variant="secondary" onClick={() => selectedTemplate && onApplyTemplate(selectedTemplate)} disabled={!selectedHasContent}>
             填入所选
           </Button>
           <Button variant="secondary" onClick={onApplyRecommended}>今日推荐</Button>

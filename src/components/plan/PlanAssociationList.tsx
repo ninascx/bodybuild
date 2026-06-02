@@ -58,7 +58,9 @@ export function PlanAssociationList({
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-200">{plan.name}</p>
               <p className="mt-1 truncate text-xs leading-5 text-slate-500 dark:text-slate-400">
-                {target.isTrainingDay ? `${plan.focus} · ${plan.exercises.length} 个动作` : '不安排训练'}
+                {target.isTrainingDay
+                  ? `${plan.focus} · ${plan.exercises.length} 个动作 · ${(plan.cardio ?? []).length} 个有氧`
+                  : '不安排训练'}
               </p>
             </div>
 
