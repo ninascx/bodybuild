@@ -108,6 +108,7 @@ export function useConfirm() {
             <Button
               ref={confirmButtonRef}
               variant={request.tone === 'danger' ? 'danger' : 'primary'}
+              data-pressable="true"
               onClick={() => handleAnswer(true)}
             >
               {request.confirmLabel ?? '确定'}

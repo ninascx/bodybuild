@@ -66,16 +66,16 @@ import type { AdjustmentRecommendation, CardioPlan, DailyLog, DayKey, ExerciseLo
 import { LoadingBlock } from './components/ui'
 import { useColorScheme } from './hooks/useColorScheme'
 import { useConfirm } from './components/ConfirmDialog'
-import { ExportDataDialog } from './components/ExportDataDialog'
 import { AppShell } from './components/layout/AppShell'
 import { LoginScreen } from './components/layout/LoginScreen'
 import { TodayTab } from './tabs/TodayTab'
-import { DailyRecordTab } from './tabs/DailyRecordTab'
-import { WorkoutTab } from './tabs/WorkoutTab'
-const AnalyticsTab = lazy(() => import('./tabs/AnalyticsTab').then((mod) => ({ default: mod.AnalyticsTab })))
-import { SettingsTab } from './tabs/SettingsTab'
-import { AdminUsersTab } from './tabs/AdminUsersTab'
 import { DailyRecordSkeleton } from './components/DailyRecordSkeleton'
+const DailyRecordTab = lazy(() => import('./tabs/DailyRecordTab').then((mod) => ({ default: mod.DailyRecordTab })))
+const WorkoutTab = lazy(() => import('./tabs/WorkoutTab').then((mod) => ({ default: mod.WorkoutTab })))
+const AnalyticsTab = lazy(() => import('./tabs/AnalyticsTab').then((mod) => ({ default: mod.AnalyticsTab })))
+const SettingsTab = lazy(() => import('./tabs/SettingsTab').then((mod) => ({ default: mod.SettingsTab })))
+const AdminUsersTab = lazy(() => import('./tabs/AdminUsersTab').then((mod) => ({ default: mod.AdminUsersTab })))
+const ExportDataDialog = lazy(() => import('./components/ExportDataDialog').then((mod) => ({ default: mod.ExportDataDialog })))
 
 type TabKey = 'today' | 'daily' | 'workout' | 'analytics' | 'settings' | 'admin'
 
@@ -93,6 +93,14 @@ const ACTIVE_TAB_KEY = 'bodybuild:v1:activeTab'
 const LEGACY_API_CACHE_NAMES = ['api-cache']
 const exerciseMetadataKeys = new Set<keyof ExerciseLog>(['name', 'notes'])
 const dayKeys: DayKey[] = [0, 1, 2, 3, 4, 5, 6]
+
+function DialogLoadingFallback() {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/30 p-4 backdrop-blur-sm" role="status" aria-live="polite">
+      <LoadingBlock title="正在准备导出..." lines={2} className="w-full max-w-md shadow-xl" />
+    </div>
+  )
+}
 
 function isTabKey(value: string | null): value is TabKey {
   return allTabs.some((tab) => tab.key === value)
@@ -226,6 +234,7 @@ function App() {
   const [weeklyAnchorDate, setWeeklyAnchorDate] = useState<string>(() => formatDateInput())
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
   const saveVersionRef = useRef(0)
+  const dataEditVersionRef = useRef(0)
   const planSaveQueueRef = useRef<Promise<void>>(Promise.resolve())
   const planSaveVersionRef = useRef(0)
   const autoRetryAtRef = useRef(0)
@@ -489,11 +498,12 @@ function App() {
       localEditsRef.current = true
       const saveVersion = saveVersionRef.current + 1
       saveVersionRef.current = saveVersion
+      const editVersionAtSave = dataEditVersionRef.current
       applyData(nextData)
       setSavePending(false)
       setSyncState('saving')
       setSyncMessage('保存中...')
-      setSaveFeedback({ tone: 'neutral', message: '正在保存到服务器...' })
+      setSaveFeedback(null)
       const saveTask = saveQueueRef.current.then(() => saveAppData(currentUser.id, nextData))
       saveQueueRef.current = saveTask.then(
         () => undefined,
@@ -502,17 +512,17 @@ function App() {
 
       try {
         const saved = await saveTask
-        if (saveVersion === saveVersionRef.current) {
+        if (saveVersion === saveVersionRef.current && editVersionAtSave === dataEditVersionRef.current) {
           applyData(saved)
           setSavePending(false)
           setSyncState('synced')
           setLastSyncedAt(new Date().toISOString())
           setAutoRetryEnabled(false)
           setSyncMessage('已同步')
-          setSaveFeedback({ tone: 'positive', message: '数据已保存到服务器。' })
+          setSaveFeedback(null)
         }
       } catch (error) {
-        if (saveVersion === saveVersionRef.current) {
+        if (saveVersion === saveVersionRef.current && editVersionAtSave === dataEditVersionRef.current) {
           setSyncState('offline')
           setSavePending(false)
           setAutoRetryEnabled(true)
@@ -543,6 +553,7 @@ function App() {
   const schedulePersist = useCallback(
     (nextData: AppData, immediate = false) => {
       localEditsRef.current = true
+      dataEditVersionRef.current += 1
       applyData(nextData)
       pendingDataRef.current = nextData
       setSavePending(!immediate)
@@ -554,7 +565,7 @@ function App() {
         flushPending()
       } else {
         setSyncMessage('已记录')
-        setSaveFeedback({ tone: 'neutral', message: '已记录，正在保存...' })
+        setSaveFeedback(null)
         debounceTimerRef.current = window.setTimeout(flushPending, 400)
       }
     },
@@ -1609,149 +1620,159 @@ function App() {
         ) : null}
 
         {contentTab === 'settings' && currentUser ? (
-          <SettingsTab
-            key={`${currentUser.id}-${initialLoaded ? 'ready' : 'loading'}`}
-            currentUser={currentUser}
-            preference={userPreference}
-            planData={currentPlanData}
-            onSavePreference={savePreferenceData}
-            onSavePlan={savePlanData}
-          />
+          <Suspense fallback={<LoadingBlock title="正在加载设置..." lines={3} />}>
+            <SettingsTab
+              key={`${currentUser.id}-${initialLoaded ? 'ready' : 'loading'}`}
+              currentUser={currentUser}
+              preference={userPreference}
+              planData={currentPlanData}
+              onSavePreference={savePreferenceData}
+              onSavePlan={savePlanData}
+            />
+          </Suspense>
         ) : null}
 
         {contentTab === 'daily' ? (
-          <DailyRecordTab
-            selectedDate={selectedDate}
-            today={today}
-            selectedLog={selectedLog}
-            selectedTarget={selectedTarget}
-            dailyLogs={dailyLogs}
-            workoutLogs={workoutLogs}
-            syncState={syncState}
-            savePending={savePending}
-            lastSyncedLabel={lastSyncedLabel}
-            sleepFloorHours={userPreference.sleepFloorHours ?? defaultUserPreference.sleepFloorHours}
-            fatigueThreshold={userPreference.fatigueThreshold ?? defaultUserPreference.fatigueThreshold}
-            onDateChange={handleDateChange}
-            onUpdateDailyLog={updateDailyLog}
-            onQuickAction={quickDailyAction}
-            focusKey={dailyFocusKey}
-            onFocusConsumed={() => setDailyFocusKey(undefined)}
-          />
+          <Suspense fallback={<DailyRecordSkeleton />}>
+            <DailyRecordTab
+              selectedDate={selectedDate}
+              today={today}
+              selectedLog={selectedLog}
+              selectedTarget={selectedTarget}
+              dailyLogs={dailyLogs}
+              workoutLogs={workoutLogs}
+              syncState={syncState}
+              savePending={savePending}
+              lastSyncedLabel={lastSyncedLabel}
+              sleepFloorHours={userPreference.sleepFloorHours ?? defaultUserPreference.sleepFloorHours}
+              fatigueThreshold={userPreference.fatigueThreshold ?? defaultUserPreference.fatigueThreshold}
+              onDateChange={handleDateChange}
+              onUpdateDailyLog={updateDailyLog}
+              onQuickAction={quickDailyAction}
+              focusKey={dailyFocusKey}
+              onFocusConsumed={() => setDailyFocusKey(undefined)}
+            />
+          </Suspense>
         ) : null}
 
         {contentTab === 'workout' ? (
-          <WorkoutTab
-            selectedDate={selectedDate}
-            today={today}
-            selectedWorkout={selectedWorkout}
-            restDay={restDay}
-            selectedTemplate={selectedTemplate}
-            selectedTemplateId={selectedTemplateId}
-            templateOptions={templateOptions}
-            recommendedPlanName={workoutPlansByDay[getDayKey(selectedDate)].name}
-            workoutSummary={workoutSummary}
-            visibleWorkoutExercises={visibleWorkoutExercises}
-            previousRecordsByExerciseKey={previousRecordsByExerciseKey}
-            showOnlyUnfinishedExercises={showOnlyUnfinishedExercises}
-            builtinTemplates={builtinTemplates}
-            workoutTemplates={workoutTemplates}
-            syncState={syncState}
-            workoutMarkedComplete={(selectedLog.workoutCompletion ?? 0) >= 100}
-            onDateChange={handleDateChange}
-            onTemplateChange={setSelectedTemplateId}
-            onApplyTemplate={(template) => void replaceWorkoutFromTemplate(template)}
-            onApplyRecommended={() => void replaceWorkoutFromTemplate(templateOptions.find((template) => template.id === `builtin-${getDayKey(selectedDate)}`))}
-            onToggleShowUnfinished={handleToggleShowUnfinished}
-            onUpdateWorkout={updateWorkoutLog}
-            onUpdateExercise={updateExercise}
-            onUpdateSet={updateExerciseSet}
-            onAddSet={addSetToExercise}
-            onDeleteLastSet={deleteLastSetFromExercise}
-            onRebuildSets={rebuildSetsFromTarget}
-            onDeleteExercise={deleteExerciseFromWorkout}
-            onMoveExerciseUp={moveExerciseUp}
-            onMoveExerciseDown={moveExerciseDown}
-            onAddExercise={addExerciseToWorkout}
-            onFillEmptySets={fillEmptySetsFromLast}
-            onSaveAsTemplate={saveCurrentWorkoutAsTemplate}
-            onCreateTemplate={createCustomTemplate}
-            onUpdateTemplate={updateTemplate}
-            onUpdateTemplateExercise={updateTemplateExercise}
-            onAddTemplateExercise={addTemplateExercise}
-            onDeleteTemplateExercise={deleteTemplateExercise}
-            onUpdateTemplateCardio={updateTemplateCardio}
-            onAddTemplateCardio={addTemplateCardio}
-            onDeleteTemplateCardio={deleteTemplateCardio}
-            onDeleteTemplate={deleteTemplate}
-            onExportTemplateToken={exportTemplateToken}
-            onImportTemplateToken={importTemplateToken}
-            onExportSelectedWorkout={() =>
-              openExportDialog('today', selectedDate, {
-                includeDailyLogs: false,
-                includeWorkoutLogs: true,
-                includeWorkoutTemplates: false,
-                includeProfile: false,
-                includePlanData: false,
-                includePreference: false,
-                slimMode: true,
-              }, 'csv')
-            }
-            onFinishWorkout={finishSelectedWorkout}
-            onImmersiveModeChange={setWorkoutImmersiveMode}
-          />
+          <Suspense fallback={<LoadingBlock title="正在加载训练..." lines={4} />}>
+            <WorkoutTab
+              selectedDate={selectedDate}
+              today={today}
+              selectedWorkout={selectedWorkout}
+              restDay={restDay}
+              selectedTemplate={selectedTemplate}
+              selectedTemplateId={selectedTemplateId}
+              templateOptions={templateOptions}
+              recommendedPlanName={workoutPlansByDay[getDayKey(selectedDate)].name}
+              workoutSummary={workoutSummary}
+              visibleWorkoutExercises={visibleWorkoutExercises}
+              previousRecordsByExerciseKey={previousRecordsByExerciseKey}
+              showOnlyUnfinishedExercises={showOnlyUnfinishedExercises}
+              builtinTemplates={builtinTemplates}
+              workoutTemplates={workoutTemplates}
+              syncState={syncState}
+              workoutMarkedComplete={(selectedLog.workoutCompletion ?? 0) >= 100}
+              onDateChange={handleDateChange}
+              onTemplateChange={setSelectedTemplateId}
+              onApplyTemplate={(template) => void replaceWorkoutFromTemplate(template)}
+              onApplyRecommended={() => void replaceWorkoutFromTemplate(templateOptions.find((template) => template.id === `builtin-${getDayKey(selectedDate)}`))}
+              onToggleShowUnfinished={handleToggleShowUnfinished}
+              onUpdateWorkout={updateWorkoutLog}
+              onUpdateExercise={updateExercise}
+              onUpdateSet={updateExerciseSet}
+              onAddSet={addSetToExercise}
+              onDeleteLastSet={deleteLastSetFromExercise}
+              onRebuildSets={rebuildSetsFromTarget}
+              onDeleteExercise={deleteExerciseFromWorkout}
+              onMoveExerciseUp={moveExerciseUp}
+              onMoveExerciseDown={moveExerciseDown}
+              onAddExercise={addExerciseToWorkout}
+              onFillEmptySets={fillEmptySetsFromLast}
+              onSaveAsTemplate={saveCurrentWorkoutAsTemplate}
+              onCreateTemplate={createCustomTemplate}
+              onUpdateTemplate={updateTemplate}
+              onUpdateTemplateExercise={updateTemplateExercise}
+              onAddTemplateExercise={addTemplateExercise}
+              onDeleteTemplateExercise={deleteTemplateExercise}
+              onUpdateTemplateCardio={updateTemplateCardio}
+              onAddTemplateCardio={addTemplateCardio}
+              onDeleteTemplateCardio={deleteTemplateCardio}
+              onDeleteTemplate={deleteTemplate}
+              onExportTemplateToken={exportTemplateToken}
+              onImportTemplateToken={importTemplateToken}
+              onExportSelectedWorkout={() =>
+                openExportDialog('today', selectedDate, {
+                  includeDailyLogs: false,
+                  includeWorkoutLogs: true,
+                  includeWorkoutTemplates: false,
+                  includeProfile: false,
+                  includePlanData: false,
+                  includePreference: false,
+                  slimMode: true,
+                }, 'csv')
+              }
+              onFinishWorkout={finishSelectedWorkout}
+              onImmersiveModeChange={setWorkoutImmersiveMode}
+            />
+          </Suspense>
         ) : null}
 
         {contentTab === 'analytics' ? (
           <Suspense fallback={<LoadingBlock title="正在加载分析..." lines={2} />}>
-          <AnalyticsTab
-            dashboardStats={dashboardStats}
-            trendData={trendData}
-            trainingPerformanceData={trainingPerformanceData}
-            trendDays={trendDays}
-            weeklyCalorieTarget={userWeeklyCalorieTarget}
-            showAllPerformanceLines={showAllPerformanceLines}
-            twoWeekAdjustment={twoWeekAdjustment}
-            weekendRisk={weekendRisk}
-            weeklySummary={weeklySummary}
-            weeklyAnchorDate={weeklyAnchorDate}
-            today={today}
-            weeklyConclusionCard={weeklyConclusionCard}
-            trendAlerts={trendAlerts}
-            weeklyActionRecommendations={weeklyActionRecommendations}
-            weekendCalorieUpperKcal={userPreference.weekendCalorieUpperKcal ?? defaultUserPreference.weekendCalorieUpperKcal}
-            dailyLogs={dailyLogs}
-            onTrendDaysChange={setTrendDays}
-            onTogglePerformanceLines={() => setShowAllPerformanceLines((value) => !value)}
-            onAnchorChange={setWeeklyAnchorDate}
-            onExportWeek={() => openExportDialog('thisWeek', weeklyAnchorDate)}
-          />
+            <AnalyticsTab
+              dashboardStats={dashboardStats}
+              trendData={trendData}
+              trainingPerformanceData={trainingPerformanceData}
+              trendDays={trendDays}
+              weeklyCalorieTarget={userWeeklyCalorieTarget}
+              showAllPerformanceLines={showAllPerformanceLines}
+              twoWeekAdjustment={twoWeekAdjustment}
+              weekendRisk={weekendRisk}
+              weeklySummary={weeklySummary}
+              weeklyAnchorDate={weeklyAnchorDate}
+              today={today}
+              weeklyConclusionCard={weeklyConclusionCard}
+              trendAlerts={trendAlerts}
+              weeklyActionRecommendations={weeklyActionRecommendations}
+              weekendCalorieUpperKcal={userPreference.weekendCalorieUpperKcal ?? defaultUserPreference.weekendCalorieUpperKcal}
+              dailyLogs={dailyLogs}
+              onTrendDaysChange={setTrendDays}
+              onTogglePerformanceLines={() => setShowAllPerformanceLines((value) => !value)}
+              onAnchorChange={setWeeklyAnchorDate}
+              onExportWeek={() => openExportDialog('thisWeek', weeklyAnchorDate)}
+            />
           </Suspense>
         ) : null}
 
         {contentTab === 'admin' && currentUser?.role === 'admin' ? (
-          <AdminUsersTab currentUser={currentUser} />
+          <Suspense fallback={<LoadingBlock title="正在加载用户管理..." lines={3} />}>
+            <AdminUsersTab currentUser={currentUser} />
+          </Suspense>
         ) : null}
       </>
       )}
       {confirmDialog}
       {showExportDialog ? (
-        <ExportDataDialog
-          today={exportAnchorDate}
-          dailyLogs={dailyLogs}
-          workoutLogs={workoutLogs}
-          workoutTemplates={workoutTemplates}
-          initialRangePreset={exportInitialRangePreset}
-          initialOptions={exportInitialOptions}
-          initialOutputFormat={exportInitialOutputFormat}
-          pending={exportPending}
-          onClose={() => {
-            setShowExportDialog(false)
-            setExportInitialOptions(undefined)
-            setExportInitialOutputFormat('summary')
-          }}
-          onExport={(options, format) => void exportData(options, format)}
-        />
+        <Suspense fallback={<DialogLoadingFallback />}>
+          <ExportDataDialog
+            today={exportAnchorDate}
+            dailyLogs={dailyLogs}
+            workoutLogs={workoutLogs}
+            workoutTemplates={workoutTemplates}
+            initialRangePreset={exportInitialRangePreset}
+            initialOptions={exportInitialOptions}
+            initialOutputFormat={exportInitialOutputFormat}
+            pending={exportPending}
+            onClose={() => {
+              setShowExportDialog(false)
+              setExportInitialOptions(undefined)
+              setExportInitialOutputFormat('summary')
+            }}
+            onExport={(options, format) => void exportData(options, format)}
+          />
+        </Suspense>
       ) : null}
     </AppShell>
   )

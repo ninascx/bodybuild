@@ -237,7 +237,7 @@ export function StatusMessage({
       className={cn(
         'motion-feedback rounded-lg border px-4 py-3 text-sm font-medium',
         toneClasses[tone],
-        tone === 'positive' && 'motion-success-pulse',
+        tone === 'positive' && 'motion-success',
         className,
       )}
       role={liveRole}
@@ -316,7 +316,7 @@ export function ProgressBar({ value }: { value: number }) {
       aria-valuemax={100}
       aria-valuenow={Math.round(bounded)}
     >
-      <div className="h-full rounded-full bg-teal-600 transition-[width] duration-200 dark:bg-cyan-500" style={{ width: `${bounded}%` }} />
+      <div className="h-full rounded-full bg-teal-600 transition-[width] duration-[var(--motion-base)] ease-[var(--ease-out-smooth)] dark:bg-cyan-500" style={{ width: `${bounded}%` }} />
     </div>
   )
 }
@@ -343,7 +343,7 @@ export function StatCard({
   const indicator = delta?.direction === 'up' ? '+' : delta?.direction === 'down' ? '-' : '='
   const isLarge = size === 'large'
   return (
-    <Card className={cn(isLarge ? 'min-h-36' : 'min-h-28', 'transition-shadow duration-200 hover:shadow-md')}>
+    <Card className={cn(isLarge ? 'min-h-36' : 'min-h-28', 'transition-shadow duration-[var(--motion-base)] ease-[var(--ease-out-smooth)] hover:shadow-md')}>
       <p className={cn(isLarge ? 'text-sm' : 'text-xs', 'font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400')}>{label}</p>
       <p className={cn('mt-3 font-bold tabular-nums text-slate-950 dark:text-slate-50', isLarge ? 'text-3xl sm:text-4xl' : 'text-2xl')}>{value}</p>
       {delta ? (

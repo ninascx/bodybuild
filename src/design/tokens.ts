@@ -62,9 +62,11 @@ export const boxShadow = {
 } as const
 
 export const transition = {
-  fast: '150ms cubic-bezier(0.4, 0, 0.2, 1)',
-  base: '200ms cubic-bezier(0.4, 0, 0.2, 1)',
-  slow: '300ms cubic-bezier(0.4, 0, 0.2, 1)',
+  instant: '80ms cubic-bezier(0.22, 1, 0.36, 1)',
+  fast: '120ms cubic-bezier(0.22, 1, 0.36, 1)',
+  base: '180ms cubic-bezier(0.22, 1, 0.36, 1)',
+  slow: '240ms cubic-bezier(0.22, 1, 0.36, 1)',
+  rest: '680ms cubic-bezier(0.22, 1, 0.36, 1)',
 } as const
 
 // 导出完整的设计系统

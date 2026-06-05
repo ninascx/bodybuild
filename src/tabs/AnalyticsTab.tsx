@@ -1,10 +1,11 @@
-import { useState } from 'react'
-import { SegmentedControl } from '../components/ui'
-import { DashboardTab } from './DashboardTab'
-import { WeeklyTab } from './WeeklyTab'
+import { lazy, Suspense, useState } from 'react'
+import { LoadingBlock, SegmentedControl } from '../components/ui'
 import type { TrendPoint, DashboardStats, TrainingPerformanceData } from '../lib/metrics'
 import type { AdjustmentRecommendation, DailyLog, WeeklySummary } from '../types'
 import type { RecommendationTone } from '../types'
+
+const DashboardTab = lazy(() => import('./DashboardTab').then((mod) => ({ default: mod.DashboardTab })))
+const WeeklyTab = lazy(() => import('./WeeklyTab').then((mod) => ({ default: mod.WeeklyTab })))
 
 type AnalyticsTabProps = {
   dashboardStats: DashboardStats
@@ -45,35 +46,37 @@ export function AnalyticsTab(props: AnalyticsTabProps) {
         />
       </div>
 
-      {view === 'dashboard' ? (
-        <DashboardTab
-          dashboardStats={props.dashboardStats}
-          trendData={props.trendData}
-          trainingPerformanceData={props.trainingPerformanceData}
-          trendDays={props.trendDays}
-          weeklyCalorieTarget={props.weeklyCalorieTarget}
-          showAllPerformanceLines={props.showAllPerformanceLines}
-          twoWeekAdjustment={props.twoWeekAdjustment}
-          weekendRisk={props.weekendRisk}
-          onTrendDaysChange={props.onTrendDaysChange}
-          onTogglePerformanceLines={props.onTogglePerformanceLines}
-        />
-      ) : (
-        <WeeklyTab
-          weeklySummary={props.weeklySummary}
-          weeklyAnchorDate={props.weeklyAnchorDate}
-          today={props.today}
-          twoWeekAdjustment={props.twoWeekAdjustment}
-          weekendRisk={props.weekendRisk}
-          weeklyConclusionCard={props.weeklyConclusionCard}
-          trendAlerts={props.trendAlerts}
-          weeklyActionRecommendations={props.weeklyActionRecommendations}
-          weekendCalorieUpperKcal={props.weekendCalorieUpperKcal}
-          dailyLogs={props.dailyLogs}
-          onAnchorChange={props.onAnchorChange}
-          onExportWeek={props.onExportWeek}
-        />
-      )}
+      <Suspense fallback={<LoadingBlock title={view === 'dashboard' ? '正在加载趋势...' : '正在加载周报...'} lines={3} />}>
+        {view === 'dashboard' ? (
+          <DashboardTab
+            dashboardStats={props.dashboardStats}
+            trendData={props.trendData}
+            trainingPerformanceData={props.trainingPerformanceData}
+            trendDays={props.trendDays}
+            weeklyCalorieTarget={props.weeklyCalorieTarget}
+            showAllPerformanceLines={props.showAllPerformanceLines}
+            twoWeekAdjustment={props.twoWeekAdjustment}
+            weekendRisk={props.weekendRisk}
+            onTrendDaysChange={props.onTrendDaysChange}
+            onTogglePerformanceLines={props.onTogglePerformanceLines}
+          />
+        ) : (
+          <WeeklyTab
+            weeklySummary={props.weeklySummary}
+            weeklyAnchorDate={props.weeklyAnchorDate}
+            today={props.today}
+            twoWeekAdjustment={props.twoWeekAdjustment}
+            weekendRisk={props.weekendRisk}
+            weeklyConclusionCard={props.weeklyConclusionCard}
+            trendAlerts={props.trendAlerts}
+            weeklyActionRecommendations={props.weeklyActionRecommendations}
+            weekendCalorieUpperKcal={props.weekendCalorieUpperKcal}
+            dailyLogs={props.dailyLogs}
+            onAnchorChange={props.onAnchorChange}
+            onExportWeek={props.onExportWeek}
+          />
+        )}
+      </Suspense>
     </div>
   )
 }

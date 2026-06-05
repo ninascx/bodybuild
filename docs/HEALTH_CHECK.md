@@ -6,6 +6,7 @@
 
 - `npm run health:check`：轻量健康检查，覆盖 metrics、导出、PWA 配置和 UI 回归约束。
 - `npm run test`：lint + typecheck。
+- `npm run bundle:check`：检查已构建前端资源的 gzip 体积预算，需先执行 `npm run build`。
 - `npm run export:check`：导出 JSON/CSV/摘要内容检查。
 - `npm run build`：生产构建和服务端打包。
 - `npm run prod:check`：生产启动、认证、备份和基础 API 检查。
@@ -47,9 +48,15 @@
 - 固定底栏必须处理 `safe-area-inset-bottom`。
 - 菜单、图例、动作名等长文本要截断或换成可读布局。
 
+### 性能预算
+
+- 主入口 JS gzip 预算当前为 108 KiB，阶段目标已收敛到 110 kB 以下。
+- 每日记录、训练、分析外壳、周报、设置、管理、导出弹窗必须保持独立 chunk。
+- Recharts 只应进入趋势图表 chunk，不进入主包或分析外壳。
+- 调整 tab 页面、导出弹窗或图表依赖后，必须跑 `npm run build` 和 `npm run bundle:check`。
+
 ## 当前基线
 
 - `npm run test` 通过。
 - `npm run export:check` 通过。
 - 本轮新增 `npm run health:check`，作为后续修复前后的快速回归门槛。
-

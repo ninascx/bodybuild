@@ -13,7 +13,7 @@ export function Card({ children, className = '', variant = 'default' }: CardProp
       className={cn(
         'min-w-0 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900',
         variant === 'default' && 'shadow-sm',
-        variant === 'interactive' && 'shadow-sm cursor-pointer transition-shadow duration-200 hover:shadow-md hover:-translate-y-px',
+        variant === 'interactive' && 'card-hover cursor-pointer shadow-sm',
         className,
       )}
     >

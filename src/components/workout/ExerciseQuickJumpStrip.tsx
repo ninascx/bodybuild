@@ -1,5 +1,6 @@
 import type { ExerciseLog } from '../../types'
 import { isSetComplete } from '../../lib/workout'
+import { getMotionScrollBehavior } from '../../lib/motion'
 import { Button } from '../ui'
 
 function getStickyOffset(): number {
@@ -14,7 +15,7 @@ function scrollToExercise(index: number): void {
   const target = document.getElementById(`exercise-${index}`)
   if (!target) return
   const top = window.scrollY + target.getBoundingClientRect().top - getStickyOffset()
-  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+  window.scrollTo({ top: Math.max(0, top), behavior: getMotionScrollBehavior() })
 }
 
 export function ExerciseQuickJumpStrip({

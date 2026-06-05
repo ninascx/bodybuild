@@ -501,7 +501,7 @@ export function ExportDataDialog({
           <Button ref={closeButtonRef} variant="secondary" onClick={onClose} disabled={pending}>
             取消
           </Button>
-          <Button onClick={() => onExport(options, activeOutputFormat)} disabled={exportDisabled} loading={pending}>
+          <Button data-pressable="true" onClick={() => onExport(options, activeOutputFormat)} disabled={exportDisabled} loading={pending}>
             {exportActionLabel}
           </Button>
         </div>

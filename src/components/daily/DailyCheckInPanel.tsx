@@ -3,6 +3,7 @@ import { Field, TextArea } from '../ui'
 import type { DailyLog, DailyTarget } from '../../types'
 import type { SyncState } from '../../lib/storage'
 import type { DailyFocusKey } from '../../lib/productFlow'
+import { getMotionScrollBehavior } from '../../lib/motion'
 import { DailyEssentialsForm } from './DailyEssentialsForm'
 
 export type DailyCheckInPanelProps = {
@@ -51,7 +52,7 @@ export function DailyCheckInPanel(props: DailyCheckInPanelProps) {
     const target = document.querySelector<HTMLElement>(`[data-daily-focus="${focusKey}"]`)
     if (!target) return
     const timer = window.setTimeout(() => {
-      target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      target.scrollIntoView({ block: 'center', behavior: getMotionScrollBehavior() })
       const control = target.matches('input, textarea, button')
         ? target
         : target.querySelector<HTMLElement>('input, textarea, button')

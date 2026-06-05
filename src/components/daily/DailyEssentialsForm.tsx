@@ -105,14 +105,6 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
     { key: 'sleep', label: '睡眠 h', value: props.selectedLog.sleepHours, step: '0.1', kind: 'decimal', range: { min: 0, max: 24, allowZero: true }, quickStep: 0.5, quickStepLabel: '0.5', patch: (value: number | undefined) => ({ sleepHours: value }) },
     { key: 'fatigue', label: `疲劳 ≤${props.fatigueThreshold}`, value: props.selectedLog.fatigueScore, step: '1', kind: 'integer', range: { min: 0, max: 10, allowZero: true }, quickStep: 1, quickStepLabel: '1', patch: (value: number | undefined) => ({ fatigueScore: value }) },
   ]
-  const fieldOrder = props.focusKey
-    ? essentialFields.sort((a, b) => {
-        if (props.focusKey === a.key) return -1
-        if (props.focusKey === b.key) return 1
-        return 0
-      })
-    : essentialFields
-
   return (
     <section className="rounded-lg border border-slate-200 bg-white px-3 py-3 dark:border-slate-800 dark:bg-slate-900 sm:p-4">
       <div className="flex items-center justify-between gap-3">
@@ -126,7 +118,7 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
       </div>
 
       <div className="motion-list mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
-        {fieldOrder.map((field, index) => (
+        {essentialFields.map((field, index) => (
           <div key={field.key} data-daily-focus={field.key} style={{ '--motion-index': Math.min(index, 3) } as CSSProperties}>
             <NumberField
               className={quickFieldClass}

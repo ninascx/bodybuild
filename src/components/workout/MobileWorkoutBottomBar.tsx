@@ -155,7 +155,7 @@ export function MobileWorkoutBottomBar({
               <button
                 type="button"
                 onClick={restActive ? () => setExpanded(true) : onStartRest}
-                className={`shrink-0 rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-colors ${restDone ? 'motion-rest-ready' : ''} ${
+                className={`shrink-0 rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-colors ${restDone && !expanded ? 'motion-rest-ready' : ''} ${
                   restDone
                     ? 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-600/50 dark:bg-amber-900/30 dark:text-amber-200'
                     : restActive

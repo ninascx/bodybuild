@@ -3,6 +3,7 @@ import { useTrainingTimer } from '../../hooks/useTrainingTimer'
 import type { ExerciseLog, ExerciseSetLog, WorkoutLog } from '../../types'
 import type { WorkoutSummary } from '../../lib/workout'
 import { isSetComplete } from '../../lib/workout'
+import { getMotionScrollBehavior } from '../../lib/motion'
 
 type UseWorkoutSessionStateParams = {
   selectedDate: string
@@ -37,7 +38,7 @@ function scrollToExercise(index: number): void {
   const target = document.getElementById(`exercise-${index}`)
   if (!target) return
   const top = window.scrollY + target.getBoundingClientRect().top - 120
-  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+  window.scrollTo({ top: Math.max(0, top), behavior: getMotionScrollBehavior() })
 }
 
 export function useWorkoutSessionState({

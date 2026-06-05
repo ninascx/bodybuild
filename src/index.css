@@ -46,9 +46,12 @@
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 
+  --motion-instant: 80ms;
   --motion-fast: 120ms;
   --motion-base: 180ms;
   --motion-slow: 240ms;
+  --motion-rest: 680ms;
+  --motion-stagger-step: 40ms;
   --ease-out-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -76,11 +79,11 @@ h1,
   [role="button"],
   .transition-colors {
     transition:
-      background-color 200ms ease,
-      border-color 200ms ease,
-      color 200ms ease,
-      fill 200ms ease,
-      stroke 200ms ease;
+      background-color var(--motion-base) var(--ease-out-smooth),
+      border-color var(--motion-base) var(--ease-out-smooth),
+      color var(--motion-base) var(--ease-out-smooth),
+      fill var(--motion-base) var(--ease-out-smooth),
+      stroke var(--motion-base) var(--ease-out-smooth);
   }
 }
 
@@ -88,9 +91,11 @@ h1,
   *,
   *::before,
   *::after {
+    animation-delay: 0ms !important;
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
+    transition-delay: 0ms !important;
     transition-duration: 1ms !important;
   }
 }
@@ -124,10 +129,17 @@ select {
 /* ── 微交互 & 质感 ── */
 
 /* 按压反馈只用于真正的操作按钮，避免导航和小控件整体抖动。 */
-button[data-pressable="true"]:active:not(:disabled),
+button[data-pressable="true"]:not(:disabled) {
+  transition:
+    transform var(--motion-fast) var(--ease-out-smooth),
+    background-color var(--motion-base) var(--ease-out-smooth),
+    border-color var(--motion-base) var(--ease-out-smooth),
+    color var(--motion-base) var(--ease-out-smooth),
+    box-shadow var(--motion-base) var(--ease-out-smooth);
+}
+
 button[data-pressable="true"]:active:not(:disabled) {
   transform: scale(0.97);
-  transition: transform var(--motion-fast) var(--ease-out-smooth);
 }
 
 /* 卡片悬浮抬升 */
@@ -141,69 +153,47 @@ button[data-pressable="true"]:active:not(:disabled) {
   transform: translateY(-1px);
 }
 
-/* 数字跳动入场 (用于 StatCard / InsightCard 数据) */
-@keyframes count-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-count-in {
-  animation: count-in 300ms ease-out both;
-}
-
-/* 渐入淡出 (Toast / 状态条) */
-@keyframes fade-slide-up {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-up {
-  animation: fade-slide-up 250ms ease-out both;
-}
-
-/* 脉搏提示 (关键状态) */
-@keyframes pulse-subtle {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(8 145 178 / 0.38); }
-  50%      { box-shadow: 0 0 0 6px rgb(8 145 178 / 0); }
-}
-.animate-pulse-ring {
-  animation: pulse-subtle 2s ease-in-out infinite;
-}
-
-/* 静息脉冲 (倒计时到 0) */
-@keyframes rest-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
+/* Motion primitives. */
 @keyframes motion-enter {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translate3d(0, 5px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 @keyframes motion-panel {
-  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translate3d(0, -4px, 0) scale(0.985); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 
 @keyframes motion-sheet {
-  from { opacity: 0; transform: translateY(10px) scale(0.99); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.99); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 
-@keyframes motion-success-pulse {
+@keyframes motion-success-confirm {
   0% { box-shadow: 0 0 0 0 rgb(16 185 129 / 0); transform: scale(1); }
-  45% { box-shadow: 0 0 0 5px rgb(16 185 129 / 0.16); transform: scale(1.006); }
+  42% { box-shadow: 0 0 0 4px rgb(16 185 129 / 0.12); transform: scale(1.004); }
   100% { box-shadow: 0 0 0 0 rgb(16 185 129 / 0); transform: scale(1); }
 }
 
 @keyframes motion-rest-ready {
   0% { transform: scale(1); box-shadow: 0 0 0 0 rgb(245 158 11 / 0.26); }
-  55% { transform: scale(1.015); box-shadow: 0 0 0 7px rgb(245 158 11 / 0); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgb(245 158 11 / 0); }
+  38% { transform: scale(1.012); box-shadow: 0 0 0 4px rgb(245 158 11 / 0.18); }
+  100% { transform: scale(1); box-shadow: 0 0 0 8px rgb(245 158 11 / 0); }
 }
 
 @keyframes motion-nav-active {
-  from { opacity: 0; transform: translateY(-2px) scaleX(0.72); }
-  to { opacity: 1; transform: translateY(0) scaleX(1); }
+  from { opacity: 0; transform: translate3d(0, -2px, 0) scaleX(0.72); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scaleX(1); }
+}
+
+@keyframes motion-dialog {
+  from { opacity: 0; transform: translate3d(0, 6px, 0) scale(0.985); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes motion-dialog-backdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .motion-enter,
@@ -224,21 +214,21 @@ button[data-pressable="true"]:active:not(:disabled) {
 
 .motion-list > * {
   animation: motion-enter var(--motion-base) var(--ease-out-smooth) both;
-  animation-delay: calc(var(--motion-index, 0) * 45ms);
+  animation-delay: calc(var(--motion-index, 0) * var(--motion-stagger-step));
 }
 
-.motion-success-pulse {
+.motion-success {
   animation:
     motion-panel var(--motion-slow) var(--ease-out-smooth) both,
-    motion-success-pulse var(--motion-slow) var(--ease-out-smooth) both;
+    motion-success-confirm var(--motion-slow) var(--ease-out-smooth) both;
 }
 
 .motion-current-set {
-  animation: motion-success-pulse var(--motion-slow) var(--ease-out-smooth) both;
+  animation: motion-success-confirm var(--motion-slow) var(--ease-out-smooth) both;
 }
 
 .motion-rest-ready {
-  animation: motion-rest-ready 900ms var(--ease-out-smooth) both;
+  animation: motion-rest-ready var(--motion-rest) var(--ease-out-smooth) both;
 }
 
 .motion-nav-active::after {
@@ -248,4 +238,12 @@ button[data-pressable="true"]:active:not(:disabled) {
 
 .group[open] > .motion-disclosure-content {
   animation: motion-enter var(--motion-base) var(--ease-out-smooth) both;
+}
+
+dialog[open] {
+  animation: motion-dialog var(--motion-slow) var(--ease-out-smooth) both;
+}
+
+dialog::backdrop {
+  animation: motion-dialog-backdrop var(--motion-base) var(--ease-out-smooth) both;
 }

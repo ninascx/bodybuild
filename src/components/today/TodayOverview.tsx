@@ -3,6 +3,7 @@ import { Badge, Button, Card, SectionHeader, StatusHero } from '../ui'
 import { dayNames } from '../../data/plans'
 import type { DailyTarget } from '../../types'
 import type { DailyFocusKey, TodayTaskAction, TodayTaskPlan } from '../../lib/productFlow'
+import { getMotionScrollBehavior } from '../../lib/motion'
 
 function runTodayAction(
   action: TodayTaskAction,
@@ -14,7 +15,7 @@ function runTodayAction(
     return
   }
   if (action.kind === 'review') {
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
+    window.scrollTo({ top: document.body.scrollHeight, behavior: getMotionScrollBehavior() })
     return
   }
   onRecordToday(action.focusKey)
