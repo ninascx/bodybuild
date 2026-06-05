@@ -225,7 +225,7 @@ export function MobileCurrentExerciseView({
               <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">确认后会同步到今日记录，并把训练完成度记为 100%。</p>
             </div>
           ) : shouldSuggestNextExercise ? (
-            <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-800">
+            <div className="mt-2 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] p-2.5 dark:border-slate-700 dark:bg-slate-800">
               <p className="text-xs font-medium text-slate-800 dark:text-slate-200">当前动作已完成</p>
             </div>
           ) : null}

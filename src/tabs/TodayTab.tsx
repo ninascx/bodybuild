@@ -24,14 +24,10 @@ type TodayTabProps = {
   taskPlan: TodayTaskPlan
   onRecordToday: (focusKey?: DailyFocusKey) => void
   onStartWorkout: () => void
+  onReview: () => void
 }
 
 export function TodayTab(props: TodayTabProps) {
-  const hasRecommendations =
-    props.dailyRecommendations.length > 0 ||
-    props.trendAlerts.some((item) => item.tone !== 'positive') ||
-    props.weekendRisk.tone !== 'positive'
-
   return (
     <div className="grid gap-3 sm:gap-4">
       <TodayOverview
@@ -41,6 +37,7 @@ export function TodayTab(props: TodayTabProps) {
         taskPlan={props.taskPlan}
         onRecordToday={props.onRecordToday}
         onStartWorkout={props.onStartWorkout}
+        onReview={props.onReview}
       />
 
       <TodayDetailsPanels
@@ -54,7 +51,6 @@ export function TodayTab(props: TodayTabProps) {
         weekendRisk={props.weekendRisk}
         trendAlerts={props.trendAlerts}
         dailyRecommendations={props.dailyRecommendations}
-        hasRecommendations={hasRecommendations}
         signedRemaining={props.signedRemaining}
         remainingTone={props.remainingTone}
         onRecordToday={props.onRecordToday}

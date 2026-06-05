@@ -13,7 +13,7 @@ function TodayDetailSection({
   className?: string
 }) {
   return (
-    <section className={`rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/70 ${className}`}>
+    <section className={`rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] p-3 dark:border-slate-700 dark:bg-slate-800/70 ${className}`}>
       {children}
     </section>
   )
@@ -30,7 +30,6 @@ export function TodayDetailsPanels({
   weekendRisk,
   trendAlerts,
   dailyRecommendations,
-  hasRecommendations,
   signedRemaining,
   remainingTone,
   onRecordToday,
@@ -46,7 +45,6 @@ export function TodayDetailsPanels({
   weekendRisk: AdjustmentRecommendation
   trendAlerts: AdjustmentRecommendation[]
   dailyRecommendations: AdjustmentRecommendation[]
-  hasRecommendations: boolean
   signedRemaining: (target: number | undefined, actual: number | undefined) => string
   remainingTone: (target: number | undefined, actual: number | undefined) => 'positive' | 'warning' | 'neutral'
   onRecordToday: () => void
@@ -121,7 +119,7 @@ export function TodayDetailsPanels({
                 {plan.exercises.length > 0 ? (
                   <div className="grid gap-2 md:grid-cols-2">
                     {plan.exercises.map((exercise, index) => (
-                      <div key={exercise.id} className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                      <div key={exercise.id} className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-3 dark:border-slate-700 dark:bg-slate-900">
                         <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">
                           {index + 1}. {exercise.name}
                         </p>
@@ -134,14 +132,14 @@ export function TodayDetailsPanels({
                 {(plan.cardio ?? []).length > 0 ? (
                   <div className="grid gap-2 md:grid-cols-2">
                     {(plan.cardio ?? []).map((cardio, index) => (
-                      <div key={cardio.id} className="rounded-lg border border-cyan-100 bg-cyan-50 p-3 dark:border-cyan-900/50 dark:bg-cyan-950/30">
+                      <div key={cardio.id} className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-3 dark:border-slate-700 dark:bg-slate-900">
                         <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">
                           有氧 {index + 1}. {cardio.mode}
                         </p>
                         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                           {cardio.durationMin ? `${cardio.durationMin} min` : '未设置时长'}
                         </p>
-                        {cardio.note ? <p className="mt-1 text-xs text-cyan-800 dark:text-cyan-200">{cardio.note}</p> : null}
+                        {cardio.note ? <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{cardio.note}</p> : null}
                       </div>
                     ))}
                   </div>
@@ -152,7 +150,7 @@ export function TodayDetailsPanels({
         </div>
       </TipsDetails>
 
-      <TipsDetails defaultOpen={hasRecommendations} summary="今日提示">
+      <TipsDetails defaultOpen={false} summary="今日提示">
         <div className="mt-3 grid gap-2">
           <RecommendationBox title={weekendRisk.title} message={weekendRisk.message} tone={weekendRisk.tone} />
           {trendAlerts.map((item) => (

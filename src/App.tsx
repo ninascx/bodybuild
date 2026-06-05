@@ -341,7 +341,7 @@ function App() {
   const weekendRisk = useMemo(() => getWeekendRiskRecommendation(dailyLogs, today, userPreference), [dailyLogs, today, userPreference])
   const todaySnapshot = useMemo(
     () =>
-      contentTab === 'today'
+      contentTab === 'today' || contentTab === 'daily' || contentTab === 'workout' || contentTab === 'analytics'
         ? buildTodaySnapshot({
             today,
             log: todayLog,
@@ -357,7 +357,7 @@ function App() {
   )
   const todayTaskPlan = useMemo(
     () =>
-      contentTab === 'today'
+      contentTab === 'today' || contentTab === 'daily' || contentTab === 'workout' || contentTab === 'analytics'
         ? buildTodayTaskPlan({
             log: todayLog,
             target,
@@ -368,6 +368,10 @@ function App() {
           })
         : ({} as TodayTaskPlan),
     [contentTab, todayLog, target, todayWorkout, todaySnapshot, dashboardStats, userPreference],
+  )
+  const dailyPriorityKeys = useMemo(
+    () => todayTaskPlan.missingItems?.map((item) => item.key).filter((key) => key !== 'training') ?? [],
+    [todayTaskPlan],
   )
   const trendAlerts = useMemo(
     () => (contentTab === 'today' || contentTab === 'analytics' ? buildTrendAlerts(dailyLogs, today, dailyTargetsByDay, userPreference) : ([] as AdjustmentRecommendation[])),
@@ -777,6 +781,12 @@ function App() {
     setSelectedDate(today)
     setDailyFocusKey(undefined)
     changeTab('workout')
+  }
+
+  function openTodayReview() {
+    setWeeklyAnchorDate(today)
+    setDailyFocusKey(undefined)
+    changeTab('analytics')
   }
 
   const retrySync = useCallback(async () => {
@@ -1616,6 +1626,7 @@ function App() {
             remainingTone={remainingTone}
             onRecordToday={openTodayRecord}
             onStartWorkout={openTodayWorkout}
+            onReview={openTodayReview}
           />
         ) : null}
 
@@ -1650,6 +1661,7 @@ function App() {
               onUpdateDailyLog={updateDailyLog}
               onQuickAction={quickDailyAction}
               focusKey={dailyFocusKey}
+              priorityKeys={dailyPriorityKeys}
               onFocusConsumed={() => setDailyFocusKey(undefined)}
             />
           </Suspense>
@@ -1673,6 +1685,7 @@ function App() {
               builtinTemplates={builtinTemplates}
               workoutTemplates={workoutTemplates}
               syncState={syncState}
+              taskPlan={todayTaskPlan}
               workoutMarkedComplete={(selectedLog.workoutCompletion ?? 0) >= 100}
               onDateChange={handleDateChange}
               onTemplateChange={setSelectedTemplateId}
@@ -1738,10 +1751,13 @@ function App() {
               weeklyActionRecommendations={weeklyActionRecommendations}
               weekendCalorieUpperKcal={userPreference.weekendCalorieUpperKcal ?? defaultUserPreference.weekendCalorieUpperKcal}
               dailyLogs={dailyLogs}
+              taskPlan={todayTaskPlan}
               onTrendDaysChange={setTrendDays}
               onTogglePerformanceLines={() => setShowAllPerformanceLines((value) => !value)}
               onAnchorChange={setWeeklyAnchorDate}
               onExportWeek={() => openExportDialog('thisWeek', weeklyAnchorDate)}
+              onRecordToday={openTodayRecord}
+              onStartWorkout={openTodayWorkout}
             />
           </Suspense>
         ) : null}

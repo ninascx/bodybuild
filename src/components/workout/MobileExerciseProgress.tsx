@@ -19,7 +19,7 @@ export function MobileTrainingModeHeader({
   onExitTrainingMode: () => void
 }) {
   return (
-    <div className="sticky top-0 z-20 -mx-4 border-b border-slate-200 bg-slate-50/95 px-4 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-950/95 sm:-mx-6 sm:px-6">
+    <div className="sticky top-0 z-20 -mx-4 border-b border-[var(--surface-border)] bg-[color-mix(in_srgb,var(--surface-page)_92%,white)] px-4 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-950/95 sm:-mx-6 sm:px-6">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -72,16 +72,16 @@ export function MobileExerciseProgressCard({
       </div>
 
       <div className="mt-2 flex items-center gap-1.5 overflow-x-auto pb-1">
-        <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+        <span className="shrink-0 rounded-full border border-[var(--surface-border)] bg-[var(--surface-muted)] px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
           本动作 {completedSetCount}/{exercise.sets.length}
         </span>
-        <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+        <span className="shrink-0 rounded-full border border-[var(--surface-border)] bg-[var(--surface-muted)] px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
           当前第 {currentSetIndex + 1} 组
         </span>
         <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
           remainingSetCount === 0
             ? 'border-emerald-200 bg-white text-emerald-700 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-300'
-            : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+            : 'border-[var(--surface-border)] bg-[var(--surface-muted)] text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
         }`}>
           还剩 {remainingSetCount} 组
         </span>
@@ -89,7 +89,7 @@ export function MobileExerciseProgressCard({
 
       {previousRecord ? (
         <DisclosurePanel
-          className="mt-2 border-slate-200 bg-slate-50 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+          className="mt-2 border-[var(--surface-border)] bg-[var(--surface-muted)] text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
           title={formatPreviousSummary(previousRecord)}
           summaryClassName="text-xs font-medium text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-900"
           contentClassName="border-slate-200 py-2 dark:border-slate-700"
@@ -118,10 +118,10 @@ export function MobileExerciseProgressCard({
               className={cn(
                 'min-h-11 min-w-[4rem] shrink-0 flex-col gap-0 rounded-full border px-2 text-center text-xs font-medium',
                 isCurrent
-                  ? 'border-teal-700 bg-teal-700 text-white dark:border-cyan-500 dark:bg-cyan-600 dark:text-white'
+                  ? 'border-[var(--color-primary-700)] bg-[var(--color-primary-700)] text-white dark:border-cyan-500 dark:bg-cyan-600 dark:text-white'
                   : setDone
                     ? 'border-emerald-200 bg-white text-slate-700 hover:border-emerald-300 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-slate-200'
-                    : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400',
+                    : 'border-[var(--surface-border)] bg-[var(--surface-muted)] text-slate-500 hover:border-[var(--surface-border-strong)] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400',
               )}
             >
               <span className="block">#{index + 1}</span>

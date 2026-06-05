@@ -29,7 +29,7 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
   const mobileTabs = tabs.filter((tab) => tab.key !== 'admin')
   return (
     <>
-      <nav className="sticky top-0 z-20 mb-5 hidden overflow-x-auto border-y border-slate-200/80 bg-slate-100/90 py-2 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90 md:block">
+      <nav className="sticky top-0 z-20 mb-5 hidden overflow-x-auto border-y border-[var(--surface-border)] bg-[color-mix(in_srgb,var(--surface-page)_88%,white)] py-2 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90 md:block">
         <div className="flex min-w-max gap-1.5">
           {tabs.map((tab) => {
             const active = activeTab === tab.key
@@ -42,7 +42,7 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
                 className={cn(
                   'rounded-md px-4 text-sm font-semibold shadow-none',
                   active
-                    ? 'bg-teal-700 text-white shadow-sm hover:bg-teal-800 dark:bg-cyan-600 dark:text-white dark:hover:bg-cyan-500'
+                    ? 'bg-[var(--color-primary-700)] text-white hover:bg-[var(--color-primary-600)] dark:bg-cyan-600 dark:text-white dark:hover:bg-cyan-500'
                     : 'text-slate-600 hover:bg-white hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-50',
                 )}
               >
@@ -55,7 +55,7 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
       </nav>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-3 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-1.5 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--surface-border)] bg-white/95 px-3 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-1.5 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden"
         aria-label="主要导航"
       >
         <div className={`mx-auto grid max-w-md gap-1 ${mobileTabs.length === 6 ? 'grid-cols-6' : 'grid-cols-5'}`}>
@@ -70,8 +70,8 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
                 className={cn(
                   'relative min-h-12 flex-col gap-0.5 rounded-lg px-1 py-1 text-xs font-semibold shadow-none',
                   active
-                    ? 'motion-nav-active bg-cyan-50 text-teal-800 hover:bg-cyan-50 dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950/40 after:absolute after:inset-x-4 after:top-1 after:h-0.5 after:rounded-full after:bg-teal-700 dark:after:bg-cyan-400'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-50',
+                    ? 'motion-nav-active bg-[var(--surface-selected)] text-[var(--color-primary-700)] hover:bg-[var(--surface-selected)] dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950/40 after:absolute after:inset-x-4 after:top-1 after:h-0.5 after:rounded-full after:bg-[var(--color-primary-700)] dark:after:bg-cyan-400'
+                    : 'text-slate-500 hover:bg-[var(--surface-muted)] hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-50',
                 )}
               >
                 <NavigationIcon tabKey={tab.key} />

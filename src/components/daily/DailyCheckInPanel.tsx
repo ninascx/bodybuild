@@ -21,6 +21,7 @@ export type DailyCheckInPanelProps = {
   onFillTarget: () => void
   hasFillableTargetFields: boolean
   focusKey?: DailyFocusKey
+  priorityKeys?: DailyFocusKey[]
   onFocusConsumed?: () => void
 }
 
@@ -55,7 +56,7 @@ export function DailyCheckInPanel(props: DailyCheckInPanelProps) {
       target.scrollIntoView({ block: 'center', behavior: getMotionScrollBehavior() })
       const control = target.matches('input, textarea, button')
         ? target
-        : target.querySelector<HTMLElement>('input, textarea, button')
+        : target.querySelector<HTMLElement>('input, textarea') ?? target.querySelector<HTMLElement>('button')
       control?.focus({ preventScroll: true })
       onFocusConsumed?.()
     }, 80)

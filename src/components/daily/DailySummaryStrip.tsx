@@ -12,12 +12,12 @@ export function DailySummaryStrip({ statuses }: { statuses: QuickStatus[] }) {
   const summaryStatuses = sortSummaryStatuses(statuses)
 
   return (
-    <section className="hidden rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-800/70 lg:block">
+    <section className="hidden rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] p-2.5 dark:border-slate-700 dark:bg-slate-800/70 lg:block">
       <div className="grid grid-cols-3 gap-2">
         {summaryStatuses.map((status) => (
           <div
             key={status.label}
-            className={`min-w-0 rounded-md bg-white px-2.5 py-2 dark:bg-slate-900 ${
+            className={`min-w-0 rounded-md bg-[var(--surface-panel)] px-2.5 py-2 dark:bg-slate-900 ${
               status.tone === 'warning'
                 ? 'text-amber-900 dark:text-amber-100'
                 : status.tone === 'positive'

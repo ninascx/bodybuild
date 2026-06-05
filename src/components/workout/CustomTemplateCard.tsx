@@ -140,9 +140,9 @@ export function CustomTemplateCard({
               {cardio.map((item, cardioIndex) => (
                 <div
                   key={`${template.id}-${item.id}-${cardioIndex}`}
-                  className="grid gap-1.5 rounded-md bg-cyan-50 px-2 py-1.5 dark:bg-cyan-950/30 lg:grid-cols-[2rem_minmax(0,1.2fr)_8rem_minmax(0,1fr)_2.75rem] lg:items-center lg:gap-2"
+                  className="grid gap-1.5 rounded-md bg-slate-50 px-2 py-1.5 dark:bg-slate-800 lg:grid-cols-[2rem_minmax(0,1.2fr)_8rem_minmax(0,1fr)_2.75rem] lg:items-center lg:gap-2"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-cyan-100 text-xs font-semibold text-cyan-800 dark:bg-cyan-900/60 dark:text-cyan-100">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-200 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100">
                     {cardioIndex + 1}
                   </div>
                   <TextInput

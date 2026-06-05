@@ -1,4 +1,5 @@
 import type { WorkoutLog } from '../../types'
+import type { TodayTaskPlan } from '../../lib/productFlow'
 import type { SyncState } from '../../lib/storage'
 import type { WorkoutSummary, WorkoutTemplateOption } from '../../lib/workout'
 import { getDayKey } from '../../lib/dates'
@@ -20,6 +21,7 @@ export function WorkoutControlPanel({
   workoutStatusLabel,
   workoutStatusTone,
   syncState,
+  taskPlan,
   restDay,
   onDateChange,
   onTemplateChange,
@@ -38,6 +40,7 @@ export function WorkoutControlPanel({
   workoutStatusLabel?: string
   workoutStatusTone?: 'positive' | 'warning' | 'neutral'
   syncState: SyncState
+  taskPlan: TodayTaskPlan
   restDay: boolean
   onDateChange: (date: string) => void
   onTemplateChange: (id: string) => void
@@ -61,7 +64,7 @@ export function WorkoutControlPanel({
   const statusBadgeTone = workoutStatusTone ?? (hasWorkout ? 'positive' : 'neutral')
 
   return (
-    <Card className="border-slate-200 p-3 shadow-none dark:border-slate-800 sm:p-4 md:shadow-sm">
+    <Card className="p-3 shadow-none sm:p-4">
       {/* Row 1: badges + title + sync */}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
@@ -78,6 +81,13 @@ export function WorkoutControlPanel({
         <Badge tone={syncBadge.tone} className="min-w-16 shrink-0 justify-center">
           {syncBadge.text}
         </Badge>
+      </div>
+      <div className="mt-3 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] px-3 py-2 dark:border-slate-700 dark:bg-slate-800/70">
+        <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">{taskPlan.workoutActionLabel}</p>
+        <p className="mt-1 text-sm leading-5 text-slate-600 dark:text-slate-300">{taskPlan.workoutMessage}</p>
+        {taskPlan.review.readiness === 'insufficient-data' && taskPlan.review.primaryDestination === 'workout' ? (
+          <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300">{taskPlan.review.message}</p>
+        ) : null}
       </div>
 
       {/* Row 2: date */}

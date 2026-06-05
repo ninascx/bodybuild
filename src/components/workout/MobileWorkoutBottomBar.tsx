@@ -100,7 +100,7 @@ export function MobileWorkoutBottomBar({
                     ? 'border-amber-300 bg-amber-50 dark:border-amber-600/50 dark:bg-amber-900/30'
                     : restActive
                       ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-700/50 dark:bg-emerald-900/20'
-                      : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800'
+                      : 'border-[var(--surface-border)] bg-[var(--surface-muted)] dark:border-slate-700 dark:bg-slate-800'
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
@@ -160,7 +160,7 @@ export function MobileWorkoutBottomBar({
                     ? 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-600/50 dark:bg-amber-900/30 dark:text-amber-200'
                     : restActive
                       ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700/50 dark:bg-emerald-900/20 dark:text-emerald-200'
-                      : 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+                      : 'border-[var(--surface-border)] bg-[var(--surface-muted)] text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
                 }`}
               >
                 {restText}

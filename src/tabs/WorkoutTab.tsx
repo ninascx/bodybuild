@@ -24,6 +24,7 @@ import type { CardioPlan, ExerciseLog, ExercisePlan, WorkoutLog, WorkoutTemplate
 import type { PreviousExerciseRecord } from '../lib/metrics'
 import type { SyncState } from '../lib/storage'
 import type { WorkoutSummary, WorkoutTemplateOption } from '../lib/workout'
+import type { TodayTaskPlan } from '../lib/productFlow'
 
 function templateToOption(template: WorkoutTemplate): WorkoutTemplateOption {
   return {
@@ -51,6 +52,7 @@ type WorkoutTabProps = {
   builtinTemplates: WorkoutTemplate[]
   workoutTemplates: WorkoutTemplate[]
   syncState: SyncState
+  taskPlan: TodayTaskPlan
   restDay: boolean
   workoutMarkedComplete: boolean
   onDateChange: (date: string) => void
@@ -241,6 +243,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
             workoutStatusLabel={workoutRecordBadge.label}
             workoutStatusTone={workoutRecordBadge.tone}
             syncState={props.syncState}
+            taskPlan={props.taskPlan}
             restDay={props.restDay}
             onDateChange={props.onDateChange}
             onTemplateChange={props.onTemplateChange}

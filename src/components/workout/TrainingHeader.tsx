@@ -15,7 +15,7 @@ export function TrainingHeader({
   onExitTrainingMode: () => void
 }) {
   return (
-    <Card className="border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <Card className="border-[var(--surface-border)] bg-[var(--surface-panel)] dark:border-slate-800 dark:bg-slate-900">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -34,7 +34,7 @@ export function TrainingHeader({
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-md border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800">
+        <div className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] p-2 dark:border-slate-700 dark:bg-slate-800">
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {workoutSummary.cardioCount > 0 ? '已填组数 / 有氧' : '已填组数'}
           </p>
@@ -43,13 +43,13 @@ export function TrainingHeader({
             {workoutSummary.cardioCount > 0 ? ` · ${workoutSummary.cardioCount}` : ''}
           </p>
         </div>
-        <div className="rounded-md border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800">
+        <div className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] p-2 dark:border-slate-700 dark:bg-slate-800">
           <p className="text-xs text-slate-500 dark:text-slate-400">完成率</p>
           <p className="mt-0.5 font-semibold text-slate-950 dark:text-slate-50">
             {workoutSummary.completionPercent}%
           </p>
         </div>
-        <div className="rounded-md border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800">
+        <div className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] p-2 dark:border-slate-700 dark:bg-slate-800">
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {workoutSummary.cardioDurationMin > 0 ? '训练量 / 有氧' : '训练量'}
           </p>
@@ -103,10 +103,10 @@ export function TrainingTimerFloat({
       <Button
         variant="secondary"
         onClick={() => setCollapsed(false)}
-        className="fixed bottom-4 right-4 z-40 flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 dark:focus-visible:ring-cyan-500"
+        className="fixed bottom-4 right-4 z-40 flex items-center gap-3 rounded-full border border-[var(--surface-border)] bg-[var(--surface-panel)] px-4 py-3 transition-colors hover:bg-[var(--surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)] dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 dark:focus-visible:ring-cyan-500"
       >
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--surface-muted)] dark:bg-slate-800">
             <svg className="h-4 w-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -137,7 +137,7 @@ export function TrainingTimerFloat({
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+    <div className="fixed bottom-4 right-4 z-40 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-[var(--surface-border)] bg-[var(--surface-panel)] p-4 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
@@ -159,11 +159,11 @@ export function TrainingTimerFloat({
         </Button>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-800">
+        <div className="rounded-md bg-[var(--surface-muted)] p-2 dark:bg-slate-800">
           <p className="text-xs text-slate-500 dark:text-slate-400">训练时长</p>
           <p className="mt-0.5 text-xl font-bold tabular-nums text-slate-950 dark:text-slate-50">{formatTime(elapsedSeconds)}</p>
         </div>
-        <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-800">
+        <div className="rounded-md bg-[var(--surface-muted)] p-2 dark:bg-slate-800">
           <p className="text-xs text-slate-500 dark:text-slate-400">{restActive ? '组间休息' : '休息默认'}</p>
           <p className={`mt-0.5 text-xl font-bold tabular-nums ${restSeconds === 0 && restActive ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
             {restActive ? formatTime(restSeconds) : `${restDefaultDuration}s`}
@@ -176,7 +176,7 @@ export function TrainingTimerFloat({
           className={`mt-3 rounded-lg border p-3 text-center ${
             restSeconds === 0
               ? 'motion-rest-ready border-amber-400 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-900/30'
-              : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800'
+              : 'border-[var(--surface-border)] bg-[var(--surface-muted)] dark:border-slate-700 dark:bg-slate-800'
           }`}
         >
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
@@ -219,7 +219,7 @@ export function TrainingTimerFloat({
           <Button
             variant="secondary"
             onClick={onStartRest}
-            className="border-teal-500 text-teal-700 shadow-none hover:bg-cyan-50 dark:border-cyan-600/40 dark:text-cyan-300 dark:hover:bg-cyan-950/30"
+            className="border-[var(--color-primary-600)] text-[var(--color-primary-700)] shadow-none hover:bg-[var(--surface-selected)] dark:border-cyan-600/40 dark:text-cyan-300 dark:hover:bg-cyan-950/30"
           >
             开始组间休息 ({restDefaultDuration}s)
           </Button>

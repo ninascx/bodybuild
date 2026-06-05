@@ -62,17 +62,17 @@ export function AppShell<T extends string>({
         : '浅色'
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <main className="min-h-screen bg-[var(--surface-page)] text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <a
         href="#app-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-slate-950 focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 dark:focus:bg-slate-100 dark:focus:text-slate-950"
       >
         跳到主要内容
       </a>
-      <div className={`mx-auto flex min-h-screen w-full max-w-7xl flex-col px-3 pt-2 sm:px-6 sm:pt-4 lg:px-8 ${immersiveMode ? 'pb-4' : 'pb-24 md:pb-4'}`}>
+      <div className={`mx-auto flex min-h-screen w-full max-w-7xl flex-col px-3 pt-2 sm:px-6 sm:pt-4 lg:px-8 ${immersiveMode ? 'pb-4' : 'pb-56 md:pb-4'}`}>
         {!immersiveMode ? (
           <>
-            <header className="mb-2 border-b border-slate-200/70 pb-1.5 dark:border-slate-800 sm:pb-2">
+            <header className="mb-2 border-b border-[var(--surface-border)] pb-1.5 dark:border-slate-800 sm:pb-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
                   <img
@@ -82,7 +82,7 @@ export function AppShell<T extends string>({
                     width={32}
                     height={32}
                   />
-                  <span className="hidden text-slate-300 dark:text-slate-700 sm:inline">/</span>
+                  <span className="hidden text-[var(--surface-border-strong)] dark:text-slate-700 sm:inline">/</span>
                   <h1 className="truncate text-xl font-bold tracking-tight text-slate-950 dark:text-slate-50 sm:text-2xl">{activeLabel}</h1>
                 </div>
 

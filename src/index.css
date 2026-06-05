@@ -8,7 +8,7 @@
     Inter, Barlow, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   color: #0f172a;
-  background: #f8fafc;
+  background: #f6f8fb;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -17,19 +17,28 @@
   touch-action: manipulation;
 
   /* 设计 Token - 主色 (Teal Blue) */
-  --color-primary-50: #ecfeff;
-  --color-primary-100: #cffafe;
-  --color-primary-500: #0891b2;
-  --color-primary-600: #0e7490;
-  --color-primary-700: #0f766e;
+  --color-primary-50: #effcf8;
+  --color-primary-100: #d7f4ee;
+  --color-primary-500: #0f9488;
+  --color-primary-600: #0b7f76;
+  --color-primary-700: #0f6f68;
 
   /* 设计 Token - 中性色 */
-  --color-neutral-50: #f8fafc;
-  --color-neutral-100: #f1f5f9;
-  --color-neutral-200: #e2e8f0;
+  --color-neutral-50: #f6f8fb;
+  --color-neutral-100: #f2f5f8;
+  --color-neutral-200: #dbe3ea;
   --color-neutral-700: #334155;
   --color-neutral-800: #1e293b;
   --color-neutral-900: #0f172a;
+
+  /* Surface ladder: quiet product UI surfaces. */
+  --surface-page: #f6f8fb;
+  --surface-panel: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-muted: #f2f5f8;
+  --surface-selected: #eefcf8;
+  --surface-border: #dbe3ea;
+  --surface-border-strong: #c6d1db;
 
   /* 设计 Token - 间距 */
   --spacing-2: 0.5rem;
@@ -66,6 +75,14 @@ h1,
   color-scheme: dark;
   color: #e2e8f0;
   background: #0f172a;
+
+  --surface-page: #020617;
+  --surface-panel: #0f172a;
+  --surface-raised: #111827;
+  --surface-muted: #1e293b;
+  --surface-selected: #0f2f2e;
+  --surface-border: #1e293b;
+  --surface-border-strong: #334155;
 }
 
 /* 主题切换柔和过渡 */

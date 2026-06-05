@@ -18,7 +18,7 @@ export function WorkoutMobileActionPanel({
   onPrimaryAction: () => void
 }) {
   return (
-    <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800 sm:hidden">
+    <div className="grid gap-3 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] p-3 dark:border-slate-700 dark:bg-slate-800 sm:hidden">
       <Button className="w-full" onClick={onPrimaryAction}>
         {primaryLabel}
       </Button>
@@ -93,7 +93,7 @@ export function WorkoutMoreActionsPanel({
             {cardio.map((item, cardioIndex) => (
               <div
                 key={`${item.id}-${cardioIndex}`}
-                className="grid gap-2 rounded-lg border border-cyan-100 bg-cyan-50 p-3 dark:border-cyan-900/50 dark:bg-cyan-950/30 lg:grid-cols-[minmax(0,1.2fr)_8rem_minmax(0,0.9fr)_minmax(0,1fr)_2.75rem] lg:items-end"
+                className="grid gap-2 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900 lg:grid-cols-[minmax(0,1.2fr)_8rem_minmax(0,0.9fr)_minmax(0,1fr)_2.75rem] lg:items-end"
               >
                 <Field label="模式">
                   <TextInput

@@ -20,6 +20,7 @@ export type DailyEssentialsFormProps = {
   onFillTarget: () => void
   hasFillableTargetFields: boolean
   focusKey?: DailyFocusKey
+  priorityKeys?: DailyFocusKey[]
 }
 
 const quickFieldClass = 'h-11 text-base'
@@ -61,10 +62,10 @@ function QuickAdjustButtons({
   onIncrease: () => void
 }) {
   const buttonClass =
-    'h-7 border-l border-slate-200 px-1.5 text-[11px] font-bold leading-none text-slate-600 transition-colors first:border-l-0 hover:bg-slate-100 hover:text-teal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-cyan-100 dark:focus-visible:ring-cyan-500/40 dark:disabled:text-slate-600'
+    'h-7 border-l border-[var(--surface-border)] px-1.5 text-[11px] font-semibold leading-none text-slate-600 transition-colors first:border-l-0 hover:bg-white hover:text-[var(--color-primary-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-cyan-100 dark:focus-visible:ring-cyan-500/40 dark:disabled:text-slate-600'
 
   return (
-    <div className="inline-flex shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-50 shadow-sm dark:border-slate-700 dark:bg-slate-900" aria-label={`${label} 快速微调`}>
+    <div className="inline-flex shrink-0 overflow-hidden rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] dark:border-slate-700 dark:bg-slate-900" aria-label={`${label} 快速微调`}>
       <button
         type="button"
         className={buttonClass}
@@ -105,8 +106,16 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
     { key: 'sleep', label: '睡眠 h', value: props.selectedLog.sleepHours, step: '0.1', kind: 'decimal', range: { min: 0, max: 24, allowZero: true }, quickStep: 0.5, quickStepLabel: '0.5', patch: (value: number | undefined) => ({ sleepHours: value }) },
     { key: 'fatigue', label: `疲劳 ≤${props.fatigueThreshold}`, value: props.selectedLog.fatigueScore, step: '1', kind: 'integer', range: { min: 0, max: 10, allowZero: true }, quickStep: 1, quickStepLabel: '1', patch: (value: number | undefined) => ({ fatigueScore: value }) },
   ]
+  const priorityOrder = props.priorityKeys ?? []
+  const priorityRank = new Map(priorityOrder.map((key, index) => [key, index]))
+  const orderedFields = [...essentialFields].sort((a, b) => {
+    const aRank = priorityRank.get(a.key) ?? Number.MAX_SAFE_INTEGER
+    const bRank = priorityRank.get(b.key) ?? Number.MAX_SAFE_INTEGER
+    if (aRank !== bRank) return aRank - bRank
+    return essentialFields.findIndex((field) => field.key === a.key) - essentialFields.findIndex((field) => field.key === b.key)
+  })
   return (
-    <section className="rounded-lg border border-slate-200 bg-white px-3 py-3 dark:border-slate-800 dark:bg-slate-900 sm:p-4">
+    <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] px-3 py-3 dark:border-slate-800 dark:bg-slate-900 sm:p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h3 className="text-base font-semibold text-slate-950 dark:text-slate-50">常用录入</h3>
@@ -118,34 +127,42 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
       </div>
 
       <div className="motion-list mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
-        {essentialFields.map((field, index) => (
-          <div key={field.key} data-daily-focus={field.key} style={{ '--motion-index': Math.min(index, 3) } as CSSProperties}>
-            <NumberField
-              className={quickFieldClass}
-              label={field.label}
-              value={field.value}
-              step={field.step}
-              kind={field.kind}
-              range={field.range}
-              labelAction={
-                <QuickAdjustButtons
-                  label={field.label}
-                  stepLabel={field.quickStepLabel}
-                  disabled={field.value === undefined}
-                  onDecrease={() => {
-                    if (field.value === undefined) return
-                    props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value - field.quickStep, field)))
-                  }}
-                  onIncrease={() => {
-                    if (field.value === undefined) return
-                    props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value + field.quickStep, field)))
-                  }}
-                />
-              }
-              onChange={(value) => props.onUpdateDailyLog(field.patch(value))}
-            />
-          </div>
-        ))}
+        {orderedFields.map((field, index) => {
+          const focused = props.focusKey === field.key
+          return (
+            <div
+              key={field.key}
+              data-daily-focus={field.key}
+              style={{ '--motion-index': Math.min(index, 3) } as CSSProperties}
+              className={focused ? 'rounded-lg border border-[var(--color-primary-100)] bg-[var(--surface-selected)] p-1 dark:border-cyan-700/40 dark:bg-cyan-950/20' : undefined}
+            >
+              <NumberField
+                className={quickFieldClass}
+                label={field.label}
+                value={field.value}
+                step={field.step}
+                kind={field.kind}
+                range={field.range}
+                labelAction={
+                  <QuickAdjustButtons
+                    label={field.label}
+                    stepLabel={field.quickStepLabel}
+                    disabled={field.value === undefined}
+                    onDecrease={() => {
+                      if (field.value === undefined) return
+                      props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value - field.quickStep, field)))
+                    }}
+                    onIncrease={() => {
+                      if (field.value === undefined) return
+                      props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value + field.quickStep, field)))
+                    }}
+                  />
+                }
+                onChange={(value) => props.onUpdateDailyLog(field.patch(value))}
+              />
+            </div>
+          )
+        })}
       </div>
 
       {(props.yesterdayLog || props.hasFillableTargetFields) ? (

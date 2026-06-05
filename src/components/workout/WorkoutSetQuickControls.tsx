@@ -61,8 +61,8 @@ export function WeightQuickSelect({
             className={cn(
               'min-h-9 px-1 text-xs font-semibold shadow-none',
               selected
-                ? 'border-teal-500 bg-cyan-50 text-teal-950 dark:border-cyan-500 dark:bg-cyan-950/50 dark:text-cyan-50'
-                : 'border-slate-200 bg-white text-slate-600 hover:border-teal-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
+                ? 'border-[var(--color-primary-600)] bg-[var(--surface-selected)] text-[var(--color-primary-700)] dark:border-cyan-500 dark:bg-cyan-950/50 dark:text-cyan-50'
+                : 'border-[var(--surface-border)] bg-[var(--surface-panel)] text-slate-600 hover:border-[var(--color-primary-100)] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
             )}
             onClick={() => onSelect(weight)}
           >
@@ -106,7 +106,7 @@ export function TargetRepButtons({
             'px-2 text-xs font-semibold shadow-none',
             selected === reps
               ? 'border-emerald-500 bg-emerald-100 text-emerald-900 dark:border-emerald-500 dark:bg-emerald-900/40 dark:text-emerald-100'
-              : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
+              : 'border-[var(--surface-border)] bg-[var(--surface-panel)] text-slate-600 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
           )}
         >
           {reps}{suffix}
@@ -139,7 +139,7 @@ export function RirSelector({
             compact ? 'sm:min-h-12 sm:min-w-11' : '',
             value === option
               ? 'border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/40 dark:text-amber-100'
-              : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-200',
+              : 'border-[var(--surface-border)] bg-[var(--surface-panel)] text-slate-500 hover:border-[var(--surface-border-strong)] hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-200',
           )}
         >
           {labelPrefix}{option}

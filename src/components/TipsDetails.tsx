@@ -15,7 +15,7 @@ export function TipsDetails({
     <DisclosurePanel
       open={open}
       onOpenChange={setOpen}
-      className="bg-white shadow-sm dark:bg-slate-900 dark:shadow-none"
+      className="bg-white dark:bg-slate-900"
       title={summary}
       summaryClassName="text-lg text-slate-950 dark:text-slate-50"
       contentClassName="p-3 sm:p-4"

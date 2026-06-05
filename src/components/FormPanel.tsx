@@ -93,10 +93,10 @@ export function FormSection({
   children: ReactNode
 }) {
   return (
-    <section>
+    <section className="border-t border-slate-100 pt-5 first:border-t-0 first:pt-0 dark:border-slate-800">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{title}</h3>
+          <h3 className="text-base font-semibold text-slate-950 dark:text-slate-50">{title}</h3>
           {description ? <p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">{description}</p> : null}
         </div>
         {actions}

@@ -24,11 +24,11 @@ export function DisclosurePanel({
     <details
       open={open}
       onToggle={(event) => onOpenChange?.(event.currentTarget.open)}
-      className={cn('group rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800', className)}
+      className={cn('group rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] dark:border-slate-800 dark:bg-slate-900', className)}
     >
       <summary
         className={cn(
-          'flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-semibold text-slate-800 transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 dark:text-slate-200 dark:hover:bg-slate-900 dark:focus-visible:ring-cyan-500',
+          'flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-semibold text-slate-800 transition-colors hover:bg-[var(--surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)] dark:text-slate-200 dark:hover:bg-slate-800 dark:focus-visible:ring-cyan-500',
           summaryClassName,
         )}
       >
@@ -37,7 +37,7 @@ export function DisclosurePanel({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m6 9 6 6 6-6" />
         </svg>
       </summary>
-      <div className={cn('motion-disclosure-content border-t border-slate-200 px-3 py-3 dark:border-slate-700', contentClassName)}>
+      <div className={cn('motion-disclosure-content border-t border-[var(--surface-border)] px-3 py-3 dark:border-slate-700', contentClassName)}>
         {children}
       </div>
     </details>

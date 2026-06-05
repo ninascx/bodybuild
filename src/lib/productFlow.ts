@@ -7,11 +7,18 @@ import { summarizeWorkout } from './workout'
 export type DailyFocusKey = 'weight' | 'calories' | 'protein' | 'steps' | 'sleep' | 'fatigue' | 'training' | 'notes'
 
 export type WorkoutEntryState = 'rest-day' | 'needs-plan' | 'ready' | 'in-progress' | 'ready-to-confirm' | 'complete'
+export type TaskDestination = 'today' | 'daily' | 'workout' | 'analytics'
+export type TaskPriority = 'primary' | 'secondary' | 'supporting'
+export type TaskCompletionState = 'missing' | 'ready' | 'in-progress' | 'complete' | 'blocked'
+export type ReviewReadiness = 'insufficient-data' | 'ready' | 'action-needed'
 
 export type TodayTaskAction = {
   label: string
   helper: string
   kind: 'record' | 'workout' | 'review'
+  destination: TaskDestination
+  priority: TaskPriority
+  completionState: TaskCompletionState
   focusKey?: DailyFocusKey
 }
 
@@ -21,6 +28,16 @@ export type TodayTaskItem = {
   done: boolean
   helper: string
   priority: number
+  destination: TaskDestination
+  completionState: TaskCompletionState
+}
+
+export type ReviewTaskSummary = {
+  readiness: ReviewReadiness
+  title: string
+  message: string
+  missingSignals: string[]
+  primaryDestination: TaskDestination
 }
 
 export type TodayTaskPlan = {
@@ -36,6 +53,7 @@ export type TodayTaskPlan = {
   workoutMessage: string
   workoutActionLabel: string
   weeklySignals: WeeklySignal[]
+  review: ReviewTaskSummary
 }
 
 function isFilled(value: unknown): boolean {
@@ -43,7 +61,7 @@ function isFilled(value: unknown): boolean {
 }
 
 function buildChecklist(log: Partial<DailyLog> | undefined, target: DailyTarget): TodayTaskItem[] {
-  return [
+  return ([
     {
       key: 'weight',
       label: '体重',
@@ -101,7 +119,11 @@ function buildChecklist(log: Partial<DailyLog> | undefined, target: DailyTarget)
         : '休息日',
       priority: 70,
     },
-  ]
+  ] as Array<Omit<TodayTaskItem, 'destination' | 'completionState'>>).map((item) => ({
+    ...item,
+    destination: item.key === 'training' && target.isTrainingDay ? 'workout' : 'daily',
+    completionState: item.done ? 'complete' : 'missing',
+  }))
 }
 
 function getWorkoutState(target: DailyTarget, workout: WorkoutLog | undefined, log: Partial<DailyLog> | undefined): WorkoutEntryState {
@@ -157,6 +179,55 @@ function getWorkoutCopy(state: WorkoutEntryState, target: DailyTarget, workout: 
   }
 }
 
+function buildReviewSummary(checklist: TodayTaskItem[], workoutState: WorkoutEntryState, dashboardStats: DashboardStats): ReviewTaskSummary {
+  const missingSignals = checklist
+    .filter((item) => !item.done && item.key !== 'training')
+    .slice(0, 4)
+    .map((item) => item.label)
+  const completedDailySignals = checklist.filter((item) => item.done && item.key !== 'training').length
+  const hasEnoughDailySignals = completedDailySignals >= 4
+  const hasClosedWorkoutSignal = workoutState === 'rest-day' || workoutState === 'complete' || workoutState === 'ready-to-confirm'
+  const hasActionRisk = dashboardStats.calorieBudget.remaining < 0 || dashboardStats.trainingCompletionRate < 60
+
+  if (!hasEnoughDailySignals) {
+    return {
+      readiness: 'insufficient-data',
+      title: '先补齐记录，再看复盘',
+      message: missingSignals.length > 0 ? `还缺 ${missingSignals.join('、')}，复盘结论会先保持保守。` : '记录点还不够，复盘结论会先保持保守。',
+      missingSignals,
+      primaryDestination: 'daily',
+    }
+  }
+
+  if (!hasClosedWorkoutSignal) {
+    return {
+      readiness: 'insufficient-data',
+      title: '训练状态还没闭环',
+      message: '补完今天训练状态后，再看周节奏和调整建议。',
+      missingSignals: ['训练'],
+      primaryDestination: 'workout',
+    }
+  }
+
+  if (hasActionRisk) {
+    return {
+      readiness: 'action-needed',
+      title: '复盘里有需要处理的信号',
+      message: '热量预算或训练完成度出现偏差，先看结论再决定下周调整。',
+      missingSignals: [],
+      primaryDestination: 'analytics',
+    }
+  }
+
+  return {
+    readiness: 'ready',
+    title: '可以查看复盘结论',
+    message: '今天的关键记录已经足够，复盘会优先给出是否调整的判断。',
+    missingSignals: [],
+    primaryDestination: 'analytics',
+  }
+}
+
 export function buildTodayTaskPlan({
   log,
   target,
@@ -177,6 +248,7 @@ export function buildTodayTaskPlan({
   const missingItems = checklist.filter((item) => !item.done).sort((a, b) => a.priority - b.priority)
   const workoutState = getWorkoutState(target, workout, log)
   const workoutCopy = getWorkoutCopy(workoutState, target, workout)
+  const review = buildReviewSummary(checklist, workoutState, dashboardStats)
   const fatigueRisk = (log?.fatigueScore ?? 0) >= settings.fatigueThreshold
   const sleepRisk = log?.sleepHours !== undefined && log.sleepHours < settings.sleepFloorHours
 
@@ -192,6 +264,9 @@ export function buildTodayTaskPlan({
       label: `补${item.label}`,
       helper: item.helper,
       kind: 'record',
+      destination: 'daily',
+      priority: 'primary',
+      completionState: 'missing',
       focusKey: item.key,
     }
     title = '先补今日缺口'
@@ -202,6 +277,9 @@ export function buildTodayTaskPlan({
       label: workoutCopy.workoutActionLabel,
       helper: workoutCopy.workoutMessage,
       kind: 'workout',
+      destination: 'workout',
+      priority: 'primary',
+      completionState: workoutState === 'in-progress' ? 'in-progress' : 'ready',
     }
     title = workoutState === 'ready-to-confirm' ? '训练待确认' : fatigueRisk || sleepRisk ? '保守训练' : '可以训练'
     message = workoutCopy.workoutMessage
@@ -211,6 +289,9 @@ export function buildTodayTaskPlan({
       label: '查看复盘',
       helper: '今日主路径已完成，看看趋势是否需要调整。',
       kind: 'review',
+      destination: review.primaryDestination,
+      priority: 'primary',
+      completionState: review.readiness === 'insufficient-data' ? 'blocked' : 'ready',
     }
     title = workoutState === 'complete' ? '今日已收尾' : '守住恢复节奏'
     message = workoutState === 'complete' ? '记录和训练已经闭环，可以补备注或查看复盘。' : todaySnapshot.headline
@@ -222,6 +303,9 @@ export function buildTodayTaskPlan({
       label: `补${item.label}`,
       helper: item.helper,
       kind: 'record',
+      destination: 'daily',
+      priority: 'secondary',
+      completionState: 'missing',
       focusKey: item.key,
     })
   })
@@ -230,6 +314,19 @@ export function buildTodayTaskPlan({
       label: workoutCopy.workoutActionLabel,
       helper: workoutCopy.workoutMessage,
       kind: 'workout',
+      destination: 'workout',
+      priority: 'secondary',
+      completionState: workoutState === 'in-progress' ? 'in-progress' : 'ready',
+    })
+  }
+  if (primaryAction.kind !== 'review' && review.readiness !== 'insufficient-data') {
+    secondaryActions.push({
+      label: review.readiness === 'action-needed' ? '查看风险' : '查看复盘',
+      helper: review.message,
+      kind: 'review',
+      destination: 'analytics',
+      priority: 'supporting',
+      completionState: 'ready',
     })
   }
 
@@ -249,6 +346,7 @@ export function buildTodayTaskPlan({
           { label: '平均步数', value: dashboardStats.averageSteps === undefined ? '暂无' : `${dashboardStats.averageSteps} 步`, tone: 'neutral' },
           { label: '训练完成', value: `${dashboardStats.trainingCompletionRate}%`, tone: dashboardStats.trainingCompletionRate >= 80 ? 'positive' : 'warning' },
         ],
+    review,
     ...workoutCopy,
   }
 }

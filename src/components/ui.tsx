@@ -11,14 +11,14 @@ const toneClasses: Record<RecommendationTone, string> = {
   positive: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200',
   warning: 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/30 dark:text-amber-100',
   danger: 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-600/40 dark:bg-rose-900/30 dark:text-rose-100',
-  neutral: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200',
+  neutral: 'border-[var(--surface-border)] bg-[var(--surface-muted)] text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200',
 }
 
 const toneAccentClasses: Record<RecommendationTone, string> = {
   positive: 'border-emerald-200 bg-white text-slate-950 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-slate-50',
-  warning: 'border-amber-200 bg-amber-50/80 text-amber-950 dark:border-amber-600/40 dark:bg-amber-900/20 dark:text-amber-50',
-  danger: 'border-rose-200 bg-rose-50/80 text-rose-950 dark:border-rose-600/40 dark:bg-rose-900/20 dark:text-rose-50',
-  neutral: 'border-slate-200 bg-white text-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50',
+  warning: 'border-amber-200 bg-white text-slate-950 dark:border-amber-600/40 dark:bg-slate-900 dark:text-slate-50',
+  danger: 'border-rose-200 bg-white text-slate-950 dark:border-rose-600/40 dark:bg-slate-900 dark:text-slate-50',
+  neutral: 'border-[var(--surface-border)] bg-[var(--surface-panel)] text-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50',
 }
 
 const toneSoftTextClasses: Record<RecommendationTone, string> = {
@@ -42,9 +42,9 @@ export function PageHeader({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
-        {eyebrow ? <p className="text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-cyan-300">{eyebrow}</p> : null}
-        <h2 className="mt-2 text-2xl font-bold text-slate-950 dark:text-slate-50 sm:text-3xl">{title}</h2>
-        {description ? <p className="mt-3 max-w-3xl text-base leading-relaxed text-slate-600 dark:text-slate-400">{description}</p> : null}
+        {eyebrow ? <p className="text-sm font-medium text-[var(--color-primary-700)] dark:text-cyan-300">{eyebrow}</p> : null}
+        <h2 className="mt-1 text-2xl font-semibold text-balance text-slate-950 dark:text-slate-50">{title}</h2>
+        {description ? <p className="mt-2 max-w-3xl text-sm leading-6 text-pretty text-slate-600 dark:text-slate-400">{description}</p> : null}
       </div>
       {actions ? <div className="flex shrink-0 flex-wrap gap-2">{actions}</div> : null}
     </div>
@@ -88,15 +88,14 @@ export function StatusHero({
 }) {
   return (
     <section className={cn('rounded-lg border p-4', toneAccentClasses[tone])}>
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
-          {eyebrow ? <p className={cn('text-xs font-bold uppercase tracking-wide', toneSoftTextClasses[tone])}>{eyebrow}</p> : null}
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            <h2 className="text-xl font-bold sm:text-2xl">{title}</h2>
-            <Badge tone={tone}>状态</Badge>
+          {eyebrow ? <p className={cn('text-sm font-medium', toneSoftTextClasses[tone])}>{eyebrow}</p> : null}
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            <h2 className="text-xl font-semibold text-balance sm:text-2xl">{title}</h2>
           </div>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">{message}</p>
-          {meta ? <div className="mt-4">{meta}</div> : null}
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-pretty text-slate-600 dark:text-slate-300">{message}</p>
+          {meta ? <div className="mt-3">{meta}</div> : null}
         </div>
         {actions ? <div className="flex shrink-0 flex-wrap gap-2">{actions}</div> : null}
       </div>
@@ -121,7 +120,7 @@ export function InsightCard({
 }) {
   return (
     <div className={cn('min-w-0 rounded-lg border p-3 sm:p-4', toneAccentClasses[tone])}>
-      <p className={cn('text-xs font-semibold', toneSoftTextClasses[tone])}>{title}</p>
+      <p className={cn('text-xs font-medium', toneSoftTextClasses[tone])}>{title}</p>
       {value ? <p className="mt-2 text-xl font-bold leading-tight tabular-nums sm:text-2xl">{value}</p> : null}
       {message ? <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{message}</p> : null}
     </div>
@@ -143,7 +142,7 @@ export function ActionCard({
     <div className={cn('rounded-lg border p-3 sm:p-4', toneAccentClasses[tone])}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-base font-bold text-slate-950 dark:text-slate-50">{title}</p>
+          <p className="text-base font-semibold text-slate-950 dark:text-slate-50">{title}</p>
           {description ? <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{description}</p> : null}
         </div>
         {action}
@@ -176,7 +175,7 @@ export function EmptyState({
         className,
       )}
     >
-      <p className="text-base font-bold text-slate-800 dark:text-slate-100">{title}</p>
+      <p className="text-base font-semibold text-slate-800 dark:text-slate-100">{title}</p>
       {message ? <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{message}</p> : null}
       {actions ? <div className="mt-4 flex flex-wrap justify-center gap-2">{actions}</div> : null}
     </div>
@@ -277,7 +276,7 @@ export function SegmentedControl<T extends string>({
   return (
     <div
       role="radiogroup"
-      className="inline-flex max-w-full flex-wrap rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900"
+      className="inline-flex max-w-full flex-wrap rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] p-1 dark:border-slate-700 dark:bg-slate-900"
     >
       {options.map((option) => {
         const selected = value === option.value
@@ -292,10 +291,10 @@ export function SegmentedControl<T extends string>({
             onClick={() => onChange(option.value)}
             onKeyDown={(e) => handleKeyDown(e, option.value)}
             className={cn(
-              'min-h-11 min-w-11 cursor-pointer rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 disabled:cursor-not-allowed disabled:opacity-45 dark:focus-visible:ring-cyan-500',
+              'min-h-11 min-w-11 cursor-pointer rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-45 dark:focus-visible:ring-cyan-500 dark:focus-visible:ring-offset-slate-950',
               selected
-                ? 'bg-teal-700 text-white dark:bg-cyan-600 dark:text-white'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50',
+                ? 'bg-[var(--color-primary-700)] text-white dark:bg-cyan-600 dark:text-white'
+                : 'text-slate-600 hover:bg-white hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50',
             )}
           >
             {option.label}
@@ -310,13 +309,13 @@ export function ProgressBar({ value }: { value: number }) {
   const bounded = Math.min(100, Math.max(0, value))
   return (
     <div
-      className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
+      className="h-3 overflow-hidden rounded-full bg-[var(--surface-muted)] dark:bg-slate-800"
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(bounded)}
     >
-      <div className="h-full rounded-full bg-teal-600 transition-[width] duration-[var(--motion-base)] ease-[var(--ease-out-smooth)] dark:bg-cyan-500" style={{ width: `${bounded}%` }} />
+      <div className="h-full rounded-full bg-[var(--color-primary-600)] transition-[width] duration-[var(--motion-base)] ease-[var(--ease-out-smooth)] dark:bg-cyan-500" style={{ width: `${bounded}%` }} />
     </div>
   )
 }
@@ -343,9 +342,9 @@ export function StatCard({
   const indicator = delta?.direction === 'up' ? '+' : delta?.direction === 'down' ? '-' : '='
   const isLarge = size === 'large'
   return (
-    <Card className={cn(isLarge ? 'min-h-36' : 'min-h-28', 'transition-shadow duration-[var(--motion-base)] ease-[var(--ease-out-smooth)] hover:shadow-md')}>
-      <p className={cn(isLarge ? 'text-sm' : 'text-xs', 'font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400')}>{label}</p>
-      <p className={cn('mt-3 font-bold tabular-nums text-slate-950 dark:text-slate-50', isLarge ? 'text-3xl sm:text-4xl' : 'text-2xl')}>{value}</p>
+    <Card className={cn(isLarge ? 'min-h-36' : 'min-h-28')}>
+      <p className={cn(isLarge ? 'text-sm' : 'text-xs', 'font-medium text-slate-500 dark:text-slate-400')}>{label}</p>
+      <p className={cn('mt-3 font-semibold tabular-nums text-slate-950 dark:text-slate-50', isLarge ? 'text-3xl' : 'text-2xl')}>{value}</p>
       {delta ? (
         <p className={cn('mt-2 text-sm font-semibold', deltaClasses[deltaTone])}>
           {indicator} {delta.text}
@@ -358,9 +357,9 @@ export function StatCard({
 
 export function RecommendationBox({ title, message, tone }: { title: string; message: string; tone: RecommendationTone }) {
   return (
-    <div className={cn('rounded-lg border p-3', toneClasses[tone])}>
-      <p className="font-medium">{title}</p>
-      <p className="mt-1 text-sm leading-6">{message}</p>
+    <div className={cn('rounded-lg border p-3', toneAccentClasses[tone])}>
+      <p className={cn('font-semibold', toneSoftTextClasses[tone])}>{title}</p>
+      <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{message}</p>
     </div>
   )
 }

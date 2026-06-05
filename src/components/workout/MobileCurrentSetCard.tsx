@@ -85,7 +85,7 @@ export function MobileCurrentSetCard({
   }
 
   return (
-    <div className="motion-current-set mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-800">
+    <div className="motion-current-set mt-2 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] p-2.5 dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
           第 {setIndex + 1} 组 {targetRange ? `· 目标 ${formatTargetRepRange(targetRange)}` : ''}
@@ -93,7 +93,7 @@ export function MobileCurrentSetCard({
         {currentSetComplete ? <Badge tone="positive">已填</Badge> : <span className="text-xs font-medium text-slate-500 dark:text-slate-400">待填</span>}
       </div>
 
-      <div className="mt-1.5 flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-2 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+      <div className="mt-1.5 flex items-center justify-between gap-2 rounded-md border border-[var(--surface-border)] bg-[var(--surface-panel)] px-2 py-1.5 dark:border-slate-700 dark:bg-slate-900">
         <span className="text-xs font-medium text-slate-500 dark:text-slate-400">共 {totalSets} 组</span>
         <div className="flex shrink-0 items-center gap-1.5">
           <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={onDeleteLastSet} disabled={totalSets <= 1}>
@@ -201,7 +201,7 @@ export function MobileCurrentSetCard({
       </Button>
 
       <DisclosurePanel
-        className="mt-2 bg-white dark:bg-slate-900"
+        className="mt-2 bg-[var(--surface-panel)] dark:bg-slate-900"
         title="更多操作"
         summaryClassName="text-xs"
         contentClassName="grid gap-1.5 px-2.5 py-2"

@@ -9,15 +9,15 @@ export interface BadgeProps {
 }
 
 const toneClasses: Record<RecommendationTone, string> = {
-  positive: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200',
-  warning: 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/30 dark:text-amber-100',
-  danger: 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-600/40 dark:bg-rose-900/30 dark:text-rose-100',
-  neutral: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200',
+  positive: 'border-emerald-200 bg-white text-emerald-800 dark:border-emerald-700/50 dark:bg-slate-900 dark:text-emerald-200',
+  warning: 'border-amber-200 bg-white text-amber-800 dark:border-amber-600/50 dark:bg-slate-900 dark:text-amber-200',
+  danger: 'border-rose-200 bg-white text-rose-800 dark:border-rose-600/50 dark:bg-slate-900 dark:text-rose-200',
+  neutral: 'border-[var(--surface-border)] bg-[var(--surface-muted)] text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
 }
 
 export function Badge({ children, tone = 'neutral', className = '' }: BadgeProps) {
   return (
-    <span className={cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold', toneClasses[tone], className)}>
+    <span className={cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold leading-none', toneClasses[tone], className)}>
       {children}
     </span>
   )

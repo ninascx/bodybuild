@@ -30,6 +30,7 @@ type DailyRecordTabProps = {
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
   onQuickAction: (patch: Partial<DailyLog>) => void
   focusKey?: DailyFocusKey
+  priorityKeys?: DailyFocusKey[]
   onFocusConsumed?: () => void
 }
 
@@ -79,8 +80,8 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
     props.selectedLog.steps === undefined ||
     props.selectedLog.sleepHours === undefined
   return (
-    <Card {...swipeHandlers} className="space-y-3 border-0 bg-transparent p-0 shadow-none dark:bg-transparent sm:space-y-4 md:border-slate-200 md:bg-white md:p-4 md:shadow-sm md:dark:border-slate-800 md:dark:bg-slate-900">
-      <section className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900 md:border-teal-200 md:bg-cyan-50/70 md:p-3 md:dark:border-cyan-700/40 md:dark:bg-cyan-950/30">
+    <Card {...swipeHandlers} className="space-y-3 border-0 bg-transparent p-0 shadow-none dark:bg-transparent sm:space-y-4 md:border-[var(--surface-border)] md:bg-[var(--surface-panel)] md:p-4 md:dark:border-slate-800 md:dark:bg-slate-900">
+      <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] px-3 py-2 dark:border-slate-800 dark:bg-slate-900 md:bg-[var(--surface-muted)] md:p-3 md:dark:bg-slate-800/70">
         <div className="min-w-0">
           <p className="mb-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 md:text-sm md:font-semibold md:text-slate-950 md:dark:text-slate-50">记录日期</p>
           <DateNavigator selectedDate={props.selectedDate} today={props.today} onChange={props.onDateChange} />
@@ -102,14 +103,11 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         onFillTarget={fillTargetQuickFields}
         hasFillableTargetFields={hasFillableTargetQuickFields}
         focusKey={props.focusKey}
+        priorityKeys={props.priorityKeys}
         onFocusConsumed={props.onFocusConsumed}
       />
 
-      <DisclosurePanel
-        title="日历与补充详情"
-        className="border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/70"
-        contentClassName="grid gap-3"
-      >
+      <DisclosurePanel title="日历与补充详情" contentClassName="grid gap-3">
         <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">日历和围度放在这里，避免打断今日录入。</p>
         <DailyCalendarPanel
           selectedDate={props.selectedDate}

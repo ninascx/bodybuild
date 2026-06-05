@@ -64,9 +64,9 @@ export function WorkoutPlanPreview({
               {previewCardio.map((cardio, index) => (
                 <div
                   key={`${cardio.id}-${index}`}
-                  className="grid grid-cols-[2rem_minmax(0,1fr)] gap-2 rounded-md border border-cyan-100 bg-cyan-50/70 px-3 py-2 text-sm dark:border-cyan-900/50 dark:bg-cyan-950/30"
+                  className="grid grid-cols-[2rem_minmax(0,1fr)] gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
                 >
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-100 text-xs font-semibold text-cyan-800 dark:bg-cyan-900/60 dark:text-cyan-100">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
                     {index + 1}
                   </div>
                   <div className="min-w-0">
@@ -74,7 +74,7 @@ export function WorkoutPlanPreview({
                     <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
                       {cardio.durationMin ? `${cardio.durationMin} min` : '未设置时长'}
                     </p>
-                    {cardio.note ? <p className="mt-1 text-xs leading-5 text-cyan-800 dark:text-cyan-200">{cardio.note}</p> : null}
+                    {cardio.note ? <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{cardio.note}</p> : null}
                   </div>
                 </div>
               ))}

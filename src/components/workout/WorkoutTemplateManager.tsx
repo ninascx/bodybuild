@@ -108,7 +108,7 @@ export function WorkoutTemplateManager({
 
   return (
     <DisclosurePanel
-      className="bg-white shadow-sm dark:bg-slate-900"
+      className="bg-white dark:bg-slate-900"
       title={`模板管理 · ${editableBuiltinTemplates.length} 个内置 · ${customTemplates.length} 个自定义`}
       contentClassName="grid gap-4 p-4"
     >

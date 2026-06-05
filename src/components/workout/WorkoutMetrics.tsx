@@ -20,7 +20,7 @@ export function WorkoutMetrics({ summary }: { summary: WorkoutSummary }) {
 
 function WorkoutMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] p-3 dark:border-slate-700 dark:bg-slate-800">
       <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
       <p className="mt-1 text-lg font-semibold text-slate-950 dark:text-slate-50">{value}</p>
     </div>
