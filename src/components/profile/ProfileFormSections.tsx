@@ -116,29 +116,31 @@ export function PersonalizationSection({
   onToggleTrainingDay: (day: DayKey) => void
 }) {
   return (
-    <FormSection title="目标规则与训练日" actions={<span className="text-xs font-medium text-slate-500 dark:text-slate-400">{trainingDayCount} 个训练日</span>}>
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-        <Field label="当前目标">
-          <Select
-            value={preference.goalType ?? 'fat_loss'}
-            onChange={(event) => onUpdateGoalType(event.target.value === 'muscle_gain' || event.target.value === 'maintenance' ? event.target.value : 'fat_loss')}
-          >
-            <option value="fat_loss">减脂</option>
-            <option value="muscle_gain">增肌</option>
-            <option value="maintenance">维持</option>
-          </Select>
-        </Field>
-        <NumberField label="每周体重变化目标 kg" value={preference.weeklyWeightChangeGoalKg} kind="decimal" range={{ min: -2, max: 2, allowZero: true }} onChange={(value) => onUpdatePreference({ weeklyWeightChangeGoalKg: value })} />
-        <NumberField label="日热量目标 kcal" value={averageCalories} range={{ min: 0, max: 10000, allowZero: true }} onChange={onUpdateAverageCalories} />
-        <NumberField label="蛋白目标 g" value={averageProtein} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => onUpdateAllTargets({ protein: value ?? 0 })} />
-        <NumberField label="步数底线" value={averageSteps} range={{ min: 0, max: 100000, allowZero: true }} onChange={(value) => onUpdateAllTargets({ stepTarget: value ?? 0 })} />
-        <NumberField label="睡眠底线 h" value={preference.sleepFloorHours} kind="decimal" range={{ min: 0, max: 24, allowZero: true }} onChange={(value) => onUpdatePreference({ sleepFloorHours: value })} />
-        <NumberField label="疲劳阈值" value={preference.fatigueThreshold} range={{ min: 0, max: 10, allowZero: true }} onChange={(value) => onUpdatePreference({ fatigueThreshold: value })} />
-        <NumberField label="周末热量上限 kcal" value={preference.weekendCalorieUpperKcal} range={{ min: 0, max: 10000, allowZero: true }} onChange={onUpdateWeekendUpper} />
-      </div>
-      <div className="mt-3">
-        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">训练天数</p>
-        <div className="mt-2 flex flex-wrap gap-2">
+    <>
+      <FormSection title="目标规则">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <Field label="当前目标">
+            <Select
+              value={preference.goalType ?? 'fat_loss'}
+              onChange={(event) => onUpdateGoalType(event.target.value === 'muscle_gain' || event.target.value === 'maintenance' ? event.target.value : 'fat_loss')}
+            >
+              <option value="fat_loss">减脂</option>
+              <option value="muscle_gain">增肌</option>
+              <option value="maintenance">维持</option>
+            </Select>
+          </Field>
+          <NumberField label="每周体重变化目标 kg" value={preference.weeklyWeightChangeGoalKg} kind="decimal" range={{ min: -2, max: 2, allowZero: true }} onChange={(value) => onUpdatePreference({ weeklyWeightChangeGoalKg: value })} />
+          <NumberField label="日热量目标 kcal" value={averageCalories} range={{ min: 0, max: 10000, allowZero: true }} onChange={onUpdateAverageCalories} />
+          <NumberField label="蛋白目标 g" value={averageProtein} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => onUpdateAllTargets({ protein: value ?? 0 })} />
+          <NumberField label="步数底线" value={averageSteps} range={{ min: 0, max: 100000, allowZero: true }} onChange={(value) => onUpdateAllTargets({ stepTarget: value ?? 0 })} />
+          <NumberField label="睡眠底线 h" value={preference.sleepFloorHours} kind="decimal" range={{ min: 0, max: 24, allowZero: true }} onChange={(value) => onUpdatePreference({ sleepFloorHours: value })} />
+          <NumberField label="疲劳阈值" value={preference.fatigueThreshold} range={{ min: 0, max: 10, allowZero: true }} onChange={(value) => onUpdatePreference({ fatigueThreshold: value })} />
+          <NumberField label="周末热量上限 kcal" value={preference.weekendCalorieUpperKcal} range={{ min: 0, max: 10000, allowZero: true }} onChange={onUpdateWeekendUpper} />
+        </div>
+      </FormSection>
+
+      <FormSection title="训练日配置" description="选择每周默认训练日，Today 和训练入口会按这里判断当天任务。" actions={<span className="text-xs font-medium text-slate-500 dark:text-slate-400">{trainingDayCount} 个训练日</span>}>
+        <div className="flex flex-wrap gap-2">
           {profileDays.map((day) => {
             const active = (profile.trainingDays ?? []).includes(day)
             return (
@@ -154,8 +156,8 @@ export function PersonalizationSection({
             )
           })}
         </div>
-      </div>
-    </FormSection>
+      </FormSection>
+    </>
   )
 }
 

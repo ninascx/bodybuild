@@ -93,18 +93,6 @@ export function MobileCurrentSetCard({
         {currentSetComplete ? <Badge tone="positive">已填</Badge> : <span className="text-xs font-medium text-slate-500 dark:text-slate-400">待填</span>}
       </div>
 
-      <div className="mt-1.5 flex items-center justify-between gap-2 rounded-md border border-[var(--surface-border)] bg-[var(--surface-panel)] px-2 py-1.5 dark:border-slate-700 dark:bg-slate-900">
-        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">共 {totalSets} 组</span>
-        <div className="flex shrink-0 items-center gap-1.5">
-          <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={onDeleteLastSet} disabled={totalSets <= 1}>
-            -组
-          </Button>
-          <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={onAddSet}>
-            +组
-          </Button>
-        </div>
-      </div>
-
       {previousSameSetSummary ? (
         <div className="mt-1.5 rounded-md border border-emerald-200 bg-white px-2 py-1 text-xs text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200">
           上次同组：<span className="font-semibold">{previousSameSetSummary}</span>
@@ -206,6 +194,17 @@ export function MobileCurrentSetCard({
         summaryClassName="text-xs"
         contentClassName="grid gap-1.5 px-2.5 py-2"
       >
+        <div className="flex items-center justify-between gap-2 rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] px-2 py-1.5 dark:border-slate-700 dark:bg-slate-800">
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">共 {totalSets} 组</span>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={onDeleteLastSet} disabled={totalSets <= 1}>
+              -组
+            </Button>
+            <Button variant="secondary" className="min-h-9 px-2 text-xs" onClick={onAddSet}>
+              +组
+            </Button>
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-1.5">
           <Button variant="secondary" className="px-2 text-xs" onClick={onCopyPrevious} disabled={!hasCopyPrevious}>
             复制上一组

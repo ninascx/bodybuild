@@ -106,14 +106,6 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
     { key: 'sleep', label: '睡眠 h', value: props.selectedLog.sleepHours, step: '0.1', kind: 'decimal', range: { min: 0, max: 24, allowZero: true }, quickStep: 0.5, quickStepLabel: '0.5', patch: (value: number | undefined) => ({ sleepHours: value }) },
     { key: 'fatigue', label: `疲劳 ≤${props.fatigueThreshold}`, value: props.selectedLog.fatigueScore, step: '1', kind: 'integer', range: { min: 0, max: 10, allowZero: true }, quickStep: 1, quickStepLabel: '1', patch: (value: number | undefined) => ({ fatigueScore: value }) },
   ]
-  const priorityOrder = props.priorityKeys ?? []
-  const priorityRank = new Map(priorityOrder.map((key, index) => [key, index]))
-  const orderedFields = [...essentialFields].sort((a, b) => {
-    const aRank = priorityRank.get(a.key) ?? Number.MAX_SAFE_INTEGER
-    const bRank = priorityRank.get(b.key) ?? Number.MAX_SAFE_INTEGER
-    if (aRank !== bRank) return aRank - bRank
-    return essentialFields.findIndex((field) => field.key === a.key) - essentialFields.findIndex((field) => field.key === b.key)
-  })
   return (
     <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] px-3 py-3 dark:border-slate-800 dark:bg-slate-900 sm:p-4">
       <div className="flex items-center justify-between gap-3">
@@ -127,7 +119,7 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
       </div>
 
       <div className="motion-list mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
-        {orderedFields.map((field, index) => {
+        {essentialFields.map((field, index) => {
           const focused = props.focusKey === field.key
           return (
             <div

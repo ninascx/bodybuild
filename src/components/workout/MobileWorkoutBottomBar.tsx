@@ -130,8 +130,11 @@ export function MobileWorkoutBottomBar({
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Button variant="secondary" className="px-3" onClick={onFinish} title={bottomFinishTitle}>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="secondary" className="px-3 text-xs" onClick={onPreviousExercise} disabled={!canGoPrevious}>
+                  上一动作
+                </Button>
+                <Button variant="secondary" className="px-3 text-xs" onClick={onFinish} title={bottomFinishTitle}>
                   {bottomFinishLabel}
                 </Button>
               </div>
@@ -152,29 +155,16 @@ export function MobileWorkoutBottomBar({
                   第 {setIndex + 1} 组 · {currentSetStatus} · {workoutSummary.completionPercent}%
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={restActive ? () => setExpanded(true) : onStartRest}
-                className={`shrink-0 rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-colors ${restDone && !expanded ? 'motion-rest-ready' : ''} ${
-                  restDone
-                    ? 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-600/50 dark:bg-amber-900/30 dark:text-amber-200'
-                    : restActive
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700/50 dark:bg-emerald-900/20 dark:text-emerald-200'
-                      : 'border-[var(--surface-border)] bg-[var(--surface-muted)] text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
-                }`}
-              >
-                {restText}
-              </button>
               <Button variant="ghost" className="min-h-9 px-2.5 text-xs" onClick={() => setExpanded((value) => !value)}>
                 展开
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="secondary" className="min-h-12 whitespace-nowrap px-2 text-sm" onClick={onPreviousExercise} disabled={!canGoPrevious}>
-                上一动作
+            <div className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-2">
+              <Button variant="secondary" className="min-h-12 whitespace-nowrap px-2 text-sm" onClick={restActive ? () => setExpanded(true) : onStartRest}>
+                {restText}
               </Button>
-              <Button variant="secondary" className="min-h-12 whitespace-nowrap px-2 text-sm" onClick={onNext} disabled={bottomNextDisabled}>
+              <Button className="min-h-12 whitespace-nowrap px-2 text-sm" onClick={onNext} disabled={bottomNextDisabled}>
                 {bottomNextLabel}
               </Button>
             </div>
