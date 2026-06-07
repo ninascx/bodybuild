@@ -96,9 +96,6 @@ export function MobileCurrentExerciseView({
     copyPreviousPatch,
     copyRecordPatch,
     previousSameSetSummary,
-    quickFillPatch,
-    quickFillSummary,
-    quickFillLabel,
     emptySetCount,
     hasEmptySet,
     targetRange,
@@ -299,9 +296,6 @@ export function MobileCurrentExerciseView({
             previousSameSetSummary={previousSameSetSummary}
             copyRecordSummary={copyRecordPatch ? formatSetSummary(copyRecordPatch) ?? '可套用' : null}
             repsInTarget={repsInTarget}
-            quickFillLabel={quickFillLabel}
-            quickFillSummary={quickFillSummary}
-            quickFillAvailable={Boolean(quickFillPatch && quickFillLabel)}
             currentSetComplete={currentSetComplete}
             currentSetActionLabel={currentSetActionLabel}
             currentSetActionDisabled={currentSetActionDisabled}
@@ -313,7 +307,6 @@ export function MobileCurrentExerciseView({
             hasAnotherIncompleteSet={hasAnotherIncompleteSet}
             autoStartRest={autoStartRest}
             onUpdateSet={updateCurrentSet}
-            onQuickFill={() => applyPatchToCurrentSet(quickFillPatch)}
             onCurrentSetAction={handleCurrentSetActionWithUndo}
             onCopyPrevious={() => applyPatchToCurrentSet(copyPreviousPatch)}
             onCopyRecord={() => applyPatchToCurrentSet(copyRecordPatch)}

@@ -15,9 +15,6 @@ type MobileCurrentSetCardProps = {
   previousSameSetSummary: string | null
   copyRecordSummary: string | null
   repsInTarget: boolean | null
-  quickFillLabel: string | null
-  quickFillSummary: string | null
-  quickFillAvailable: boolean
   currentSetComplete: boolean
   currentSetActionLabel: string
   currentSetActionDisabled: boolean
@@ -29,7 +26,6 @@ type MobileCurrentSetCardProps = {
   hasAnotherIncompleteSet: boolean
   autoStartRest: boolean
   onUpdateSet: (patch: Partial<ExerciseSetLog>, advanceWhenComplete?: boolean) => void
-  onQuickFill: () => void
   onCurrentSetAction: () => void
   onCopyPrevious: () => void
   onCopyRecord: () => void
@@ -51,9 +47,6 @@ export function MobileCurrentSetCard({
   previousSameSetSummary,
   copyRecordSummary,
   repsInTarget,
-  quickFillLabel,
-  quickFillSummary,
-  quickFillAvailable,
   currentSetComplete,
   currentSetActionLabel,
   currentSetActionDisabled,
@@ -65,7 +58,6 @@ export function MobileCurrentSetCard({
   hasAnotherIncompleteSet,
   autoStartRest,
   onUpdateSet,
-  onQuickFill,
   onCurrentSetAction,
   onCopyPrevious,
   onCopyRecord,
@@ -108,12 +100,6 @@ export function MobileCurrentSetCard({
         <p className={`mt-1 text-xs ${repsInTarget ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'}`}>
           {repsInTarget ? '✓ 已达标' : ''}
         </p>
-      ) : null}
-
-      {quickFillAvailable && quickFillLabel ? (
-        <Button className="mt-1.5 w-full text-xs" onClick={onQuickFill}>
-          {quickFillLabel}{quickFillSummary ? ` · ${quickFillSummary}` : ''}
-        </Button>
       ) : null}
 
       <div className="mt-2 grid grid-cols-2 gap-2" data-coach="workout-input">
@@ -194,7 +180,7 @@ export function MobileCurrentSetCard({
       </div>
 
       <Button
-        className="mt-2 w-full py-2.5"
+        className="mt-2 w-full py-2"
         onClick={onCurrentSetAction}
         disabled={currentSetActionDisabled}
         title={!currentSetActionDisabled ? "快捷键: Enter" : undefined}

@@ -116,7 +116,7 @@ export function MobileExerciseProgressCard({
               onClick={() => onSelectSet(index)}
               aria-pressed={isCurrent}
               className={cn(
-                'min-h-11 min-w-[4rem] shrink-0 flex-col gap-0 rounded-full border px-2 text-center text-xs font-medium',
+                'min-h-9 min-w-[3.5rem] shrink-0 flex-col gap-0 rounded-full border px-1.5 text-center text-xs font-medium',
                 isCurrent
                   ? 'border-[var(--color-primary-700)] bg-[var(--color-primary-700)] text-white dark:border-cyan-500 dark:bg-cyan-600 dark:text-white'
                   : setDone
