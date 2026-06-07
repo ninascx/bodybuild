@@ -399,11 +399,11 @@ export function createWeeklySummary(
   }
 
   if (calorieStatus === 'on-track') suggestions.push(`本周热量接近 ${calorieTarget} kcal，先保持当前节奏。`)
-  if (calorieStatus === 'high') suggestions.push('本周热量偏高，优先检查周五周六是否超过自由饮食上限。')
-  if (calorieStatus === 'low') suggestions.push('本周热量偏低，留意训练状态和疲劳，不用用极端节食补偿。')
-  if ((weekendAverageCalories ?? 0) > settings.weekendCalorieUpperKcal) suggestions.push(`周末两天平均热量超过 ${settings.weekendCalorieUpperKcal} kcal，优先控制周末自由饮食，不要用极端压低工作日热量来补偿。`)
-  if (trainingLogs.length > 0 && completedTraining / trainingLogs.length < 0.8) suggestions.push('训练完成率偏低，下周优先保证主项和胸部关键动作。')
-  if (suggestions.length === 0) suggestions.push('数据还不够完整，先连续记录体重、热量、步数和训练完成度。')
+  if (calorieStatus === 'high') suggestions.push('本周热量偏高，优先检查周五/周六是否超过自由饮食上限。')
+  if (calorieStatus === 'low') suggestions.push('本周热量偏低，先观察训练状态和疲劳，不用继续压低摄入。')
+  if ((weekendAverageCalories ?? 0) > settings.weekendCalorieUpperKcal) suggestions.push(`周末两天平均热量超过 ${settings.weekendCalorieUpperKcal} kcal，先控制周末自由饮食，不用压低工作日热量来补偿。`)
+  if (trainingLogs.length > 0 && completedTraining / trainingLogs.length < 0.8) suggestions.push('训练完成率偏低，下周优先保证主项质量，附件动作可以少做一点。')
+  if (suggestions.length === 0) suggestions.push('数据还不够完整，先连续记录体重、热量、蛋白、步数和训练完成度。')
 
   return {
     weekStart,

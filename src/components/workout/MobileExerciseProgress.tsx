@@ -39,7 +39,6 @@ export function MobileExerciseProgressCard({
   exercise,
   exerciseIndex,
   exerciseCount,
-  previousRecord,
   completed,
   completedSetCount,
   remainingSetCount,

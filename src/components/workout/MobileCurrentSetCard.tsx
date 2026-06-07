@@ -86,6 +86,15 @@ export function MobileCurrentSetCard({
         {currentSetComplete ? <Badge tone="positive">已填</Badge> : <span className="text-xs font-medium text-slate-500 dark:text-slate-400">待填</span>}
       </div>
 
+      {hasPreviousRecord && emptySetCount >= 2 ? (
+        <Button
+          className="mt-1.5 min-h-10 w-full py-0 text-sm"
+          onClick={onApplyPreviousRecordToEmptySets}
+        >
+          按上次填满全部 {emptySetCount} 组
+        </Button>
+      ) : null}
+
       {(previousSameSetSummary || copyRecordSummary || hasCopyPrevious) ? (
         <div className="mt-1.5 grid gap-1.5">
           {previousSameSetSummary || copyRecordSummary ? (
@@ -225,16 +234,9 @@ export function MobileCurrentSetCard({
         </Button>
 
         {hasEmptySet ? (
-          <div className="mt-1.5 grid gap-1.5">
-            <Button variant="secondary" className="min-h-9 w-full py-0 text-xs" onClick={onApplyCurrentSetToEmptySets} disabled={!currentSetComplete}>
-              复制本组到 {emptySetCount} 个空组
-            </Button>
-            {hasPreviousRecord ? (
-              <Button variant="secondary" className="min-h-9 w-full py-0 text-xs" onClick={onApplyPreviousRecordToEmptySets}>
-                按上次填入 {emptySetCount} 个空组
-              </Button>
-            ) : null}
-          </div>
+          <Button variant="secondary" className="mt-1.5 min-h-9 w-full py-0 text-xs" onClick={onApplyCurrentSetToEmptySets} disabled={!currentSetComplete}>
+            复制本组到 {emptySetCount} 个空组
+          </Button>
         ) : null}
 
         {hasAnotherIncompleteSet ? (
