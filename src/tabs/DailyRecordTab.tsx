@@ -107,7 +107,7 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         onFocusConsumed={props.onFocusConsumed}
       />
 
-      <DisclosurePanel title="日历与补充详情" contentClassName="grid gap-3">
+      <DisclosurePanel title="日历与补充详情" contentClassName="grid gap-3" open={true}>
         <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">日历和围度放在这里，避免打断今日录入。</p>
         <DailyCalendarPanel
           selectedDate={props.selectedDate}
