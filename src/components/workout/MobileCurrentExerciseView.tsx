@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { PreviousExerciseRecord } from '../../lib/metrics'
 import type { WorkoutSummary } from '../../lib/workout'
 import type { ExerciseSetLog, WorkoutLog } from '../../types'
@@ -7,6 +8,8 @@ import { MobileExerciseProgressCard, MobileTrainingModeHeader } from './MobileEx
 import { MobileWorkoutBottomBar } from './MobileWorkoutBottomBar'
 import { useMobileExerciseSession } from './useMobileExerciseSession'
 import { formatSetSummary } from './workoutRecordFormat'
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
+import { useToast } from '../ToastContainer'
 
 type MobileCurrentExerciseViewProps = {
   workout: WorkoutLog
@@ -121,6 +124,89 @@ export function MobileCurrentExerciseView({
     goToNextIncompleteSet,
   } = session
   const totalSets = exercise?.sets.length ?? 0
+  const { showToast } = useToast()
+
+  // Undo buffer for last completed set
+  const [lastCompletedSet, setLastCompletedSet] = useState<{
+    exerciseIndex: number
+    setIndex: number
+    data: ExerciseSetLog
+  } | null>(null)
+
+  // Wrap handleCurrentSetAction to save state and show undo toast
+  function handleCurrentSetActionWithUndo() {
+    if (!exercise || !currentSet) return
+
+    // Save current set state before completing
+    setLastCompletedSet({
+      exerciseIndex: currentExerciseIndex,
+      setIndex: safeCurrentSetIndex,
+      data: { ...currentSet }
+    })
+
+    // Execute original action
+    handleCurrentSetAction()
+
+    // Show toast with undo action
+    showToast(
+      `第 ${safeCurrentSetIndex + 1} 组已完成`,
+      'success',
+      5000,
+      {
+        label: '撤销',
+        handler: undoLastSet
+      }
+    )
+  }
+
+  // Undo last completed set
+  function undoLastSet() {
+    if (!lastCompletedSet) return
+
+    const { exerciseIndex, setIndex, data } = lastCompletedSet
+    onUpdateSet(exerciseIndex, setIndex, data)
+    setLastCompletedSet(null)
+
+    showToast('已撤销', 'neutral', 2000)
+  }
+
+  // Keyboard shortcuts for workout
+  useKeyboardShortcuts([
+    {
+      key: 'Enter',
+      handler: () => {
+        if (!currentSetActionDisabled && exercise) {
+          handleCurrentSetActionWithUndo()
+        }
+      }
+    },
+    {
+      key: ' ',
+      handler: () => {
+        if (!restActive) {
+          onStartRest()
+        } else {
+          onSkipRest()
+        }
+      }
+    },
+    {
+      key: 'ArrowLeft',
+      handler: () => {
+        if (currentExerciseIndex > 0) {
+          goToPreviousExercise()
+        }
+      }
+    },
+    {
+      key: 'ArrowRight',
+      handler: () => {
+        if (shouldSuggestNextExercise || currentExerciseIndex < workout.exercises.length - 1) {
+          handleGoToNextExercise()
+        }
+      }
+    }
+  ], Boolean(exercise))
 
   function handleAddCurrentExerciseSet() {
     if (!exercise) return
@@ -130,8 +216,29 @@ export function MobileCurrentExerciseView({
 
   function handleDeleteCurrentExerciseLastSet() {
     if (!exercise || exercise.sets.length <= 1) return
+
+    // Confirm before deleting
+    if (!window.confirm('确定要删除最后一组吗？此操作无法撤销。')) {
+      return
+    }
+
     setCurrentSetIndex(Math.min(safeCurrentSetIndex, exercise.sets.length - 2))
     onDeleteLastSet(currentExerciseIndex)
+
+    showToast('已删除最后一组', 'neutral', 2000)
+  }
+
+  function handleExitTrainingMode() {
+    // Check if there are any incomplete sets
+    const hasIncompleteSets = workout.exercises.some(ex =>
+      ex.sets.some(set => !set.weight || !set.reps)
+    )
+
+    if (hasIncompleteSets && !window.confirm('训练中有未填写的组，确定要退出吗？')) {
+      return
+    }
+
+    onExitTrainingMode()
   }
 
   function handleGoToNextExercise() {
@@ -167,7 +274,7 @@ export function MobileCurrentExerciseView({
         workoutName={workout.workoutName}
         elapsedSeconds={elapsedSeconds}
         workoutSummary={workoutSummary}
-        onExitTrainingMode={onExitTrainingMode}
+        onExitTrainingMode={handleExitTrainingMode}
       />
 
       <div className="mt-2 grid gap-2">
@@ -207,7 +314,7 @@ export function MobileCurrentExerciseView({
             autoStartRest={autoStartRest}
             onUpdateSet={updateCurrentSet}
             onQuickFill={() => applyPatchToCurrentSet(quickFillPatch)}
-            onCurrentSetAction={handleCurrentSetAction}
+            onCurrentSetAction={handleCurrentSetActionWithUndo}
             onCopyPrevious={() => applyPatchToCurrentSet(copyPreviousPatch)}
             onCopyRecord={() => applyPatchToCurrentSet(copyRecordPatch)}
             onAddExercise={onAddExercise}

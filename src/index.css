@@ -40,6 +40,30 @@
   --surface-border: #dbe3ea;
   --surface-border-strong: #c6d1db;
 
+  /* Elevation system - subtle shadows for depth */
+  --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.08);
+  --shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.08);
+  --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.08);
+  --shadow-xl: 0 20px 25px -5px rgb(15 23 42 / 0.08), 0 8px 10px -6px rgb(15 23 42 / 0.08);
+
+  /* Gradient tokens */
+  --gradient-primary: linear-gradient(135deg, #0f9488 0%, #0ea5e9 100%);
+  --gradient-success: linear-gradient(135deg, #10b981 0%, #22d3ee 100%);
+  --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fb923c 100%);
+  --gradient-surface: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+  --gradient-overlay: linear-gradient(180deg, rgb(15 23 42 / 0) 0%, rgb(15 23 42 / 0.6) 100%);
+
+  /* Interactive state colors */
+  --color-hover-overlay: rgb(15 23 42 / 0.04);
+  --color-active-overlay: rgb(15 23 42 / 0.08);
+  --color-focus-ring: rgb(14 165 233 / 0.5);
+
+  /* Glassmorphism tokens */
+  --glass-bg: rgb(255 255 255 / 0.7);
+  --glass-border: rgb(255 255 255 / 0.18);
+  --glass-shadow: 0 8px 32px 0 rgb(31 38 135 / 0.15);
+
   /* 设计 Token - 间距 */
   --spacing-2: 0.5rem;
   --spacing-3: 0.75rem;
@@ -61,7 +85,17 @@
   --motion-slow: 240ms;
   --motion-rest: 680ms;
   --motion-stagger-step: 40ms;
-  --ease-out-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Natural easing curves - inspired by Material Design 3 */
+  --ease-out-smooth: cubic-bezier(0.22, 1, 0.36, 1); /* 已存在 */
+  --ease-in-out-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-bounce: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+  --ease-elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* iOS-like momentum curve */
+  --ease-momentum: cubic-bezier(0.4, 0, 0.1, 1);
 }
 
 /* Display type is reserved for the top-level brand/page title. */
@@ -83,6 +117,30 @@ h1,
   --surface-selected: #0f2f2e;
   --surface-border: #1e293b;
   --surface-border-strong: #334155;
+
+  /* Dark mode elevation - colored glows instead of shadows */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+
+  /* Dark mode gradients */
+  --gradient-primary: linear-gradient(135deg, #0f9488 0%, #0ea5e9 100%);
+  --gradient-success: linear-gradient(135deg, #059669 0%, #0891b2 100%);
+  --gradient-warning: linear-gradient(135deg, #d97706 0%, #ea580c 100%);
+  --gradient-surface: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+  --gradient-overlay: linear-gradient(180deg, rgb(15 23 42 / 0) 0%, rgb(15 23 42 / 0.9) 100%);
+
+  /* Dark mode interactive states */
+  --color-hover-overlay: rgb(255 255 255 / 0.06);
+  --color-active-overlay: rgb(255 255 255 / 0.12);
+  --color-focus-ring: rgb(6 182 212 / 0.5);
+
+  /* Dark mode glassmorphism */
+  --glass-bg: rgb(15 23 42 / 0.7);
+  --glass-border: rgb(255 255 255 / 0.08);
+  --glass-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.4);
 }
 
 /* 主题切换柔和过渡 */
@@ -143,124 +201,364 @@ select {
   font: inherit;
 }
 
+/* 焦点环 - 现代且易见 */
+@media (prefers-reduced-motion: no-preference) {
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+    transition: outline-offset var(--motion-fast) var(--ease-spring);
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    box-shadow: 0 0 0 4px var(--color-focus-ring);
+    border-color: var(--color-primary-500);
+    transition:
+      box-shadow var(--motion-base) var(--ease-spring),
+      border-color var(--motion-base) var(--ease-out-smooth);
+  }
+}
+
 /* ── 微交互 & 质感 ── */
 
 /* 按压反馈只用于真正的操作按钮，避免导航和小控件整体抖动。 */
-button[data-pressable="true"]:not(:disabled) {
+@media (prefers-reduced-motion: no-preference) {
+  button[data-pressable="true"]:not(:disabled) {
+    transition:
+      transform var(--motion-fast) var(--ease-spring),
+      background-color var(--motion-base) var(--ease-out-smooth),
+      border-color var(--motion-base) var(--ease-out-smooth),
+      color var(--motion-base) var(--ease-out-smooth),
+      box-shadow var(--motion-base) var(--ease-out-smooth);
+  }
+
+  button[data-pressable="true"]:active:not(:disabled) {
+    transform: scale(0.96);
+    transition-duration: var(--motion-instant);
+  }
+
+  button[data-pressable="true"]:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+}
+
+/* Glassmorphism effect */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-button {
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px) saturate(150%);
+  -webkit-backdrop-filter: blur(8px) saturate(150%);
+  border: 1px solid var(--glass-border);
   transition:
-    transform var(--motion-fast) var(--ease-out-smooth),
-    background-color var(--motion-base) var(--ease-out-smooth),
-    border-color var(--motion-base) var(--ease-out-smooth),
-    color var(--motion-base) var(--ease-out-smooth),
+    background var(--motion-base) var(--ease-out-smooth),
+    transform var(--motion-fast) var(--ease-spring),
     box-shadow var(--motion-base) var(--ease-out-smooth);
 }
 
-button[data-pressable="true"]:active:not(:disabled) {
-  transform: scale(0.97);
-}
+@media (prefers-reduced-motion: no-preference) {
+  .glass-button:hover {
+    background: rgb(255 255 255 / 0.85);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
 
-/* 卡片悬浮抬升 */
-.card-hover {
-  transition:
-    box-shadow var(--motion-base) var(--ease-out-smooth),
-    transform var(--motion-base) var(--ease-out-smooth);
-}
-.card-hover:hover {
-  box-shadow: 0 4px 12px rgb(15 23 42 / 0.08);
-  transform: translateY(-1px);
+  .dark .glass-button:hover {
+    background: rgb(15 23 42 / 0.85);
+  }
+
+  .glass-button:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+  }
 }
 
 /* Motion primitives. */
-@keyframes motion-enter {
-  from { opacity: 0; transform: translate3d(0, 5px, 0); }
-  to { opacity: 1; transform: translate3d(0, 0, 0); }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes motion-enter {
+    from { opacity: 0; transform: translate3d(0, 5px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
+  @keyframes motion-panel {
+    from { opacity: 0; transform: translate3d(0, -4px, 0) scale(0.985); }
+    to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  }
+
+  @keyframes motion-sheet {
+    from { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.99); }
+    to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  }
+
+  @keyframes motion-success-confirm {
+    0% { box-shadow: 0 0 0 0 rgb(16 185 129 / 0); transform: scale(1); }
+    42% { box-shadow: 0 0 0 4px rgb(16 185 129 / 0.12); transform: scale(1.004); }
+    100% { box-shadow: 0 0 0 0 rgb(16 185 129 / 0); transform: scale(1); }
+  }
+
+  /* Enhanced success celebration */
+  @keyframes motion-celebrate {
+    0% {
+      transform: scale(1) rotate(0deg);
+      box-shadow: 0 0 0 0 rgb(16 185 129 / 0);
+    }
+    15% {
+      transform: scale(1.1) rotate(-3deg);
+      box-shadow: 0 0 0 8px rgb(16 185 129 / 0.2);
+    }
+    30% {
+      transform: scale(1.05) rotate(3deg);
+      box-shadow: 0 0 0 12px rgb(16 185 129 / 0.1);
+    }
+    45% {
+      transform: scale(1.08) rotate(-2deg);
+    }
+    60% {
+      transform: scale(1.03) rotate(2deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      box-shadow: 0 0 0 0 rgb(16 185 129 / 0);
+    }
+  }
+
+  /* Error shake animation */
+  @keyframes motion-error-shake {
+    0%, 100% {
+      transform: translateX(0);
+      box-shadow: 0 0 0 0 rgb(239 68 68 / 0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+      transform: translateX(-8px);
+      box-shadow: 0 0 0 4px rgb(239 68 68 / 0.15);
+    }
+    20%, 40%, 60%, 80% {
+      transform: translateX(8px);
+      box-shadow: 0 0 0 4px rgb(239 68 68 / 0.15);
+    }
+  }
+
+  /* Warning pulse */
+  @keyframes motion-warning-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgb(245 158 11 / 0);
+      border-color: rgb(245 158 11 / 0.5);
+    }
+    50% {
+      box-shadow: 0 0 0 6px rgb(245 158 11 / 0.2);
+      border-color: rgb(245 158 11 / 1);
+    }
+  }
+
+  @keyframes motion-rest-ready {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgb(245 158 11 / 0.26); }
+    38% { transform: scale(1.012); box-shadow: 0 0 0 4px rgb(245 158 11 / 0.18); }
+    100% { transform: scale(1); box-shadow: 0 0 0 8px rgb(245 158 11 / 0); }
+  }
+
+  @keyframes motion-nav-active {
+    from { opacity: 0; transform: translate3d(0, -2px, 0) scaleX(0.72); }
+    to { opacity: 1; transform: translate3d(0, 0, 0) scaleX(1); }
+  }
+
+  @keyframes motion-dialog {
+    from { opacity: 0; transform: translate3d(0, 6px, 0) scale(0.985); }
+    to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  }
+
+  @keyframes motion-dialog-backdrop {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .motion-enter,
+  .motion-tab-view {
+    animation: motion-enter var(--motion-base) var(--ease-momentum) both;
+  }
+
+  .motion-panel,
+  .motion-feedback {
+    animation: motion-panel var(--motion-slow) var(--ease-elastic) both;
+    transform-origin: top right;
+  }
+
+  .motion-sheet {
+    animation: motion-sheet var(--motion-slow) var(--ease-spring) both;
+    transform-origin: bottom center;
+  }
+
+  .motion-list > * {
+    animation: motion-enter var(--motion-base) var(--ease-momentum) both;
+    animation-delay: calc(var(--motion-index, 0) * var(--motion-stagger-step));
+  }
+
+  .motion-success {
+    animation:
+      motion-panel var(--motion-slow) var(--ease-elastic) both,
+      motion-success-confirm var(--motion-slow) var(--ease-out-smooth) both;
+  }
+
+  .motion-current-set {
+    animation: motion-success-confirm var(--motion-slow) var(--ease-bounce) both;
+  }
+
+  .motion-celebrate {
+    animation: motion-celebrate 600ms var(--ease-spring) both;
+  }
+
+  .motion-error-shake {
+    animation: motion-error-shake 500ms var(--ease-out-smooth) both;
+  }
+
+  .motion-warning-pulse {
+    animation: motion-warning-pulse 1.5s var(--ease-out-smooth) infinite;
+  }
+
+  .motion-rest-ready {
+    animation: motion-rest-ready var(--motion-rest) var(--ease-out-smooth) both;
+  }
+
+  .motion-nav-active::after {
+    animation: motion-nav-active var(--motion-base) var(--ease-elastic) both;
+    transform-origin: center;
+  }
+
+  .group[open] > .motion-disclosure-content {
+    animation: motion-enter var(--motion-base) var(--ease-momentum) both;
+  }
+
+  dialog[open] {
+    animation: motion-dialog var(--motion-slow) var(--ease-spring) both;
+  }
+
+  dialog::backdrop {
+    animation: motion-dialog-backdrop var(--motion-base) var(--ease-out-smooth) both;
+  }
 }
 
-@keyframes motion-panel {
-  from { opacity: 0; transform: translate3d(0, -4px, 0) scale(0.985); }
-  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+/* 卡片悬浮抬升 - 仅在无动效偏好时应用 */
+@media (prefers-reduced-motion: no-preference) {
+  .card-hover {
+    transition:
+      box-shadow var(--motion-base) var(--ease-momentum),
+      transform var(--motion-base) var(--ease-momentum),
+      border-color var(--motion-base) var(--ease-out-smooth);
+  }
+  .card-hover:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+    border-color: var(--color-primary-100);
+  }
+  .card-hover:active {
+    transform: translateY(0px);
+    box-shadow: var(--shadow-sm);
+    transition-duration: var(--motion-instant);
+  }
 }
 
-@keyframes motion-sheet {
-  from { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.99); }
-  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+/* 微交互：悬停高亮 */
+@media (prefers-reduced-motion: no-preference) {
+  .interactive-overlay {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .interactive-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-hover-overlay);
+    opacity: 0;
+    transition: opacity var(--motion-fast) var(--ease-out-smooth);
+    pointer-events: none;
+  }
+
+  .interactive-overlay:hover::before {
+    opacity: 1;
+  }
+
+  .interactive-overlay:active::before {
+    background: var(--color-active-overlay);
+  }
 }
 
-@keyframes motion-success-confirm {
-  0% { box-shadow: 0 0 0 0 rgb(16 185 129 / 0); transform: scale(1); }
-  42% { box-shadow: 0 0 0 4px rgb(16 185 129 / 0.12); transform: scale(1.004); }
-  100% { box-shadow: 0 0 0 0 rgb(16 185 129 / 0); transform: scale(1); }
+/* 微交互：脉冲效果（用于吸引注意力） */
+@keyframes pulse-attention {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--color-focus-ring);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 4px var(--color-focus-ring);
+    transform: scale(1.02);
+  }
 }
 
-@keyframes motion-rest-ready {
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgb(245 158 11 / 0.26); }
-  38% { transform: scale(1.012); box-shadow: 0 0 0 4px rgb(245 158 11 / 0.18); }
-  100% { transform: scale(1); box-shadow: 0 0 0 8px rgb(245 158 11 / 0); }
+/* Skeleton shimmer loading animation */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
-@keyframes motion-nav-active {
-  from { opacity: 0; transform: translate3d(0, -2px, 0) scaleX(0.72); }
-  to { opacity: 1; transform: translate3d(0, 0, 0) scaleX(1); }
+@media (prefers-reduced-motion: no-preference) {
+  .pulse-attention {
+    animation: pulse-attention 2s var(--ease-out-smooth) infinite;
+  }
+
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgb(226 232 240 / 0) 0%,
+      rgb(226 232 240 / 0.4) 20%,
+      rgb(226 232 240 / 0.6) 50%,
+      rgb(226 232 240 / 0.4) 80%,
+      rgb(226 232 240 / 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  }
+
+  .dark .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgb(51 65 85 / 0) 0%,
+      rgb(51 65 85 / 0.4) 20%,
+      rgb(51 65 85 / 0.6) 50%,
+      rgb(51 65 85 / 0.4) 80%,
+      rgb(51 65 85 / 0) 100%
+    );
+    background-size: 200% 100%;
+  }
 }
 
-@keyframes motion-dialog {
-  from { opacity: 0; transform: translate3d(0, 6px, 0) scale(0.985); }
-  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+/* Coach mark highlight */
+.coach-mark-highlight {
+  position: relative;
+  z-index: 61;
+  box-shadow: 0 0 0 4px rgb(14 165 233 / 0.3), 0 0 0 2px rgb(14 165 233 / 0.8);
+  border-radius: 0.5rem;
+  animation: coach-mark-pulse 2s ease-in-out infinite;
 }
 
-@keyframes motion-dialog-backdrop {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.motion-enter,
-.motion-tab-view {
-  animation: motion-enter var(--motion-base) var(--ease-out-smooth) both;
-}
-
-.motion-panel,
-.motion-feedback {
-  animation: motion-panel var(--motion-slow) var(--ease-out-smooth) both;
-  transform-origin: top right;
-}
-
-.motion-sheet {
-  animation: motion-sheet var(--motion-slow) var(--ease-out-smooth) both;
-  transform-origin: bottom center;
-}
-
-.motion-list > * {
-  animation: motion-enter var(--motion-base) var(--ease-out-smooth) both;
-  animation-delay: calc(var(--motion-index, 0) * var(--motion-stagger-step));
-}
-
-.motion-success {
-  animation:
-    motion-panel var(--motion-slow) var(--ease-out-smooth) both,
-    motion-success-confirm var(--motion-slow) var(--ease-out-smooth) both;
-}
-
-.motion-current-set {
-  animation: motion-success-confirm var(--motion-slow) var(--ease-out-smooth) both;
-}
-
-.motion-rest-ready {
-  animation: motion-rest-ready var(--motion-rest) var(--ease-out-smooth) both;
-}
-
-.motion-nav-active::after {
-  animation: motion-nav-active var(--motion-base) var(--ease-out-smooth) both;
-  transform-origin: center;
-}
-
-.group[open] > .motion-disclosure-content {
-  animation: motion-enter var(--motion-base) var(--ease-out-smooth) both;
-}
-
-dialog[open] {
-  animation: motion-dialog var(--motion-slow) var(--ease-out-smooth) both;
-}
-
-dialog::backdrop {
-  animation: motion-dialog-backdrop var(--motion-base) var(--ease-out-smooth) both;
+@keyframes coach-mark-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgb(14 165 233 / 0.3), 0 0 0 2px rgb(14 165 233 / 0.8);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgb(14 165 233 / 0.2), 0 0 0 2px rgb(14 165 233 / 0.8);
+  }
 }
