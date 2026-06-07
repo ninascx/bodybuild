@@ -18,14 +18,14 @@ export function WeightStepControls({
       <Button
         variant="secondary"
         onClick={onDecrease}
-        className="px-2 text-xs text-slate-600 shadow-none dark:text-slate-400"
+        className="min-h-9 whitespace-nowrap px-2 py-0 text-xs text-slate-600 shadow-none dark:text-slate-400"
       >
         -{WEIGHT_STEP_KG}{suffix}
       </Button>
       <Button
         variant="secondary"
         onClick={onIncrease}
-        className="px-2 text-xs text-slate-600 shadow-none dark:text-slate-400"
+        className="min-h-9 whitespace-nowrap px-2 py-0 text-xs text-slate-600 shadow-none dark:text-slate-400"
       >
         +{WEIGHT_STEP_KG}{suffix}
       </Button>
@@ -59,7 +59,7 @@ export function WeightQuickSelect({
             key={weight}
             variant="secondary"
             className={cn(
-              'min-h-9 px-1 text-xs font-semibold shadow-none',
+              'min-h-9 px-1 py-0 text-xs font-semibold shadow-none',
               selected
                 ? 'border-[var(--color-primary-600)] bg-[var(--surface-selected)] text-[var(--color-primary-700)] dark:border-cyan-500 dark:bg-cyan-950/50 dark:text-cyan-50'
                 : 'border-[var(--surface-border)] bg-[var(--surface-panel)] text-slate-600 hover:border-[var(--color-primary-100)] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
@@ -103,7 +103,7 @@ export function TargetRepButtons({
           variant="secondary"
           onClick={() => onSelect(reps)}
           className={cn(
-            'px-2 text-xs font-semibold shadow-none',
+            'px-2 py-0 text-xs font-semibold shadow-none min-h-9',
             selected === reps
               ? 'border-emerald-500 bg-emerald-100 text-emerald-900 dark:border-emerald-500 dark:bg-emerald-900/40 dark:text-emerald-100'
               : 'border-[var(--surface-border)] bg-[var(--surface-panel)] text-slate-600 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
@@ -135,7 +135,7 @@ export function RirSelector({
           variant="secondary"
           onClick={() => onChange(value === option ? undefined : option)}
           className={cn(
-            'min-w-11 px-2 text-xs font-medium shadow-none',
+            'min-w-11 min-h-9 px-2 py-0 text-xs font-medium shadow-none',
             compact ? 'sm:min-h-12 sm:min-w-11' : '',
             value === option
               ? 'border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/40 dark:text-amber-100'

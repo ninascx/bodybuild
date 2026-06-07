@@ -86,19 +86,33 @@ export function MobileCurrentSetCard({
         {currentSetComplete ? <Badge tone="positive">已填</Badge> : <span className="text-xs font-medium text-slate-500 dark:text-slate-400">待填</span>}
       </div>
 
-      {previousSameSetSummary ? (
-        <div className="mt-1.5 rounded-md border border-emerald-200 bg-white px-2 py-1 text-xs text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200">
-          上次同组：<span className="font-semibold">{previousSameSetSummary}</span>
-        </div>
-      ) : copyRecordSummary ? (
-        <div className="mt-1.5 rounded-md border border-emerald-200 bg-white px-2 py-1 text-xs text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200">
-          上次最佳：<span className="font-semibold">{copyRecordSummary}</span>
+      {(previousSameSetSummary || copyRecordSummary || hasCopyPrevious) ? (
+        <div className="mt-1.5 grid gap-1.5">
+          {previousSameSetSummary || copyRecordSummary ? (
+            <button
+              type="button"
+              className="flex w-full items-center gap-1.5 rounded-md border border-emerald-200 bg-white px-2 py-1.5 text-left text-xs text-emerald-800 hover:bg-emerald-50 disabled:hover:bg-white dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-emerald-950/30"
+              onClick={hasCopyRecord ? onCopyRecord : undefined}
+              disabled={!hasCopyRecord}
+            >
+              <span className="shrink-0 text-slate-500 dark:text-slate-400">
+                {previousSameSetSummary ? '上次' : '最佳'}
+              </span>
+              <span className="min-w-0 flex-1 truncate font-semibold">{previousSameSetSummary ?? copyRecordSummary}</span>
+              {hasCopyRecord ? <span className="shrink-0 rounded bg-emerald-100 px-1.5 py-0.5 font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">套用</span> : null}
+            </button>
+          ) : null}
+          {hasCopyPrevious ? (
+            <Button variant="secondary" className="min-h-8 w-full px-2 text-xs" onClick={onCopyPrevious}>
+              复制上一组
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
-      {targetRange ? (
-        <p className={`mt-1 text-xs ${repsInTarget ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'}`}>
-          {repsInTarget ? '✓ 已达标' : ''}
+      {targetRange && repsInTarget ? (
+        <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">
+          ✓ 已达标
         </p>
       ) : null}
 
@@ -110,14 +124,14 @@ export function MobileCurrentSetCard({
           kind="decimal"
           range={{ min: 0, max: 500, allowZero: true }}
           onChange={(value) => onUpdateSet({ weight: value })}
-          className="h-12 text-base"
+          className="h-9 text-base"
         />
         <NumberField
           label="次数"
           value={currentSet.reps}
           range={{ min: 1, max: 100 }}
           onChange={(value) => onUpdateSet({ reps: value })}
-          className="h-12 text-base"
+          className="h-9 text-base"
         />
       </div>
 
@@ -129,11 +143,26 @@ export function MobileCurrentSetCard({
         onSelect={(reps) => onUpdateSet({ reps })}
       />
 
+      <div className="mt-2">
+        <div className="mb-1 flex items-center gap-1">
+          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">RIR</span>
+          <Tooltip content="Reps in Reserve: 完成后还能做几次">
+            <span className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-slate-200 text-[10px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">?</span>
+          </Tooltip>
+        </div>
+        <RirSelector
+          value={currentSet.rir}
+          labelPrefix=""
+          onChange={(rir) => onUpdateSet({ rir })}
+        />
+      </div>
+
       <DisclosurePanel
         className="mt-2 bg-[var(--surface-panel)] dark:bg-slate-900"
-        title="快速调整"
+        title="快速调整重量 / 次数"
         summaryClassName="text-xs"
         contentClassName="grid gap-2 px-2.5 py-2"
+        defaultOpen
       >
         <WeightQuickSelect
           value={currentSet.weight}
@@ -149,14 +178,14 @@ export function MobileCurrentSetCard({
           <div className="grid grid-cols-2 gap-1.5">
             <Button
               variant="secondary"
-              className="px-1.5 text-xs"
+              className="min-h-9 whitespace-nowrap px-1.5 py-0 text-xs"
               onClick={() => onUpdateSet({ reps: Math.max(1, (currentSet.reps ?? 1) - 1) })}
             >
               -1次
             </Button>
             <Button
               variant="secondary"
-              className="px-1.5 text-xs"
+              className="min-h-9 whitespace-nowrap px-1.5 py-0 text-xs"
               onClick={() => onUpdateSet({ reps: (currentSet.reps ?? 0) + 1 })}
             >
               +1次
@@ -165,22 +194,8 @@ export function MobileCurrentSetCard({
         </div>
       </DisclosurePanel>
 
-      <div className="mt-1.5">
-        <div className="mb-1 flex items-center gap-1">
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">RIR</span>
-          <Tooltip content="Reps in Reserve: 完成后还能做几次">
-            <span className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-slate-200 text-[10px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">?</span>
-          </Tooltip>
-        </div>
-        <RirSelector
-          value={currentSet.rir}
-          labelPrefix=""
-          onChange={(rir) => onUpdateSet({ rir })}
-        />
-      </div>
-
       <Button
-        className="mt-2 w-full py-2"
+        className="mt-2 min-h-10 w-full py-0 text-sm"
         onClick={onCurrentSetAction}
         disabled={currentSetActionDisabled}
         title={!currentSetActionDisabled ? "快捷键: Enter" : undefined}
@@ -190,7 +205,7 @@ export function MobileCurrentSetCard({
 
       <DisclosurePanel
         className="mt-2 bg-[var(--surface-panel)] dark:bg-slate-900"
-        title="更多操作"
+        title="组操作"
         summaryClassName="text-xs"
         contentClassName="grid gap-1.5 px-2.5 py-2"
       >
@@ -205,25 +220,17 @@ export function MobileCurrentSetCard({
             </Button>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-1.5">
-          <Button variant="secondary" className="px-2 text-xs" onClick={onCopyPrevious} disabled={!hasCopyPrevious}>
-            复制上一组
-          </Button>
-          <Button variant="secondary" className="px-2 text-xs" onClick={onCopyRecord} disabled={!hasCopyRecord}>
-            套用上次
-          </Button>
-          <Button variant="secondary" className="px-2 text-xs" onClick={onAddExercise}>
-            新增动作
-          </Button>
-        </div>
+        <Button variant="secondary" className="min-h-9 w-full px-2 py-0 text-xs" onClick={onAddExercise}>
+          新增动作
+        </Button>
 
         {hasEmptySet ? (
           <div className="mt-1.5 grid gap-1.5">
-            <Button variant="secondary" className="w-full text-xs" onClick={onApplyCurrentSetToEmptySets} disabled={!currentSetComplete}>
+            <Button variant="secondary" className="min-h-9 w-full py-0 text-xs" onClick={onApplyCurrentSetToEmptySets} disabled={!currentSetComplete}>
               复制本组到 {emptySetCount} 个空组
             </Button>
             {hasPreviousRecord ? (
-              <Button variant="secondary" className="w-full text-xs" onClick={onApplyPreviousRecordToEmptySets}>
+              <Button variant="secondary" className="min-h-9 w-full py-0 text-xs" onClick={onApplyPreviousRecordToEmptySets}>
                 按上次填入 {emptySetCount} 个空组
               </Button>
             ) : null}
@@ -231,7 +238,7 @@ export function MobileCurrentSetCard({
         ) : null}
 
         {hasAnotherIncompleteSet ? (
-          <Button variant="secondary" className="w-full text-xs" onClick={onNextIncompleteSet}>
+          <Button variant="secondary" className="min-h-9 w-full py-0 text-xs" onClick={onNextIncompleteSet}>
             下一未填组
           </Button>
         ) : null}

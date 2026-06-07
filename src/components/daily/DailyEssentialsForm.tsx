@@ -64,7 +64,7 @@ function QuickAdjustButtons({
   onIncrease: () => void
 }) {
   const buttonClass =
-    'h-9 min-w-[36px] border-l border-[var(--surface-border)] px-1.5 text-xs font-semibold leading-none text-slate-600 transition-colors first:border-l-0 hover:bg-white hover:text-[var(--color-primary-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-cyan-100 dark:focus-visible:ring-cyan-500/40 dark:disabled:text-slate-600 sm:h-11 sm:min-w-[44px] sm:px-2 sm:text-sm'
+    'h-9 min-w-[28px] border-l border-[var(--surface-border)] px-1 text-xs font-semibold leading-none text-slate-600 transition-colors first:border-l-0 hover:bg-white hover:text-[var(--color-primary-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-cyan-100 dark:focus-visible:ring-cyan-500/40 dark:disabled:text-slate-600 sm:h-11 sm:min-w-[44px] sm:px-2 sm:text-sm'
 
   return (
     <div className="inline-flex shrink-0 overflow-hidden rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] dark:border-slate-700 dark:bg-slate-900" aria-label={`${label} 快速微调`}>

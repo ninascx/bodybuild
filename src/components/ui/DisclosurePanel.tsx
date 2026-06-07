@@ -1,10 +1,11 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { cn } from '../../lib/cn'
 
 export interface DisclosurePanelProps {
   title: ReactNode
   children: ReactNode
   open?: boolean
+  defaultOpen?: boolean
   className?: string
   summaryClassName?: string
   contentClassName?: string
@@ -15,15 +16,24 @@ export function DisclosurePanel({
   title,
   children,
   open,
+  defaultOpen = false,
   className = '',
   summaryClassName = '',
   contentClassName = '',
   onOpenChange,
 }: DisclosurePanelProps) {
+  const [internalOpen, setInternalOpen] = useState(defaultOpen)
+  const isControlled = open !== undefined
+  const actualOpen = isControlled ? open : internalOpen
+
   return (
     <details
-      open={open}
-      onToggle={(event) => onOpenChange?.(event.currentTarget.open)}
+      open={actualOpen}
+      onToggle={(event) => {
+        const next = event.currentTarget.open
+        if (!isControlled) setInternalOpen(next)
+        onOpenChange?.(next)
+      }}
       className={cn('group rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] dark:border-slate-800 dark:bg-slate-900', className)}
     >
       <summary

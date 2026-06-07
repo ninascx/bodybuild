@@ -4,8 +4,8 @@ import type { WorkoutSummary } from '../../lib/workout'
 import { formatTime, isSetComplete } from '../../lib/workout'
 import type { ExerciseLog } from '../../types'
 import { cn } from '../../lib/cn'
-import { Badge, Button, Card, DisclosurePanel } from '../ui'
-import { formatPreviousSummary, formatSetSummary } from './workoutRecordFormat'
+import { Badge, Button, Card } from '../ui'
+import { formatSetSummary } from './workoutRecordFormat'
 
 export function MobileTrainingModeHeader({
   workoutName,
@@ -27,7 +27,7 @@ export function MobileTrainingModeHeader({
           </p>
           <h2 className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{workoutName}</h2>
         </div>
-        <Button variant="secondary" className="min-h-11 shrink-0 px-3 text-xs" onClick={onExitTrainingMode}>
+        <Button variant="secondary" className="min-h-8 shrink-0 px-3 text-xs" onClick={onExitTrainingMode}>
           退出
         </Button>
       </div>
@@ -75,9 +75,6 @@ export function MobileExerciseProgressCard({
         <span className="shrink-0 rounded-full border border-[var(--surface-border)] bg-[var(--surface-muted)] px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
           本动作 {completedSetCount}/{exercise.sets.length}
         </span>
-        <span className="shrink-0 rounded-full border border-[var(--surface-border)] bg-[var(--surface-muted)] px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-          当前第 {currentSetIndex + 1} 组
-        </span>
         <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
           remainingSetCount === 0
             ? 'border-emerald-200 bg-white text-emerald-700 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-300'
@@ -87,36 +84,19 @@ export function MobileExerciseProgressCard({
         </span>
       </div>
 
-      {previousRecord ? (
-        <DisclosurePanel
-          className="mt-2 border-[var(--surface-border)] bg-[var(--surface-muted)] text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-          title={formatPreviousSummary(previousRecord)}
-          summaryClassName="text-xs font-medium text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-900"
-          contentClassName="border-slate-200 py-2 dark:border-slate-700"
-        >
-          {previousRecord.allSets?.length ? (
-            <p className="text-xs leading-5">
-              {previousRecord.allSets.map((set, index) => {
-                const summary = formatSetSummary(set)
-                return summary ? `${index + 1}. ${summary}` : null
-              }).filter(Boolean).join('  ')}
-            </p>
-          ) : null}
-        </DisclosurePanel>
-      ) : null}
 
       <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
         {exercise.sets.map((set, index) => {
           const setDone = isSetComplete(set)
           const isCurrent = index === currentSetIndex
           return (
-            <Button
+            <button
               key={index}
-              variant="ghost"
+              type="button"
               onClick={() => onSelectSet(index)}
               aria-pressed={isCurrent}
               className={cn(
-                'min-h-9 min-w-[3.5rem] shrink-0 flex-col gap-0 rounded-full border px-1.5 text-center text-xs font-medium',
+                'flex shrink-0 flex-col items-center justify-center gap-0 rounded-md border px-2.5 py-1 text-center text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)]',
                 isCurrent
                   ? 'border-[var(--color-primary-700)] bg-[var(--color-primary-700)] text-white dark:border-cyan-500 dark:bg-cyan-600 dark:text-white'
                   : setDone
@@ -124,11 +104,11 @@ export function MobileExerciseProgressCard({
                     : 'border-[var(--surface-border)] bg-[var(--surface-muted)] text-slate-500 hover:border-[var(--surface-border-strong)] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400',
               )}
             >
-              <span className="block">#{index + 1}</span>
-              <span className="mt-0.5 block truncate text-xs font-semibold">
+              <span className="text-[11px] leading-tight opacity-70">#{index + 1}</span>
+              <span className="whitespace-nowrap text-xs font-semibold leading-tight">
                 {formatSetSummary(set) ?? '待填'}
               </span>
-            </Button>
+            </button>
           )
         })}
       </div>

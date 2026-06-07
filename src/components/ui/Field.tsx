@@ -49,13 +49,13 @@ export function Field({ label, children, helper, error, labelAction, className =
   if (labelAction) {
     return (
       <div className={cn('grid min-w-0 gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300', className)}>
-        <div className="flex min-h-5 items-center justify-between gap-2">
-          <label htmlFor={controlId} className="min-w-0 truncate">
-            {label}
-          </label>
-          {labelAction}
+        <label htmlFor={controlId} className="min-w-0 truncate">
+          {label}
+        </label>
+        <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
+          <div className="min-w-0 flex-1 overflow-hidden">{control}</div>
+          <div className="shrink-0">{labelAction}</div>
         </div>
-        {control}
         {helper ? <span id={helperId} className="text-xs font-normal leading-5 text-slate-500 dark:text-slate-400">{helper}</span> : null}
         {error ? (
           <span id={errorId} className="text-xs font-semibold leading-5 text-rose-600 dark:text-rose-400" role="alert">
