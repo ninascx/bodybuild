@@ -30,7 +30,7 @@ export function getDailyRecommendations(
   if (log?.sleepHours !== undefined && log.sleepHours < settings.sleepFloorHours) {
     recommendations.push({
       title: '睡眠偏少',
-      message: '今天不要冲力竭，训练保留更多余力。',
+      message: '今天训练先保主项质量，避免力竭，附件动作少做一点。',
       tone: 'warning',
     })
   }
@@ -39,7 +39,7 @@ export function getDailyRecommendations(
   if (recentThree.length >= 3 && recentThree.every((item) => (item.steps ?? target.stepTarget) < target.stepTarget)) {
     recommendations.push({
       title: '活动量偏低',
-      message: `连续 3 天步数低于 ${target.stepTarget}，建议增加 10-20 分钟散步。`,
+      message: `连续 3 天步数低于 ${target.stepTarget}。今天加一次饭后 10-20 分钟步行，先把活动量拉回底线。`,
       tone: 'warning',
     })
   }
@@ -48,21 +48,21 @@ export function getDailyRecommendations(
     if ((log?.calories ?? 0) > settings.weekendCalorieUpperKcal) {
       recommendations.push({
         title: '自由饮食偏高',
-        message: `周五或周六热量超过 ${settings.weekendCalorieUpperKcal} kcal，可能抵消周内赤字。优先控制周末，不要用极端压低工作日热量补偿。`,
+        message: `周五或周六热量超过 ${settings.weekendCalorieUpperKcal} kcal，可能抵消周内赤字。先把周末结构收紧，不用压低工作日来补偿。`,
         tone: 'danger',
       })
     }
     if (log?.protein !== undefined && log.protein < target.protein) {
       recommendations.push({
         title: '蛋白质未达底线',
-        message: `休息日也尽量保证至少 ${target.protein} g 蛋白质。`,
+        message: `休息日也先守住 ${target.protein} g 蛋白质，避免热量够了但恢复材料不足。`,
         tone: 'warning',
       })
     }
     if (log?.steps !== undefined && log.steps < target.stepTarget) {
       recommendations.push({
         title: '步数未达底线',
-        message: '建议饭后步行 20-30 分钟补足活动量。',
+        message: '今天先安排一次饭后 20-30 分钟步行，把活动量补回底线。',
         tone: 'warning',
       })
     }
@@ -71,7 +71,7 @@ export function getDailyRecommendations(
   if (recommendations.length === 0) {
     recommendations.push({
       title: '今日节奏',
-      message: target.isTrainingDay ? '按计划完成主项，推举动作保持可控和无明显不适。' : '休息日重点是蛋白质达标、控制自由饮食和补足步数。',
+      message: target.isTrainingDay ? '按计划完成主项，重量和次数保持可控；如果有明显不适，附件动作直接收掉。' : '休息日先守住蛋白质、步数和周末热量上限。',
       tone: 'positive',
     })
   }
@@ -91,14 +91,14 @@ export function getWeekendRiskRecommendation(logs: DailyLog[], today: string, pr
   if (riskyDays.length > 0 || (averageWeekendCalories ?? 0) > settings.weekendCalorieUpperKcal) {
     return {
       title: '周末风险预警',
-      message: '周五周六热量偏高时，优先控制自由饮食结构和步数，不建议用极端压低工作日热量来补偿。',
+      message: '周五/周六热量已经偏高。先控制自由饮食结构和步数，不用压低工作日热量来补偿。',
       tone: 'danger',
     }
   }
 
   return {
     title: '周末节奏',
-    message: `目前没有明显周末超标记录。继续守住周末 ${settings.weekendCalorieUpperKcal} kcal 上限、蛋白质和步数底线。`,
+    message: `目前没有明显周末超标记录。继续守住 ${settings.weekendCalorieUpperKcal} kcal 上限，同时保住蛋白质和步数底线。`,
     tone: 'positive',
   }
 }
@@ -113,7 +113,7 @@ export function getTwoWeekAdjustment(logs: DailyLog[], today: string, preference
   if (recentFourteen.length < 10 || previousFourteen.length < 7) {
     return {
       title: '两周调整',
-      message: '连续记录还不够完整。先积累至少 2-4 周体重、腰围、热量和训练完成度，再做热量调整。',
+      message: '连续记录还不够完整。先积累 2-4 周体重、腰围、热量和训练完成度，再判断是否调整热量。',
       tone: 'neutral',
     }
   }
@@ -129,7 +129,7 @@ export function getTwoWeekAdjustment(logs: DailyLog[], today: string, preference
   if (latestWeight === undefined || previousWeight === undefined) {
     return {
       title: '两周调整',
-      message: '体重数据不足，暂不调整热量。优先保持晨起体重连续记录。',
+      message: '体重数据不足，暂不调整热量。先把晨起体重连续记录补起来。',
       tone: 'neutral',
     }
   }
@@ -147,7 +147,7 @@ export function getTwoWeekAdjustment(logs: DailyLog[], today: string, preference
   if (weightOnTarget && performanceStable) {
     return {
       title: '继续当前方案',
-      message: `7 日平均体重变化接近每周 ${goalDeltaKg} kg 目标，训练表现稳定，先保持当前热量与训练安排。`,
+      message: `7 日均重变化接近每周 ${goalDeltaKg} kg 目标，训练表现稳定。先保持当前热量和训练安排。`,
       tone: 'positive',
     }
   }
@@ -155,7 +155,7 @@ export function getTwoWeekAdjustment(logs: DailyLog[], today: string, preference
   if (weightFlat && !waistFlat && waistChange !== undefined && waistChange < 0 && performanceRising) {
     return {
       title: '可能正在身体重组',
-      message: '体重变化不大，但腰围下降且训练表现上升，不要急着降热量。',
+      message: '体重变化不大，但腰围下降且训练表现上升。先保持当前方案，继续观察 1-2 周。',
       tone: 'positive',
     }
   }
@@ -163,7 +163,7 @@ export function getTwoWeekAdjustment(logs: DailyLog[], today: string, preference
   if (weightFlat && waistFlat) {
     return {
       title: '优先检查周末',
-      message: `连续两周体重和腰围几乎不变。先检查周五周六是否超过 ${settings.weekendCalorieUpperKcal} kcal；如果周末已控制，再小幅调整工作日热量。`,
+      message: `连续两周体重和腰围几乎不变。先检查周五/周六是否超过 ${settings.weekendCalorieUpperKcal} kcal；周末已控制后，再小幅调整工作日热量。`,
       tone: 'warning',
     }
   }
@@ -171,7 +171,7 @@ export function getTwoWeekAdjustment(logs: DailyLog[], today: string, preference
   if (weeklyWeightDeltaKg < goalDeltaKg - goalToleranceKg || (recentFatigue ?? 0) >= settings.fatigueThreshold || !performanceStable) {
     return {
       title: '赤字可能过大',
-      message: '体重下降偏快、疲劳偏高或训练完成度下降。建议训练日增加 100-150 kcal 碳水，并减少每周 2-4 组附件训练。',
+      message: '体重下降偏快、疲劳偏高或训练完成度下降。训练日先增加 100-150 kcal 碳水，本周附件训练少 2-4 组。',
       tone: 'warning',
     }
   }

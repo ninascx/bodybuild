@@ -215,13 +215,13 @@ export function buildTrendAlerts(
     if (weeklyRate < -0.75) {
       alerts.push({
         title: '体重下降偏快',
-        message: '7 日均重下降超过 0.75%。行动：训练日加 100 kcal 碳水，先别继续扩大赤字。',
+        message: '7 日均重下降超过 0.75%。训练日先加 100 kcal 碳水，不继续扩大赤字。',
         tone: 'warning',
       })
     } else if (Math.abs(weeklyRate) < 0.15 && waistChange !== undefined && waistChange < -0.3) {
       alerts.push({
         title: '可能正在身体重组',
-        message: '体重基本不动，但腰围在下降。行动：保持当前热量和训练，不急着压低摄入。',
+        message: '体重基本不动，但腰围在下降。保持当前热量和训练，继续观察 1-2 周。',
         tone: 'positive',
       })
     }
@@ -230,35 +230,35 @@ export function buildTrendAlerts(
   if (sleepLowStreak >= 2) {
     alerts.push({
       title: '睡眠连续不足',
-      message: `已连续 ${sleepLowStreak} 天睡眠低于 ${settings.sleepFloorHours}h。行动：今天训练保守，优先把睡眠补回底线以上。`,
+      message: `已连续 ${sleepLowStreak} 天睡眠低于 ${settings.sleepFloorHours}h。今天训练保守，优先把睡眠补回底线以上。`,
       tone: 'warning',
     })
   }
   if (fatigueHighStreak >= 2) {
     alerts.push({
       title: '疲劳连续偏高',
-      message: `疲劳已连续 ${fatigueHighStreak} 天偏高。行动：本周减少 2-4 组附件训练。`,
+      message: `疲劳已连续 ${fatigueHighStreak} 天偏高。本周减少 2-4 组附件训练，主项保留余力。`,
       tone: 'danger',
     })
   }
   if (stepsLowStreak >= 3) {
     alerts.push({
       title: '步数连续低于目标',
-      message: `已连续 ${stepsLowStreak} 天低于步数目标。行动：每天加一次饭后 15-20 分钟步行。`,
+      message: `已连续 ${stepsLowStreak} 天低于步数目标。每天加一次饭后 15-20 分钟步行，先补活动量底线。`,
       tone: 'warning',
     })
   }
   if ((weekendAverageCalories ?? 0) > settings.weekendCalorieUpperKcal) {
     alerts.push({
       title: '周末热量风险',
-      message: `最近周五/周六平均热量超过 ${settings.weekendCalorieUpperKcal} kcal。行动：先控周末自由饮食，不急着压工作日。`,
+      message: `最近周五/周六平均热量超过 ${settings.weekendCalorieUpperKcal} kcal。先控周末自由饮食，不急着压低工作日。`,
       tone: 'danger',
     })
   }
   if (recentCompletion !== undefined && previousCompletion !== undefined && recentCompletion < previousCompletion - 15) {
     alerts.push({
       title: '训练完成度下降',
-      message: `训练完成度从 ${previousCompletion}% 降到 ${recentCompletion}%。行动：保主项，附件少 2-4 组。`,
+      message: `训练完成度从 ${previousCompletion}% 降到 ${recentCompletion}%。下周先保主项，附件少 2-4 组。`,
       tone: 'warning',
     })
   }
@@ -266,7 +266,7 @@ export function buildTrendAlerts(
   if (alerts.length === 0) {
     alerts.push({
       title: '趋势暂时平稳',
-      message: '最近没有明显风险信号。行动：继续记录体重、腰围、睡眠、疲劳和训练完成度。',
+      message: '最近没有明显风险信号。继续记录体重、腰围、睡眠、疲劳和训练完成度。',
       tone: 'positive',
     })
   }
@@ -296,7 +296,7 @@ export function buildWeeklyActionRecommendations(
     return [
       {
         title: '暂不调整，继续记录',
-        message: '本周核心记录不足 4 天。下周先补齐体重、热量、蛋白、步数和训练完成度。',
+        message: '本周核心记录不足 4 天。下周先补齐体重、热量、蛋白、步数和训练完成度，再判断是否调整。',
         tone: 'neutral',
       },
     ]
@@ -305,7 +305,7 @@ export function buildWeeklyActionRecommendations(
   if (summary.weekendOverLimit) {
     actions.push({
       title: '优先控制周末',
-      message: '下周先把周五/周六拉回 2600-3000 kcal，不急着压低工作日热量。',
+      message: `下周先把周五/周六拉回 ${Math.max(0, settings.weekendCalorieUpperKcal - 400)}-${settings.weekendCalorieUpperKcal} kcal，不急着压低工作日热量。`,
       tone: 'danger',
     })
   }
@@ -313,7 +313,7 @@ export function buildWeeklyActionRecommendations(
   if ((averageFatigue ?? 0) >= settings.fatigueThreshold || summary.trainingCompletionRate < 70 || (averageSleep !== undefined && averageSleep < settings.sleepFloorHours)) {
     actions.push({
       title: '本周减少 2-4 组训练量',
-      message: '疲劳、睡眠或完成度已经影响执行。下周保主项，附件训练少做 2-4 组。',
+      message: '疲劳、睡眠或完成度已经影响执行。下周保主项质量，附件训练少做 2-4 组。',
       tone: 'warning',
     })
   }
@@ -329,7 +329,7 @@ export function buildWeeklyActionRecommendations(
   if (summary.calorieStatus === 'low' || (summary.weightDelta !== undefined && summary.weightDelta < -0.7)) {
     actions.push({
       title: '训练日增加 100 kcal',
-      message: '热量或体重下降偏快。下周训练日前后增加 100 kcal 碳水，观察训练表现。',
+      message: '热量偏低或体重下降偏快。下周训练日前后增加 100 kcal 碳水，观察训练表现。',
       tone: 'warning',
     })
   }

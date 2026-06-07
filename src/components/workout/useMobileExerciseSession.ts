@@ -120,17 +120,6 @@ export function useMobileExerciseSession({
     ? formatSetSummary(previousRecord.allSets[safeCurrentSetIndex])
     : null
   const currentSetSummary = currentSet ? formatSetSummary(currentSet) : null
-  const quickFillPatch = currentSet && isSetEmpty(currentSet)
-    ? copyPreviousPatch ?? copyRecordPatch
-    : null
-  const quickFillSummary = quickFillPatch ? formatSetSummary(quickFillPatch) : null
-  const quickFillLabel = currentSet && isSetEmpty(currentSet) && copyPreviousPatch
-    ? '沿用上一组填本组'
-    : currentSet && isSetEmpty(currentSet) && copyRecordPatch
-      ? previousSameSetSummary
-        ? '套用上次同组'
-        : '套用上次最佳'
-      : null
   const emptySetCount = exercise?.sets.filter(isSetEmpty).length ?? 0
   const hasEmptySet = emptySetCount > 0
   const targetRange: TargetRepRange | null = exercise ? parseTargetRepRange(exercise.target) : null
@@ -299,9 +288,6 @@ export function useMobileExerciseSession({
     copyPreviousPatch,
     copyRecordPatch,
     previousSameSetSummary,
-    quickFillPatch,
-    quickFillSummary,
-    quickFillLabel,
     emptySetCount,
     hasEmptySet,
     targetRange,
