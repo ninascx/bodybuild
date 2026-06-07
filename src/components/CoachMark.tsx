@@ -89,7 +89,7 @@ export function CoachMark({ steps, storageKey, onComplete }: CoachMarkProps) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-[60] bg-slate-950/40 backdrop-blur-sm"
+        className="fixed inset-0 z-[60] bg-slate-950/40 backdrop-blur-md"
         onClick={handleSkip}
       />
 

@@ -19,7 +19,7 @@ export function MobileTrainingModeHeader({
   onExitTrainingMode: () => void
 }) {
   return (
-    <div className="sticky top-0 z-20 -mx-4 border-b border-[var(--surface-border)] bg-[color-mix(in_srgb,var(--surface-page)_92%,white)] px-4 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-950/95 sm:-mx-6 sm:px-6">
+    <div className="sticky top-0 z-20 -mx-4 border-b border-[var(--surface-border)] bg-[color-mix(in_srgb,var(--surface-page)_92%,white)] px-4 py-2 backdrop-blur-lg dark:border-slate-700 dark:bg-slate-950/75 sm:-mx-6 sm:px-6">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">

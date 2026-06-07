@@ -146,7 +146,7 @@ export function MobileWorkoutBottomBar({
           </div>
         ) : null}
 
-        <div className="border-t border-slate-200 bg-white/95 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
+        <div className="border-t border-white/20 bg-white/75 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-lg backdrop-blur-lg dark:border-slate-700/50 dark:bg-slate-900/75">
           <div className="mx-auto grid max-w-md gap-2">
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1">

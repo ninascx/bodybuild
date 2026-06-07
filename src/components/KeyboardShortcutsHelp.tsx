@@ -46,7 +46,7 @@ export function KeyboardShortcutsHelp() {
     <>
       <button
         type="button"
-        className="fixed inset-0 z-40 bg-slate-950/25 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-slate-950/25 backdrop-blur-md"
         onClick={() => setIsOpen(false)}
         aria-label="关闭快捷键帮助"
       />

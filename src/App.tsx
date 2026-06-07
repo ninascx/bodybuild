@@ -96,7 +96,7 @@ const dayKeys: DayKey[] = [0, 1, 2, 3, 4, 5, 6]
 
 function DialogLoadingFallback() {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/30 p-4 backdrop-blur-sm" role="status" aria-live="polite">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/30 p-4 backdrop-blur-md" role="status" aria-live="polite">
       <LoadingBlock title="正在准备导出..." lines={2} className="w-full max-w-md shadow-xl" />
     </div>
   )
