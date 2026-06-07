@@ -4,6 +4,7 @@ import type { ExerciseSetLog } from '../../types'
 import { NumberField } from '../NumberField'
 import { Badge, Button, Checkbox, DisclosurePanel } from '../ui'
 import { RirSelector, TargetRepButtons, WEIGHT_STEP_KG, WeightQuickSelect, WeightStepControls } from './WorkoutSetQuickControls'
+import { Tooltip } from '../Tooltip'
 
 type MobileCurrentSetCardProps = {
   currentSet: ExerciseSetLog | undefined
@@ -14,9 +15,6 @@ type MobileCurrentSetCardProps = {
   previousSameSetSummary: string | null
   copyRecordSummary: string | null
   repsInTarget: boolean | null
-  quickFillLabel: string | null
-  quickFillSummary: string | null
-  quickFillAvailable: boolean
   currentSetComplete: boolean
   currentSetActionLabel: string
   currentSetActionDisabled: boolean
@@ -28,7 +26,6 @@ type MobileCurrentSetCardProps = {
   hasAnotherIncompleteSet: boolean
   autoStartRest: boolean
   onUpdateSet: (patch: Partial<ExerciseSetLog>, advanceWhenComplete?: boolean) => void
-  onQuickFill: () => void
   onCurrentSetAction: () => void
   onCopyPrevious: () => void
   onCopyRecord: () => void
@@ -50,9 +47,6 @@ export function MobileCurrentSetCard({
   previousSameSetSummary,
   copyRecordSummary,
   repsInTarget,
-  quickFillLabel,
-  quickFillSummary,
-  quickFillAvailable,
   currentSetComplete,
   currentSetActionLabel,
   currentSetActionDisabled,
@@ -64,7 +58,6 @@ export function MobileCurrentSetCard({
   hasAnotherIncompleteSet,
   autoStartRest,
   onUpdateSet,
-  onQuickFill,
   onCurrentSetAction,
   onCopyPrevious,
   onCopyRecord,
@@ -109,13 +102,7 @@ export function MobileCurrentSetCard({
         </p>
       ) : null}
 
-      {quickFillAvailable && quickFillLabel ? (
-        <Button className="mt-1.5 w-full text-xs" onClick={onQuickFill}>
-          {quickFillLabel}{quickFillSummary ? ` · ${quickFillSummary}` : ''}
-        </Button>
-      ) : null}
-
-      <div className="mt-2 grid grid-cols-2 gap-2">
+      <div className="mt-2 grid grid-cols-2 gap-2" data-coach="workout-input">
         <NumberField
           label="重量 kg"
           value={currentSet.weight}
@@ -142,48 +129,61 @@ export function MobileCurrentSetCard({
         onSelect={(reps) => onUpdateSet({ reps })}
       />
 
-      <WeightQuickSelect
-        className="mt-2"
-        value={currentSet.weight}
-        onSelect={(weight) => onUpdateSet({ weight })}
-      />
-
-      <div className="mt-1.5 grid grid-cols-2 gap-2">
-        <WeightStepControls
-          suffix="kg"
-          onDecrease={() => onUpdateSet({ weight: Math.max(0, (currentSet.weight ?? 0) - WEIGHT_STEP_KG) })}
-          onIncrease={() => onUpdateSet({ weight: (currentSet.weight ?? 0) + WEIGHT_STEP_KG })}
+      <DisclosurePanel
+        className="mt-2 bg-[var(--surface-panel)] dark:bg-slate-900"
+        title="快速调整"
+        summaryClassName="text-xs"
+        contentClassName="grid gap-2 px-2.5 py-2"
+      >
+        <WeightQuickSelect
+          value={currentSet.weight}
+          onSelect={(weight) => onUpdateSet({ weight })}
         />
-        <div className="grid grid-cols-2 gap-1.5">
-          <Button
-            variant="secondary"
-            className="px-1.5 text-xs"
-            onClick={() => onUpdateSet({ reps: Math.max(1, (currentSet.reps ?? 1) - 1) })}
-          >
-            -1次
-          </Button>
-          <Button
-            variant="secondary"
-            className="px-1.5 text-xs"
-            onClick={() => onUpdateSet({ reps: (currentSet.reps ?? 0) + 1 })}
-          >
-            +1次
-          </Button>
+
+        <div className="grid grid-cols-2 gap-2">
+          <WeightStepControls
+            suffix="kg"
+            onDecrease={() => onUpdateSet({ weight: Math.max(0, (currentSet.weight ?? 0) - WEIGHT_STEP_KG) })}
+            onIncrease={() => onUpdateSet({ weight: (currentSet.weight ?? 0) + WEIGHT_STEP_KG })}
+          />
+          <div className="grid grid-cols-2 gap-1.5">
+            <Button
+              variant="secondary"
+              className="px-1.5 text-xs"
+              onClick={() => onUpdateSet({ reps: Math.max(1, (currentSet.reps ?? 1) - 1) })}
+            >
+              -1次
+            </Button>
+            <Button
+              variant="secondary"
+              className="px-1.5 text-xs"
+              onClick={() => onUpdateSet({ reps: (currentSet.reps ?? 0) + 1 })}
+            >
+              +1次
+            </Button>
+          </div>
         </div>
-      </div>
+      </DisclosurePanel>
 
       <div className="mt-1.5">
+        <div className="mb-1 flex items-center gap-1">
+          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">RIR</span>
+          <Tooltip content="Reps in Reserve: 完成后还能做几次">
+            <span className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-slate-200 text-[10px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">?</span>
+          </Tooltip>
+        </div>
         <RirSelector
           value={currentSet.rir}
-          labelPrefix="RIR "
+          labelPrefix=""
           onChange={(rir) => onUpdateSet({ rir })}
         />
       </div>
 
       <Button
-        className="mt-2 w-full py-2.5"
+        className="mt-2 w-full py-2"
         onClick={onCurrentSetAction}
         disabled={currentSetActionDisabled}
+        title={!currentSetActionDisabled ? "快捷键: Enter" : undefined}
       >
         {currentSetActionLabel}
       </Button>

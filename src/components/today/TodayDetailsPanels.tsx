@@ -57,13 +57,13 @@ export function TodayDetailsPanels({
           <TodayDetailSection>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">今日计划</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">今日安排</p>
                 <h2 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-50">{target.workoutName}</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{plan.focus}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button variant="secondary" className="px-3" onClick={onRecordToday}>
-                  记录今天
+                  记录数据
                 </Button>
                 <Button className="px-3" onClick={onStartWorkout}>
                   {target.isTrainingDay ? '开始训练' : '查看训练'}
@@ -83,21 +83,21 @@ export function TodayDetailsPanels({
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <BudgetTile label="已摄入" value={`${dashboardStats.calorieBudget.consumed} kcal`} />
                 <BudgetTile
-                  label="剩余额度"
+                  label="剩余"
                   value={`${dashboardStats.calorieBudget.remaining} kcal`}
                   danger={dashboardStats.calorieBudget.remaining < 0}
                 />
                 <BudgetTile label="剩余天数" value={`${dashboardStats.calorieBudget.remainingDays} 天`} />
                 <BudgetTile
-                  label="平均还能吃"
-                  value={hasWeeklyCalorieLogs ? `${dashboardStats.calorieBudget.averagePerRemainingDay} kcal/天` : '本周暂无摄入记录'}
+                  label="每天可吃"
+                  value={hasWeeklyCalorieLogs ? `${dashboardStats.calorieBudget.averagePerRemainingDay} kcal` : '本周暂无记录'}
                   danger={hasWeeklyCalorieLogs && dashboardStats.calorieBudget.averagePerRemainingDay < 1500}
                 />
               </div>
             </TodayDetailSection>
 
             <TodayDetailSection>
-              <SectionHeader title="今日宏量剩余额度" />
+              <SectionHeader title="今日剩余额度" />
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <MacroTile label="热量" value={signedRemaining(todayCalorieTarget, todayLog?.calories)} unit="kcal" tone={remainingTone(todayCalorieTarget, todayLog?.calories)} />
                 <MacroTile label="蛋白质" value={signedRemaining(target.protein, todayLog?.protein)} unit="g" tone={remainingTone(target.protein, todayLog?.protein)} />

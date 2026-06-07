@@ -28,6 +28,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       type={props.type ?? 'button'}
       disabled={props.disabled || loading}
+      data-pressable="true"
       className={cn(
         'inline-flex min-h-11 min-w-0 cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-panel)] disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-cyan-500 dark:focus-visible:ring-offset-slate-950',
         variantClasses[variant],

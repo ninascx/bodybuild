@@ -55,6 +55,37 @@ export default defineConfig({
         // 多用户网站里的 /api/* 都可能包含个人数据，不能进入 Service Worker 缓存。
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
+        // Runtime caching for better offline experience
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'gstatic-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ]
       },
       devOptions: {
         enabled: false, // dev 不启用，避免缓存干扰开发
@@ -69,4 +100,31 @@ export default defineConfig({
       '/api': 'http://127.0.0.1:8787',
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // React vendor - rarely changes
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'react-vendor'
+          }
+
+          // Chart library - only loaded on Dashboard
+          if (id.includes('node_modules/recharts')) {
+            return 'chart-vendor'
+          }
+
+          // Core utilities - relatively stable
+          if (id.includes('src/lib/metrics') ||
+              id.includes('src/lib/storage') ||
+              id.includes('src/lib/workout') ||
+              id.includes('src/lib/exportPayload')) {
+            return 'utils'
+          }
+        }
+      }
+    },
+    // Increase chunk size warning limit for chart vendor
+    chunkSizeWarningLimit: 600
+  }
 })
