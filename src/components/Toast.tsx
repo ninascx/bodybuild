@@ -8,6 +8,7 @@ export type ToastMessage = {
   message: string
   tone: ToastTone
   duration?: number
+  action?: { label: string; handler: () => void }
 }
 
 type ToastProps = {
@@ -24,30 +25,58 @@ const toneClasses: Record<ToastTone, string> = {
 
 export function Toast({ toast, onClose }: ToastProps) {
   const liveMode = toast.tone === 'danger' ? 'assertive' : 'polite'
+  const defaultDuration = toast.tone === 'success' ? 2000 : 3000
 
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose(toast.id)
-    }, toast.duration ?? 3000)
+    }, toast.duration ?? defaultDuration)
 
     return () => clearTimeout(timer)
-  }, [toast.id, toast.duration, onClose])
+  }, [toast.id, toast.duration, defaultDuration, onClose])
+
+  const isLightweight = toast.tone === 'success' && !toast.action
 
   return (
     <div
-      className={`motion-feedback ${toast.tone === 'success' ? 'motion-success' : ''} flex min-w-[280px] max-w-[90vw] items-center justify-between gap-3 rounded-lg border px-4 py-3 ${toneClasses[toast.tone]}`}
+      className={`motion-feedback ${toast.tone === 'success' ? 'motion-success' : ''} flex min-w-[280px] max-w-[90vw] items-center justify-between gap-3 rounded-lg border px-4 ${isLightweight ? 'py-2' : 'py-3'} shadow-sm ${toneClasses[toast.tone]}`}
       role={toast.tone === 'danger' ? 'alert' : 'status'}
       aria-live={liveMode}
     >
-      <p className="text-sm font-medium">{toast.message}</p>
-      <Button
-        variant="ghost"
-        onClick={() => onClose(toast.id)}
-        className="min-h-11 shrink-0 px-3 text-current opacity-80 hover:bg-black/5 hover:text-current hover:opacity-100 dark:hover:bg-white/10"
-        aria-label="关闭通知"
-      >
-        关闭
-      </Button>
+      <p className={`font-medium ${isLightweight ? 'text-xs' : 'text-sm'}`}>{toast.message}</p>
+      <div className="flex shrink-0 items-center gap-2">
+        {toast.action ? (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              toast.action!.handler()
+              onClose(toast.id)
+            }}
+            className="min-h-8 px-2 text-xs font-semibold text-current hover:bg-black/10 hover:text-current dark:hover:bg-white/15"
+          >
+            {toast.action.label}
+          </Button>
+        ) : null}
+        {!isLightweight ? (
+          <Button
+            variant="ghost"
+            onClick={() => onClose(toast.id)}
+            className="min-h-11 shrink-0 px-3 text-current opacity-80 hover:bg-black/5 hover:text-current hover:opacity-100 dark:hover:bg-white/10"
+            aria-label="关闭通知"
+          >
+            关闭
+          </Button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onClose(toast.id)}
+            className="shrink-0 text-current opacity-60 hover:opacity-100"
+            aria-label="关闭通知"
+          >
+            ✕
+          </button>
+        )}
+      </div>
     </div>
   )
 }

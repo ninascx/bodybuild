@@ -93,7 +93,13 @@ export function NumberField({
 
   const rangeHint =
     effectiveRange && (effectiveRange.min !== undefined || effectiveRange.max !== undefined)
-      ? `应在 ${effectiveRange.min ?? '负无穷'}${effectiveRange.max !== undefined ? `-${effectiveRange.max}` : '+'} 之间`
+      ? effectiveRange.min !== undefined && effectiveRange.max !== undefined
+        ? `请输入 ${effectiveRange.min}-${effectiveRange.max} 之间的数值`
+        : effectiveRange.max !== undefined
+          ? `不能超过 ${effectiveRange.max}`
+          : effectiveRange.allowZero
+            ? `请输入 0 或 ${effectiveRange.min} 以上的数值`
+            : `不能低于 ${effectiveRange.min}`
       : '请输入有效数字'
 
   return (

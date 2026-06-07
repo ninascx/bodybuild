@@ -118,22 +118,22 @@ export function MobileWorkoutBottomBar({
                       <Button variant="secondary" className="min-h-9 px-2 py-1 text-xs" onClick={() => onAdjustRestDuration(15)}>
                         +15s
                       </Button>
+                      <Button variant="secondary" className="min-h-9 px-2 py-1 text-xs" onClick={() => onAdjustRestDuration(30)}>
+                        +30s
+                      </Button>
                       <Button className="min-h-9 px-3 py-1 text-xs" onClick={onSkipRest}>
-                        结束休息
+                        结束
                       </Button>
                     </div>
                   ) : (
                     <Button variant="secondary" className="px-3" onClick={onStartRest}>
-                      开始休息
+                      开始
                     </Button>
                   )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="secondary" className="px-3 text-xs" onClick={onPreviousExercise} disabled={!canGoPrevious}>
-                  上一动作
-                </Button>
                 <Button variant="secondary" className="px-3 text-xs" onClick={onFinish} title={bottomFinishTitle}>
                   {bottomFinishLabel}
                 </Button>
@@ -156,15 +156,34 @@ export function MobileWorkoutBottomBar({
                 </p>
               </div>
               <Button variant="ghost" className="min-h-9 px-2.5 text-xs" onClick={() => setExpanded((value) => !value)}>
-                展开
+                更多
               </Button>
             </div>
 
-            <div className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-2">
-              <Button variant="secondary" className="min-h-12 whitespace-nowrap px-2 text-sm" onClick={restActive ? () => setExpanded(true) : onStartRest}>
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)] gap-2">
+              <Button
+                variant="secondary"
+                className="min-h-12 whitespace-nowrap px-2 text-xs"
+                onClick={onPreviousExercise}
+                disabled={!canGoPrevious}
+                title={canGoPrevious ? "快捷键: ←" : undefined}
+              >
+                上一个
+              </Button>
+              <Button
+                variant="secondary"
+                className="min-h-12 whitespace-nowrap px-2 text-sm"
+                onClick={restActive ? () => setExpanded(true) : onStartRest}
+                title="快捷键: Space"
+              >
                 {restText}
               </Button>
-              <Button className="min-h-12 whitespace-nowrap px-2 text-sm" onClick={onNext} disabled={bottomNextDisabled}>
+              <Button
+                className="min-h-12 whitespace-nowrap px-2 text-sm"
+                onClick={onNext}
+                disabled={bottomNextDisabled}
+                title={!bottomNextDisabled ? "快捷键: →" : undefined}
+              >
                 {bottomNextLabel}
               </Button>
             </div>
