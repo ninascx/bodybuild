@@ -23,11 +23,13 @@ export function WorkoutControlPanel({
   syncState,
   taskPlan,
   restDay,
+  xunjiSyncPending,
   onDateChange,
   onTemplateChange,
   onApplyTemplate,
   onApplyRecommended,
   onAddExercise,
+  onSyncFromXunji,
 }: {
   selectedDate: string
   today: string
@@ -42,11 +44,13 @@ export function WorkoutControlPanel({
   syncState: SyncState
   taskPlan: TodayTaskPlan
   restDay: boolean
+  xunjiSyncPending: boolean
   onDateChange: (date: string) => void
   onTemplateChange: (id: string) => void
   onApplyTemplate: (template: WorkoutTemplateOption) => void
   onApplyRecommended: () => void
   onAddExercise: () => void
+  onSyncFromXunji: () => void
 }) {
   const hasWorkout = Boolean(selectedWorkout)
   const recommendedId = `builtin-${getDayKey(selectedDate)}`
@@ -107,6 +111,16 @@ export function WorkoutControlPanel({
             onApplyRecommended={onApplyRecommended}
           />
         ) : null}
+      </div>
+      <div className="mt-3 sm:hidden">
+        <Button
+          variant="secondary"
+          className="w-full min-h-12"
+          loading={xunjiSyncPending}
+          onClick={onSyncFromXunji}
+        >
+          同步训记
+        </Button>
       </div>
 
       {!restDay && !hasWorkout ? (

@@ -48,6 +48,12 @@ interface XunjiSet extends JsonObject {
   done?: boolean
   weight?: string | number
   weight_kg?: string | number
+  selfWeight?: string | number
+  self_weight?: string | number
+  selfWeightKg?: string | number
+  self_weight_kg?: string | number
+  bodyWeight?: string | number
+  bodyweight?: string | number
   unit?: string
   reps?: string | number
   rir?: string | number
@@ -106,7 +112,9 @@ function asArray<T>(value: unknown): T[] {
 function asNumber(value: unknown): number | undefined {
   if (typeof value === 'number' && Number.isFinite(value)) return value
   if (typeof value !== 'string') return undefined
-  const parsed = Number(value.trim())
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+  const parsed = Number(trimmed)
   return Number.isFinite(parsed) ? parsed : undefined
 }
 
@@ -123,7 +131,15 @@ function createStableId(prefix: string, seed: string): string {
 }
 
 function normalizeWeightKg(set: XunjiSet): number | undefined {
-  const raw = asNumber(set.weight_kg ?? set.weight)
+  const raw =
+    asNumber(set.weight_kg) ??
+    asNumber(set.weight) ??
+    asNumber(set.selfWeight) ??
+    asNumber(set.self_weight) ??
+    asNumber(set.selfWeightKg) ??
+    asNumber(set.self_weight_kg) ??
+    asNumber(set.bodyWeight) ??
+    asNumber(set.bodyweight)
   if (raw === undefined) return undefined
   const unit = typeof set.unit === 'string' ? set.unit.toLowerCase() : 'kg'
   return unit === 'lb' || unit === 'lbs' || unit === '磅' ? Math.round(raw * 0.453592 * 100) / 100 : raw

@@ -4,7 +4,7 @@ import { QuickRecordSection } from '../components/QuickRecordSection'
 import { DailyCalendarPanel, MeasurementPanel } from '../components/daily/DailyRecordPanels'
 import { addDays } from '../lib/dates'
 import { useSwipe } from '../hooks/useSwipe'
-import { useMemo } from 'react'
+import { useMemo, useState, type ComponentProps } from 'react'
 import type { DailyLog, DailyTarget, WorkoutLog } from '../types'
 import type { SyncState } from '../lib/storage'
 import type { DailyFocusKey } from '../lib/productFlow'
@@ -12,6 +12,23 @@ import type { DailyFocusKey } from '../lib/productFlow'
 function targetCalories(target: DailyTarget): number | undefined {
   if (target.calories !== undefined) return target.calories
   return target.calorieRange?.[1]
+}
+
+const visibleDailyFieldKeys: DailyFocusKey[] = ['weight', 'calories', 'protein', 'steps', 'sleep', 'fatigue']
+const defaultDailyPriorityKeys: DailyFocusKey[] = ['weight', 'calories', 'protein']
+
+function normalizePriorityKeys(priorityKeys: DailyFocusKey[] | undefined, focusKey: DailyFocusKey | undefined) {
+  const keys = [...(focusKey ? [focusKey] : []), ...(priorityKeys ?? [])]
+  const normalized = keys.filter((key, index) => visibleDailyFieldKeys.includes(key) && keys.indexOf(key) === index)
+  return normalized.length > 0 ? normalized : defaultDailyPriorityKeys
+}
+
+type QuickRecordSectionProps = ComponentProps<typeof QuickRecordSection>
+
+function StableQuickRecordSection(props: QuickRecordSectionProps) {
+  const [stablePriorityKeys] = useState(() => normalizePriorityKeys(props.priorityKeys, props.focusKey))
+
+  return <QuickRecordSection {...props} priorityKeys={stablePriorityKeys} />
 }
 
 type DailyRecordTabProps = {
@@ -88,7 +105,8 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         </div>
       </section>
 
-      <QuickRecordSection
+      <StableQuickRecordSection
+        key={props.selectedDate}
         selectedLog={props.selectedLog}
         selectedTarget={props.selectedTarget}
         yesterdayLog={yesterdayLog}

@@ -247,6 +247,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
             syncState={props.syncState}
             taskPlan={props.taskPlan}
             restDay={props.restDay}
+            xunjiSyncPending={props.xunjiSyncPending}
             onDateChange={props.onDateChange}
             onTemplateChange={props.onTemplateChange}
             onApplyTemplate={(template) => {
@@ -261,6 +262,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
               props.onAddExercise()
               if (!hasWorkout) setTrainingMode(true)
             }}
+            onSyncFromXunji={props.onSyncFromXunji}
           />
           <div className="hidden md:block">
             <WorkoutStatusOverview
