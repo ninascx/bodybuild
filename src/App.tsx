@@ -58,6 +58,7 @@ import {
   saveUserPreference,
   saveUserPlanData,
   saveUserProfile,
+  syncXunjiTrainingDate,
 } from './lib/storage'
 import { defaultUserPreference, mergeUserPreference } from './lib/userPreferences'
 import { buildExportCsvText, buildExportResultSummary, buildExportSummaryText, buildScopedExportPayload, type ExportFormat, type ExportOptions, type ExportRangePreset } from './lib/exportPayload'
@@ -226,6 +227,7 @@ function App() {
   const [exportInitialOutputFormat, setExportInitialOutputFormat] = useState<ExportFormat>('summary')
   const [exportAnchorDate, setExportAnchorDate] = useState<string>(() => formatDateInput())
   const [exportPending, setExportPending] = useState(false)
+  const [xunjiSyncPending, setXunjiSyncPending] = useState(false)
   const [showOnlyUnfinishedExercises, setShowOnlyUnfinishedExercises] = useState(false)
   const [workoutImmersiveMode, setWorkoutImmersiveMode] = useState(false)
   const [dailyFocusKey, setDailyFocusKey] = useState<DailyFocusKey | undefined>()
@@ -895,6 +897,57 @@ function App() {
         ? workoutLogs
         : upsertByDate(workoutLogs, selectedDate, createWorkoutFromTemplate(selectedDate, selectedTemplate))
     schedulePersist({ dailyLogs: nextLogs, workoutLogs: nextWorkoutLogs, workoutTemplates }, true)
+  }
+
+  async function syncSelectedDateFromXunji() {
+    if (!currentUser || xunjiSyncPending) return
+    const shouldReplace = hasWorkoutContent(selectedWorkout)
+    if (shouldReplace) {
+      const ok = await confirm({
+        title: '覆盖当天训练？',
+        message: '同步训记会用训记当天训练替换当前项目里的当天训练记录，已有动作、组数和有氧记录会被覆盖。',
+        confirmLabel: '同步并覆盖',
+        tone: 'danger',
+      })
+      if (!ok) return
+    }
+
+    setXunjiSyncPending(true)
+    setSyncState('saving')
+    setSyncMessage('正在同步训记...')
+    setSaveFeedback({ tone: 'neutral', message: '正在从训记同步训练数据...' })
+
+    try {
+      flushPending()
+      await saveQueueRef.current
+      const result = await syncXunjiTrainingDate(selectedDate, { replaceExisting: shouldReplace })
+      if (!result.workoutLog) {
+        setSaveFeedback({ tone: 'warning', message: '训记当天没有训练记录可同步。' })
+        setSyncState('synced')
+        setSyncMessage('已同步')
+        return
+      }
+      const nextWorkoutLogs = upsertByDate(workoutLogs, selectedDate, result.workoutLog)
+      const nextDailyLogs = result.dailyLog ? upsertByDate(dailyLogs, selectedDate, result.dailyLog) : dailyLogs
+      const nextData = { dailyLogs: nextDailyLogs, workoutLogs: nextWorkoutLogs, workoutTemplates }
+      applyData(nextData)
+      setSyncState('synced')
+      setSyncMessage('已同步')
+      setLastSyncedAt(new Date().toISOString())
+      setSavePending(false)
+      setAutoRetryEnabled(false)
+      setSaveFeedback({
+        tone: 'positive',
+        message: `已从训记同步 ${result.trainCount} 条训练、${result.movementCount} 个动作。`,
+      })
+    } catch (error) {
+      setSyncState('offline')
+      const message = error instanceof Error && error.message ? error.message : '同步训记训练数据失败'
+      setSyncMessage(message)
+      setSaveFeedback({ tone: 'warning', message })
+    } finally {
+      setXunjiSyncPending(false)
+    }
   }
 
   function updateWorkoutLog(nextLog: WorkoutLog, immediate = false, options: { syncCompletion?: boolean } = {}) {
@@ -1687,10 +1740,12 @@ function App() {
               syncState={syncState}
               taskPlan={todayTaskPlan}
               workoutMarkedComplete={(selectedLog.workoutCompletion ?? 0) >= 100}
+              xunjiSyncPending={xunjiSyncPending}
               onDateChange={handleDateChange}
               onTemplateChange={setSelectedTemplateId}
               onApplyTemplate={(template) => void replaceWorkoutFromTemplate(template)}
               onApplyRecommended={() => void replaceWorkoutFromTemplate(templateOptions.find((template) => template.id === `builtin-${getDayKey(selectedDate)}`))}
+              onSyncFromXunji={() => void syncSelectedDateFromXunji()}
               onToggleShowUnfinished={handleToggleShowUnfinished}
               onUpdateWorkout={updateWorkoutLog}
               onUpdateExercise={updateExercise}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "训记训练 API"
+  short_description: "按训记 Open API 读取、整理和写回训练数据。"
+  default_prompt: "Use $xunji-training-open-api to read or update Xunji training data with confirmation and caching rules."

@@ -1,3 +1,5 @@
+import './loadEnv'
+
 import express from 'express'
 import { copyFile, mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -25,6 +27,7 @@ import {
 import { createSession, currentSessionTokenHash, destroySession, getCurrentUser, hashPassword, requireAdmin, requireUser, toPublicUser, verifyPassword } from './auth'
 import { configureDatabaseRuntime, prisma } from './db'
 import { ensureDatabaseSchema } from './ensureDatabase'
+import { syncXunjiTrainingDay } from './xunjiSync'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -107,6 +110,24 @@ function requireString(value: unknown, fieldName: string): string {
     throw new Error(`${fieldName} is required`)
   }
   return value.trim()
+}
+
+function optionalSecretString(value: unknown): string {
+  if (typeof value !== 'string') return ''
+  return value.trim()
+}
+
+function maskSecret(value: string): string {
+  if (value.length <= 12) return '已配置'
+  return `${value.slice(0, 6)}...${value.slice(-4)}`
+}
+
+function validateXunjiApiKey(value: string): string {
+  const token = value.trim()
+  if (!token) throw new Error('请输入训记 Open API Key')
+  if (/\s/.test(token)) throw new Error('训记 Open API Key 不能包含空格或换行')
+  if (token.length < 16) throw new Error('训记 Open API Key 长度过短')
+  return token
 }
 
 function trustProxySetting(): boolean | string {
@@ -465,6 +486,51 @@ app.put('/api/preferences', async (request, response) => {
   }
 })
 
+app.get('/api/integrations/xunji', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    const preference = await prisma.userPreference.findUnique({
+      where: { userId: user.id },
+      select: { xunjiOpenApiKey: true },
+    })
+    const token = preference?.xunjiOpenApiKey?.trim() ?? ''
+    response.json({
+      configured: Boolean(token),
+      maskedKey: token ? maskSecret(token) : undefined,
+    })
+  } catch (error) {
+    response.status(500).json({ error: error instanceof Error ? error.message : '读取训记配置失败' })
+  }
+})
+
+app.put('/api/integrations/xunji', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    const rawToken = optionalSecretString(request.body?.apiKey)
+    const nextToken = request.body?.clear === true ? null : validateXunjiApiKey(rawToken)
+    const preference = await prisma.userPreference.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        xunjiOpenApiKey: nextToken,
+      },
+      update: {
+        xunjiOpenApiKey: nextToken,
+      },
+      select: { xunjiOpenApiKey: true },
+    })
+    const token = preference.xunjiOpenApiKey?.trim() ?? ''
+    response.json({
+      configured: Boolean(token),
+      maskedKey: token ? maskSecret(token) : undefined,
+    })
+  } catch (error) {
+    response.status(400).json({ error: error instanceof Error ? error.message : '保存训记配置失败' })
+  }
+})
+
 app.get('/api/plan-data', async (request, response) => {
   try {
     const user = await requireUser(request, response)
@@ -509,6 +575,28 @@ app.put('/api/workout-logs/:date', async (request, response) => {
     response.json(await upsertWorkoutLog(user.id, { ...log, date: request.params.date } as WorkoutLog))
   } catch (error) {
     response.status(400).json({ error: error instanceof Error ? error.message : '保存训练记录失败' })
+  }
+})
+
+app.post('/api/xunji/sync/:date', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    const result = await syncXunjiTrainingDay({
+      userId: user.id,
+      datestr: request.params.date,
+      includeFullData: request.body?.includeFullData === true || request.body?.include_full_data === true,
+      replaceExisting: request.body?.replaceExisting === true,
+    })
+    response.json(result)
+  } catch (error) {
+    if (error instanceof Error && error.name === 'XunjiExistingWorkoutError') {
+      response.status(409).json({ error: error.message })
+      return
+    }
+    const message = error instanceof Error ? error.message : '同步训记训练数据失败'
+    const status = message.includes('过于频繁') ? 429 : message.includes('Open API Key') ? 503 : 400
+    response.status(status).json({ error: message })
   }
 })
 

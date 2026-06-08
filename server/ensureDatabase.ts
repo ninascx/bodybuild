@@ -148,6 +148,7 @@ const statements = [
     "sleepFloorHours" REAL,
     "fatigueThreshold" INTEGER,
     "weekendCalorieUpperKcal" INTEGER,
+    "xunjiOpenApiKey" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
     CONSTRAINT "UserPreference_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -209,6 +210,7 @@ async function ensureUserPreferenceRuleColumns(): Promise<void> {
     ['sleepFloorHours', 'REAL'],
     ['fatigueThreshold', 'INTEGER'],
     ['weekendCalorieUpperKcal', 'INTEGER'],
+    ['xunjiOpenApiKey', 'TEXT'],
   ]
 
   for (const [column, type] of columnsToAdd) {

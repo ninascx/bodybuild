@@ -10,6 +10,8 @@ export function WorkoutRecordToolbar({
   collapseMode,
   onToggleTrainingMode,
   onAddExercise,
+  onSyncFromXunji,
+  xunjiSyncPending,
   onShowOnlyUnfinishedChange,
   onCycleCollapseMode,
 }: {
@@ -22,6 +24,8 @@ export function WorkoutRecordToolbar({
   collapseMode: 'auto' | 'all' | 'none'
   onToggleTrainingMode: () => void
   onAddExercise: () => void
+  onSyncFromXunji: () => void
+  xunjiSyncPending: boolean
   onShowOnlyUnfinishedChange: (value: boolean) => void
   onCycleCollapseMode: () => void
 }) {
@@ -43,6 +47,9 @@ export function WorkoutRecordToolbar({
             新增动作
           </Button>
         ) : null}
+        <Button variant="secondary" className="px-3" loading={xunjiSyncPending} onClick={onSyncFromXunji}>
+          同步训记
+        </Button>
         {hasWorkout ? (
           <SegmentedControl
             value={showOnlyUnfinished ? 'unfinished' : 'all'}

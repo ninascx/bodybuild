@@ -54,6 +54,21 @@ export interface ServerHealth {
   }
 }
 
+export interface XunjiSyncResult {
+  datestr: string
+  trainCount: number
+  movementCount: number
+  setCount: number
+  workoutLog?: WorkoutLog
+  dailyLog?: DailyLog
+  source: 'cache' | 'api'
+}
+
+export interface XunjiIntegrationConfig {
+  configured: boolean
+  maskedKey?: string
+}
+
 function readJson<T>(key: string, fallback: T): T {
   try {
     const raw = window.localStorage.getItem(key)
@@ -268,6 +283,33 @@ export async function saveUserPreference(preference: UserPreference): Promise<Us
   return readApiJson<UserPreference>(response, '保存个人配置失败')
 }
 
+export async function fetchXunjiIntegrationConfig(): Promise<XunjiIntegrationConfig> {
+  const response = await fetch('/api/integrations/xunji')
+  return readApiJson<XunjiIntegrationConfig>(response, '读取训记配置失败')
+}
+
+export async function saveXunjiIntegrationConfig(apiKey: string): Promise<XunjiIntegrationConfig> {
+  const response = await fetch('/api/integrations/xunji', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ apiKey }),
+  })
+  return readApiJson<XunjiIntegrationConfig>(response, '保存训记配置失败')
+}
+
+export async function clearXunjiIntegrationConfig(): Promise<XunjiIntegrationConfig> {
+  const response = await fetch('/api/integrations/xunji', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ clear: true }),
+  })
+  return readApiJson<XunjiIntegrationConfig>(response, '移除训记配置失败')
+}
+
 export async function saveUserProfile(profile: UserProfile): Promise<UserProfile> {
   const response = await fetch('/api/profile', {
     method: 'PUT',
@@ -293,6 +335,23 @@ export async function saveUserPlanData(planData: UserPlanData): Promise<UserPlan
     body: JSON.stringify(planData),
   })
   return readApiJson<UserPlanData>(response, '保存计划失败')
+}
+
+export async function syncXunjiTrainingDate(
+  date: string,
+  options: { replaceExisting?: boolean; includeFullData?: boolean } = {},
+): Promise<XunjiSyncResult> {
+  const response = await fetch(`/api/xunji/sync/${encodeURIComponent(date)}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      replaceExisting: options.replaceExisting === true,
+      includeFullData: options.includeFullData === true,
+    }),
+  })
+  return readApiJson<XunjiSyncResult>(response, '同步训记训练数据失败')
 }
 
 export async function exportWorkoutTemplateToken(

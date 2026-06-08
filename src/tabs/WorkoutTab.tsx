@@ -55,10 +55,12 @@ type WorkoutTabProps = {
   taskPlan: TodayTaskPlan
   restDay: boolean
   workoutMarkedComplete: boolean
+  xunjiSyncPending: boolean
   onDateChange: (date: string) => void
   onTemplateChange: (id: string) => void
   onApplyTemplate: (template: WorkoutTemplateOption) => void
   onApplyRecommended: () => void
+  onSyncFromXunji: () => void
   onToggleShowUnfinished: () => void
   onUpdateWorkout: (nextLog: WorkoutLog, immediate?: boolean, options?: { syncCompletion?: boolean }) => void
   onUpdateExercise: (exerciseIndex: number, patch: Partial<ExerciseLog>) => void
@@ -304,6 +306,8 @@ export function WorkoutTab(props: WorkoutTabProps) {
           collapseMode={collapseMode}
           onToggleTrainingMode={() => setTrainingMode((value) => !value)}
           onAddExercise={props.onAddExercise}
+          onSyncFromXunji={props.onSyncFromXunji}
+          xunjiSyncPending={props.xunjiSyncPending}
           onShowOnlyUnfinishedChange={setShowOnlyUnfinished}
           onCycleCollapseMode={() => setCollapseMode((prev) => (prev === 'auto' ? 'all' : prev === 'all' ? 'none' : 'auto'))}
         />
