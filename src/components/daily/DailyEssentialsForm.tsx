@@ -6,6 +6,8 @@ import type { DailyFocusKey } from '../../lib/productFlow'
 import { Button } from '../ui'
 import { NumberField, type NumberRange } from '../NumberField'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
+import { findDailyFocusTarget } from './dailyFocus'
+import { getDailySaveLabel } from './dailyRecordStatus'
 
 export type DailyEssentialsFormProps = {
   selectedLog: Partial<DailyLog> & { date: string }
@@ -16,6 +18,7 @@ export type DailyEssentialsFormProps = {
   syncState: SyncState
   savePending: boolean
   lastSyncedLabel: string
+  showSaveStatus?: boolean
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
   onQuickAction: (patch: Partial<DailyLog>) => void
   onCopyYesterday: () => void
@@ -92,13 +95,6 @@ function QuickAdjustButtons({
   )
 }
 
-function getSaveLabel(syncState: SyncState, savePending: boolean, lastSyncedLabel: string) {
-  if (savePending) return '待保存'
-  if (syncState === 'synced') return lastSyncedLabel ? `已保存 ${lastSyncedLabel}` : '已保存'
-  if (syncState === 'saving') return '保存中'
-  return '离线缓存'
-}
-
 export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
   const allFields: EssentialField[] = [
     { key: 'weight', label: '体重 kg', value: props.selectedLog.morningWeightKg, step: '0.1', kind: 'decimal', range: { min: 20, max: 300 }, quickStep: 0.1, quickStepLabel: '0.1', patch: (value: number | undefined) => ({ morningWeightKg: value }) },
@@ -112,6 +108,7 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
   const priorityFieldKeys = props.priorityKeys || ['weight', 'calories', 'protein']
   const essentialFields = priorityFieldKeys.map(key => allFields.find(f => f.key === key)).filter(Boolean) as EssentialField[]
   const supplementaryFields = allFields.filter(f => !priorityFieldKeys.includes(f.key))
+  const showSaveStatus = props.showSaveStatus ?? true
 
   // Keyboard shortcuts for quick actions
   useKeyboardShortcuts([
@@ -138,12 +135,50 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
   useEffect(() => {
     // Auto-focus on priority field if focusKey is set
     if (props.focusKey) {
-      const element = document.querySelector(`[data-daily-focus="${props.focusKey}"] input`)
+      const element = findDailyFocusTarget(props.focusKey)?.querySelector('input')
       if (element instanceof HTMLInputElement) {
         element.focus()
       }
     }
   }, [props.focusKey])
+
+  const renderField = (field: EssentialField, index: number) => {
+    const focused = props.focusKey === field.key
+    return (
+      <div
+        key={field.key}
+        data-daily-focus={field.key}
+        style={{ '--motion-index': Math.min(index, 3) } as CSSProperties}
+        className={focused ? 'rounded-lg border border-[var(--color-primary-100)] bg-[var(--surface-selected)] p-1 dark:border-cyan-700/40 dark:bg-cyan-950/20' : undefined}
+      >
+        <NumberField
+          className={quickFieldClass}
+          label={field.label}
+          value={field.value}
+          step={field.step}
+          kind={field.kind}
+          range={field.range}
+          labelAction={
+            <QuickAdjustButtons
+              label={field.label}
+              stepLabel={field.quickStepLabel}
+              disabled={field.value === undefined}
+              onDecrease={() => {
+                if (field.value === undefined) return
+                props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value - field.quickStep, field)))
+              }}
+              onIncrease={() => {
+                if (field.value === undefined) return
+                props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value + field.quickStep, field)))
+              }}
+            />
+          }
+          onChange={(value) => props.onUpdateDailyLog(field.patch(value))}
+        />
+      </div>
+    )
+  }
+
   return (
     <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] px-3 py-3 dark:border-slate-800 dark:bg-slate-900 sm:p-4">
       <div className="flex items-center justify-between gap-3">
@@ -151,98 +186,34 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
           <h3 className="text-base font-semibold text-slate-950 dark:text-slate-50">每日记录</h3>
           <p className="mt-0.5 hidden text-xs text-slate-500 dark:text-slate-400 sm:block">先填关键数据</p>
         </div>
-        <div className="shrink-0 text-right">
+        {showSaveStatus ? <div className="shrink-0 text-right">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            {getSaveLabel(props.syncState, props.savePending, props.lastSyncedLabel)}
+            {getDailySaveLabel(props.syncState, props.savePending, props.lastSyncedLabel)}
           </span>
           {props.syncState === 'offline' ? (
             <p className="mt-0.5 text-[10px] text-amber-600 dark:text-amber-400">
               将在联网后自动同步
             </p>
           ) : null}
-        </div>
+        </div> : null}
       </div>
 
-      <div className="motion-list mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
-        {essentialFields.map((field, index) => {
-          const focused = props.focusKey === field.key
-          return (
-            <div
-              key={field.key}
-              data-daily-focus={field.key}
-              style={{ '--motion-index': Math.min(index, 3) } as CSSProperties}
-              className={focused ? 'rounded-lg border border-[var(--color-primary-100)] bg-[var(--surface-selected)] p-1 dark:border-cyan-700/40 dark:bg-cyan-950/20' : undefined}
-            >
-              <NumberField
-                className={quickFieldClass}
-                label={field.label}
-                value={field.value}
-                step={field.step}
-                kind={field.kind}
-                range={field.range}
-                labelAction={
-                  <QuickAdjustButtons
-                    label={field.label}
-                    stepLabel={field.quickStepLabel}
-                    disabled={field.value === undefined}
-                    onDecrease={() => {
-                      if (field.value === undefined) return
-                      props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value - field.quickStep, field)))
-                    }}
-                    onIncrease={() => {
-                      if (field.value === undefined) return
-                      props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value + field.quickStep, field)))
-                    }}
-                  />
-                }
-                onChange={(value) => props.onUpdateDailyLog(field.patch(value))}
-              />
-            </div>
-          )
-        })}
+      <div className="motion-list mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:hidden">
+        {essentialFields.map(renderField)}
+      </div>
+
+      <div className="motion-list mt-3 hidden grid-cols-3 gap-3 lg:grid">
+        {allFields.map(renderField)}
       </div>
 
       {supplementaryFields.length > 0 ? (
-        <details className="mt-3 rounded-md border border-[var(--surface-border)] dark:border-slate-700">
+        <details className="mt-3 rounded-md border border-[var(--surface-border)] dark:border-slate-700 lg:hidden">
           <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200">
             补充记录 ({supplementaryFields.length} 项)
           </summary>
           <div className="motion-list grid grid-cols-2 gap-2.5 border-t border-[var(--surface-border)] p-2.5 dark:border-slate-700 sm:grid-cols-3">
             {supplementaryFields.map((field, index) => {
-              const focused = props.focusKey === field.key
-              return (
-                <div
-                  key={field.key}
-                  data-daily-focus={field.key}
-                  style={{ '--motion-index': Math.min(index, 3) } as CSSProperties}
-                  className={focused ? 'rounded-lg border border-[var(--color-primary-100)] bg-[var(--surface-selected)] p-1 dark:border-cyan-700/40 dark:bg-cyan-950/20' : undefined}
-                >
-                  <NumberField
-                    className={quickFieldClass}
-                    label={field.label}
-                    value={field.value}
-                    step={field.step}
-                    kind={field.kind}
-                    range={field.range}
-                    labelAction={
-                      <QuickAdjustButtons
-                        label={field.label}
-                        stepLabel={field.quickStepLabel}
-                        disabled={field.value === undefined}
-                        onDecrease={() => {
-                          if (field.value === undefined) return
-                          props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value - field.quickStep, field)))
-                        }}
-                        onIncrease={() => {
-                          if (field.value === undefined) return
-                          props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value + field.quickStep, field)))
-                        }}
-                      />
-                    }
-                    onChange={(value) => props.onUpdateDailyLog(field.patch(value))}
-                  />
-                </div>
-              )
+              return renderField(field, index)
             })}
           </div>
         </details>

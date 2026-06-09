@@ -10,6 +10,7 @@ type DetailPanelProps = {
   title: string
   summary?: string
   tone?: 'neutral' | 'warning'
+  className?: string
   children: ReactNode
 }
 
@@ -18,10 +19,10 @@ const detailPanelTone = {
   warning: 'border-amber-200 bg-amber-50 dark:border-amber-600/40 dark:bg-amber-900/30',
 }
 
-function DetailPanel({ title, summary, tone = 'neutral', children }: DetailPanelProps) {
+function DetailPanel({ title, summary, tone = 'neutral', className = 'mt-3', children }: DetailPanelProps) {
   return (
     <DisclosurePanel
-      className={`mt-3 ${detailPanelTone[tone]}`}
+      className={`${className} ${detailPanelTone[tone]}`}
       title={(
         <>
           {title}
@@ -42,15 +43,17 @@ export function DailyCalendarPanel({
   dailyLogs,
   workoutLogs,
   onSelectDate,
+  className,
 }: {
   selectedDate: string
   today: string
   dailyLogs: DailyLog[]
   workoutLogs: WorkoutLog[]
   onSelectDate: (date: string) => void
+  className?: string
 }) {
   return (
-    <DetailPanel title="最近 6 周日历">
+    <DetailPanel title="最近 6 周日历" className={className}>
       <MiniCalendar
         selectedDate={selectedDate}
         today={today}
@@ -96,16 +99,23 @@ export function MeasurementPanel({
   selectedLog,
   previousLogs,
   onUpdateDailyLog,
+  className,
+  compact = false,
 }: {
   selectedLog: Partial<DailyLog>
   previousLogs: DailyLog[]
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
+  className?: string
+  compact?: boolean
 }) {
   const dimensionSummary = buildDimensionSummary(selectedLog, previousLogs)
+  const gridClassName = compact
+    ? 'grid gap-3 sm:grid-cols-2 lg:grid-cols-2'
+    : 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4'
 
   return (
-    <DetailPanel title="围度 / 更多记录" summary={dimensionSummary}>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <DetailPanel title="围度 / 更多记录" summary={dimensionSummary} className={className}>
+      <div className={gridClassName}>
         <NumberField label="腰围 cm" value={selectedLog.waistCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => onUpdateDailyLog({ waistCm: value })} />
         <NumberField label="胸围 cm" value={selectedLog.chestCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => onUpdateDailyLog({ chestCm: value })} />
         <NumberField label="上臂围 cm" value={selectedLog.upperArmCm} step="0.1" kind="decimal" range={{ min: 10, max: 80 }} onChange={(value) => onUpdateDailyLog({ upperArmCm: value })} />

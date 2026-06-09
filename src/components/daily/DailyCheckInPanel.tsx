@@ -5,6 +5,7 @@ import type { SyncState } from '../../lib/storage'
 import type { DailyFocusKey } from '../../lib/productFlow'
 import { getMotionScrollBehavior } from '../../lib/motion'
 import { DailyEssentialsForm } from './DailyEssentialsForm'
+import { findDailyFocusTarget } from './dailyFocus'
 
 export type DailyCheckInPanelProps = {
   selectedLog: Partial<DailyLog> & { date: string }
@@ -15,6 +16,7 @@ export type DailyCheckInPanelProps = {
   syncState: SyncState
   savePending: boolean
   lastSyncedLabel: string
+  showSaveStatus?: boolean
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
   onQuickAction: (patch: Partial<DailyLog>) => void
   onCopyYesterday: () => void
@@ -36,7 +38,7 @@ function DailyNotesSection({
     <Field label="备注" className="scroll-mt-28" >
       <TextArea
         data-daily-focus="notes"
-        className="min-h-20 bg-white dark:bg-slate-900"
+        className="min-h-20 bg-white dark:bg-slate-900 lg:min-h-28"
         value={selectedLog.notes ?? ''}
         placeholder="记录训练感受、饮食调整、身体变化..."
         onChange={(event) => onUpdateDailyLog({ notes: event.target.value })}
@@ -50,7 +52,7 @@ export function DailyCheckInPanel(props: DailyCheckInPanelProps) {
 
   useEffect(() => {
     if (!focusKey) return
-    const target = document.querySelector<HTMLElement>(`[data-daily-focus="${focusKey}"]`)
+    const target = findDailyFocusTarget(focusKey)
     if (!target) return
     const timer = window.setTimeout(() => {
       target.scrollIntoView({ block: 'center', behavior: getMotionScrollBehavior() })

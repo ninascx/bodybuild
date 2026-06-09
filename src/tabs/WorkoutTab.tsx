@@ -9,6 +9,7 @@ import { MobileCurrentExerciseView } from '../components/workout/MobileCurrentEx
 import { WorkoutControlPanel } from '../components/workout/WorkoutControlPanel'
 import { WorkoutTemplateManager } from '../components/workout/WorkoutTemplateManager'
 import { TrainingHeader, TrainingTimerFloat } from '../components/workout/TrainingHeader'
+import { WorkoutDesktopSessionRail } from '../components/workout/WorkoutDesktopSessionRail'
 import { WorkoutRecordToolbar } from '../components/workout/WorkoutRecordToolbar'
 import { WorkoutMobileActionPanel, WorkoutMoreActionsPanel } from '../components/workout/WorkoutSessionActions'
 import { WorkoutStatusOverview } from '../components/workout/WorkoutStatusOverview'
@@ -172,7 +173,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
     <div className={`grid gap-4 ${effectiveTrainingMode ? 'pb-44 md:pb-56' : ''}`}>
       {effectiveTrainingMode ? (
         <>
-          <div className="hidden md:block">
+          <div className="hidden md:block lg:hidden">
             <TrainingHeader
               workoutName={props.selectedWorkout?.workoutName ?? props.selectedTemplate.name}
               workoutSummary={props.workoutSummary}
@@ -180,7 +181,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
               onExitTrainingMode={() => setTrainingMode(false)}
             />
           </div>
-          <div className="hidden md:block">
+          <div className="hidden md:block lg:hidden">
             <TrainingTimerFloat
               elapsedSeconds={elapsedSeconds}
               restSeconds={restSeconds}
@@ -264,7 +265,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
             }}
             onSyncFromXunji={props.onSyncFromXunji}
           />
-          <div className="hidden md:block">
+          <div className="hidden md:block lg:hidden">
             <WorkoutStatusOverview
               restDay={props.restDay}
               selectedWorkout={props.selectedWorkout}
@@ -297,73 +298,104 @@ export function WorkoutTab(props: WorkoutTabProps) {
             }}
           />
         ) : null}
-      <section className={`grid gap-4 ${effectiveTrainingMode ? 'hidden md:block' : 'hidden md:grid'} ${!props.selectedWorkout ? 'hidden md:grid' : ''}`}>
-        <WorkoutRecordToolbar
-          badgeLabel={workoutRecordBadge.label}
-          badgeTone={workoutRecordBadge.tone}
-          hasWorkout={hasWorkout}
-          effectiveTrainingMode={effectiveTrainingMode}
-          showOnlyUnfinished={props.showOnlyUnfinishedExercises}
-          hasIncompleteExercise={hasIncompleteExercise}
-          collapseMode={collapseMode}
-          onToggleTrainingMode={() => setTrainingMode((value) => !value)}
-          onAddExercise={props.onAddExercise}
-          onSyncFromXunji={props.onSyncFromXunji}
-          xunjiSyncPending={props.xunjiSyncPending}
-          onShowOnlyUnfinishedChange={setShowOnlyUnfinished}
-          onCycleCollapseMode={() => setCollapseMode((prev) => (prev === 'auto' ? 'all' : prev === 'all' ? 'none' : 'auto'))}
-        />
+      <section className={`gap-4 ${props.selectedWorkout ? 'hidden md:grid' : 'hidden'} lg:grid-cols-[minmax(0,1fr)_20rem]`}>
+        <div className="min-w-0">
+          <WorkoutRecordToolbar
+            badgeLabel={workoutRecordBadge.label}
+            badgeTone={workoutRecordBadge.tone}
+            hasWorkout={hasWorkout}
+            effectiveTrainingMode={effectiveTrainingMode}
+            showOnlyUnfinished={props.showOnlyUnfinishedExercises}
+            hasIncompleteExercise={hasIncompleteExercise}
+            collapseMode={collapseMode}
+            onToggleTrainingMode={() => setTrainingMode((value) => !value)}
+            onAddExercise={props.onAddExercise}
+            onSyncFromXunji={props.onSyncFromXunji}
+            xunjiSyncPending={props.xunjiSyncPending}
+            onShowOnlyUnfinishedChange={setShowOnlyUnfinished}
+            onCycleCollapseMode={() => setCollapseMode((prev) => (prev === 'auto' ? 'all' : prev === 'all' ? 'none' : 'auto'))}
+          />
+
+          {props.selectedWorkout ? (
+            <div className="mt-5 grid gap-4">
+              <ExerciseQuickJumpStrip
+                exercises={props.selectedWorkout.exercises}
+                visibleIndexes={props.visibleWorkoutExercises.map((entry) => entry.exerciseIndex)}
+              />
+
+              {props.visibleWorkoutExercises.map(({ exercise, exerciseIndex }) => (
+                <ExerciseRecordCard
+                  key={`${exercise.exerciseId}-${exerciseIndex}`}
+                  exercise={exercise}
+                  exerciseIndex={exerciseIndex}
+                  previousRecord={props.previousRecordsByExerciseKey.get(`${exercise.exerciseId}::${exercise.name.trim()}`)}
+                  onUpdateExercise={props.onUpdateExercise}
+                  onUpdateSet={handleUpdateSet}
+                  onAddSet={props.onAddSet}
+                  onDeleteLastSet={props.onDeleteLastSet}
+                  onRebuildSets={props.onRebuildSets}
+                  onDeleteExercise={props.onDeleteExercise}
+                  onMoveExerciseUp={props.onMoveExerciseUp}
+                  onMoveExerciseDown={props.onMoveExerciseDown}
+                  onFillEmptySets={props.onFillEmptySets}
+                  forceCollapsed={collapseMode === 'auto' ? undefined : collapseMode === 'all'}
+                  compact={effectiveTrainingMode}
+                />
+              ))}
+
+              {props.visibleWorkoutExercises.length === 0 ? (
+                <EmptyState
+                  title="当前筛选下没有未完成动作"
+                  message="可以新增动作，或切回「全部动作」继续查看。"
+                  actions={<Button onClick={props.onAddExercise}>新增动作</Button>}
+                />
+              ) : null}
+
+              <WorkoutMoreActionsPanel
+                selectedWorkout={props.selectedWorkout}
+                onUpdateWorkout={props.onUpdateWorkout}
+                onAddExercise={props.onAddExercise}
+                onSaveAsTemplate={props.onSaveAsTemplate}
+                onExportSelectedWorkout={props.onExportSelectedWorkout}
+              />
+            </div>
+          ) : (
+            <EmptyState
+              title="还没有这一天的训练记录"
+              message="在上方选择计划开始，或点「空白训练」手动添加动作。"
+              actions={<Button onClick={props.onAddExercise}>空白训练</Button>}
+            />
+          )}
+        </div>
 
         {props.selectedWorkout ? (
-          <div className="mt-5 grid gap-4">
-            <ExerciseQuickJumpStrip
-              exercises={props.selectedWorkout.exercises}
-              visibleIndexes={props.visibleWorkoutExercises.map((entry) => entry.exerciseIndex)}
-            />
-
-            {props.visibleWorkoutExercises.map(({ exercise, exerciseIndex }) => (
-              <ExerciseRecordCard
-                key={`${exercise.exerciseId}-${exerciseIndex}`}
-                exercise={exercise}
-                exerciseIndex={exerciseIndex}
-                previousRecord={props.previousRecordsByExerciseKey.get(`${exercise.exerciseId}::${exercise.name.trim()}`)}
-                onUpdateExercise={props.onUpdateExercise}
-                onUpdateSet={handleUpdateSet}
-                onAddSet={props.onAddSet}
-                onDeleteLastSet={props.onDeleteLastSet}
-                onRebuildSets={props.onRebuildSets}
-                onDeleteExercise={props.onDeleteExercise}
-                onMoveExerciseUp={props.onMoveExerciseUp}
-                onMoveExerciseDown={props.onMoveExerciseDown}
-                onFillEmptySets={props.onFillEmptySets}
-                forceCollapsed={collapseMode === 'auto' ? undefined : collapseMode === 'all'}
-                compact={effectiveTrainingMode}
-              />
-            ))}
-
-            {props.visibleWorkoutExercises.length === 0 ? (
-              <EmptyState
-                title="当前筛选下没有未完成动作"
-                message="可以新增动作，或切回「全部动作」继续查看。"
-                actions={<Button onClick={props.onAddExercise}>新增动作</Button>}
-              />
-            ) : null}
-
-            <WorkoutMoreActionsPanel
-              selectedWorkout={props.selectedWorkout}
-              onUpdateWorkout={props.onUpdateWorkout}
-              onAddExercise={props.onAddExercise}
-              onSaveAsTemplate={props.onSaveAsTemplate}
-              onExportSelectedWorkout={props.onExportSelectedWorkout}
-            />
-          </div>
-        ) : (
-          <EmptyState
-            title="还没有这一天的训练记录"
-            message="在上方选择计划开始，或点「空白训练」手动添加动作。"
-            actions={<Button onClick={props.onAddExercise}>空白训练</Button>}
+          <WorkoutDesktopSessionRail
+            selectedWorkout={props.selectedWorkout}
+            workoutSummary={props.workoutSummary}
+            elapsedSeconds={elapsedSeconds}
+            restSeconds={restSeconds}
+            restActive={restActive}
+            restDefaultDuration={restDefaultDuration}
+            autoStartRest={autoStartRest}
+            workoutMarkedComplete={props.workoutMarkedComplete}
+            workoutReadyToConfirm={workoutReadyToConfirm}
+            trainingMode={effectiveTrainingMode}
+            remainingSetCount={remainingSetCount}
+            currentExerciseIndex={currentExerciseIndex}
+            suggestedExerciseIndex={suggestedExerciseIndex ?? currentExerciseIndex}
+            hasNextIncompleteExercise={hasNextIncompleteExercise}
+            statusPrimaryLabel={statusPrimaryLabel}
+            completionHint={completionHint}
+            onPrimaryAction={workoutReadyToConfirm ? handleFinishWorkout : () => setTrainingMode(true)}
+            onJumpToCurrent={() => jumpToExercise(currentExerciseIndex)}
+            onJumpToNextIncomplete={jumpToNextIncomplete}
+            onStartRest={handleStartRest}
+            onSkipRest={handleSkipRest}
+            onAdjustRestDuration={handleAdjustRestDuration}
+            onToggleAutoStart={toggleAutoStartRest}
+            onExitTrainingMode={() => setTrainingMode(false)}
           />
-        )}
+        ) : null}
       </section>
       </>
       )}

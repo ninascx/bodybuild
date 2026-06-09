@@ -191,7 +191,13 @@ body {
   margin: 0;
   min-width: 320px;
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+@supports not (overflow: clip) {
+  body {
+    overflow-x: hidden;
+  }
 }
 
 button,
@@ -384,6 +390,10 @@ select {
   .motion-enter,
   .motion-tab-view {
     animation: motion-enter var(--motion-base) var(--ease-momentum) both;
+  }
+
+  .motion-tab-view {
+    animation-fill-mode: backwards;
   }
 
   .motion-panel,

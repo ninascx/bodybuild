@@ -68,9 +68,9 @@ export function WorkoutControlPanel({
   const statusBadgeTone = workoutStatusTone ?? (hasWorkout ? 'positive' : 'neutral')
 
   return (
-    <Card className="p-3 shadow-none sm:p-4">
+    <Card className="p-3 shadow-none sm:p-4 lg:p-3">
       {/* Row 1: badges + title + sync */}
-      <div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="flex flex-wrap items-start justify-between gap-2 lg:items-center">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             {restDay ? <span className="text-xs font-medium text-slate-500 dark:text-slate-400">休息日</span> : <Badge tone={statusBadgeTone}>{statusBadgeLabel}</Badge>}
@@ -78,15 +78,25 @@ export function WorkoutControlPanel({
               selectedTemplate?.source === 'custom' ? <Badge tone="warning">自定义模板</Badge> : <span className="text-xs font-medium text-slate-500 dark:text-slate-400">内置计划</span>
             ) : null}
           </div>
-          <h2 className="mt-2 text-xl font-semibold text-slate-950 dark:text-slate-50 sm:text-2xl">
+          <h2 className="mt-2 text-xl font-semibold text-slate-950 dark:text-slate-50 sm:text-2xl lg:text-xl">
             {restDay ? '休息日' : selectedWorkout?.workoutName ?? selectedTemplate?.name ?? '选择今天的训练'}
           </h2>
         </div>
-        <Badge tone={syncBadge.tone} className="min-w-16 shrink-0 justify-center">
-          {syncBadge.text}
-        </Badge>
+        <div className="flex shrink-0 items-center gap-2">
+          <Badge tone={syncBadge.tone} className="min-w-16 justify-center">
+            {syncBadge.text}
+          </Badge>
+          <Button
+            variant="secondary"
+            className="hidden px-3 shadow-none sm:inline-flex"
+            loading={xunjiSyncPending}
+            onClick={onSyncFromXunji}
+          >
+            同步训记
+          </Button>
+        </div>
       </div>
-      <div className="mt-3 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] px-3 py-2 dark:border-slate-700 dark:bg-slate-800/70">
+      <div className="mt-3 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] px-3 py-2 dark:border-slate-700 dark:bg-slate-800/70 lg:hidden">
         <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">{taskPlan.workoutActionLabel}</p>
         <p className="mt-1 text-sm leading-5 text-slate-600 dark:text-slate-300">{taskPlan.workoutMessage}</p>
         {taskPlan.review.readiness === 'insufficient-data' && taskPlan.review.primaryDestination === 'workout' ? (
@@ -133,12 +143,12 @@ export function WorkoutControlPanel({
       ) : null}
 
       {!restDay && !hasWorkout && selectedTemplate ? (
-        <div className="mt-3">
+        <DisclosurePanel className="mt-3" title={`计划预览 · ${selectedTemplate.name}`}>
           <WorkoutPlanPreview
             template={selectedTemplate}
             recommendedId={recommendedId}
           />
-        </div>
+        </DisclosurePanel>
       ) : null}
 
       {!restDay && hasWorkout ? (
@@ -165,7 +175,11 @@ export function WorkoutControlPanel({
       ) : null}
 
       {/* Row 5: workout metrics */}
-      {!restDay && hasWorkout ? <WorkoutMetrics summary={workoutSummary} /> : null}
+      {!restDay && hasWorkout ? (
+        <div className="lg:hidden">
+          <WorkoutMetrics summary={workoutSummary} />
+        </div>
+      ) : null}
     </Card>
   )
 }
