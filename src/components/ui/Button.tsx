@@ -16,10 +16,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ...props
 }, ref) {
   const variantClasses: Record<ButtonVariant, string> = {
-    primary: 'border border-[var(--color-primary-700)] bg-[var(--color-primary-700)] text-white hover:border-[var(--color-primary-600)] hover:bg-[var(--color-primary-600)] active:border-teal-900 active:bg-teal-900 dark:border-cyan-600 dark:bg-cyan-600 dark:text-white dark:hover:border-cyan-500 dark:hover:bg-cyan-500',
-    secondary: 'border border-[var(--surface-border-strong)] bg-white text-slate-800 hover:border-slate-400 hover:bg-[var(--surface-muted)] active:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-800',
+    primary: 'border border-[var(--color-primary-700)] bg-[var(--color-primary-700)] text-white shadow-sm hover:border-[var(--color-primary-600)] hover:bg-[var(--color-primary-600)] hover:shadow-md active:border-teal-900 active:bg-teal-900 active:shadow-sm dark:border-cyan-600 dark:bg-cyan-600 dark:text-white dark:hover:border-cyan-500 dark:hover:bg-cyan-500',
+    secondary: 'border border-[var(--surface-border-strong)] bg-white text-slate-800 shadow-sm hover:border-slate-400 hover:bg-[var(--surface-muted)] hover:shadow-md active:bg-slate-100 active:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-800',
     ghost: 'border border-transparent text-slate-600 hover:bg-[var(--surface-muted)] hover:text-slate-950 active:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50',
-    danger: 'border border-rose-600 bg-rose-600 text-white hover:border-rose-700 hover:bg-rose-700 active:border-rose-800 active:bg-rose-800 dark:border-rose-500 dark:bg-rose-500 dark:text-white dark:hover:border-rose-400 dark:hover:bg-rose-400',
+    danger: 'border border-rose-600 bg-rose-600 text-white shadow-sm hover:border-rose-700 hover:bg-rose-700 hover:shadow-md active:border-rose-800 active:bg-rose-800 active:shadow-sm dark:border-rose-500 dark:bg-rose-500 dark:text-white dark:hover:border-rose-400 dark:hover:bg-rose-400',
   }
 
   return (

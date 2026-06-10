@@ -22,10 +22,17 @@ const statusLabel: Record<SyncState, string> = {
 }
 
 const statusPillClass: Record<SyncState, string> = {
-  synced: 'text-emerald-700 dark:text-emerald-300',
-  saving: 'text-amber-700 dark:text-amber-300',
-  loading: 'text-slate-500 dark:text-slate-400',
-  offline: 'text-rose-700 dark:text-rose-300',
+  synced: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  saving: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  loading: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+  offline: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+}
+
+const statusIndicator: Record<SyncState, string> = {
+  synced: '●',
+  saving: '◐',
+  loading: '○',
+  offline: '⚠',
 }
 
 export function SyncStatusBar({
@@ -54,11 +61,12 @@ export function SyncStatusBar({
         </p>
         <div className="flex shrink-0 items-center gap-2">
           <span
-            className={`rounded-full text-xs font-semibold ${statusPillClass[syncState]}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold shadow-sm ${statusPillClass[syncState]}`}
             role={syncState === 'offline' ? 'alert' : 'status'}
             aria-live={syncState === 'offline' ? 'assertive' : 'polite'}
             aria-atomic="true"
           >
+            <span className={syncState === 'saving' ? 'animate-pulse' : ''}>{statusIndicator[syncState]}</span>
             {label}
           </span>
           {syncState === 'offline' ? (

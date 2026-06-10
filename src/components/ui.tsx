@@ -1,11 +1,15 @@
 import type { AriaRole, ReactNode, KeyboardEvent } from 'react'
 import type { RecommendationTone } from '../types'
 import { cn } from '../lib/cn'
-import { Button, Card, Badge, Field, TextInput, TextArea, Select, Checkbox, DisclosurePanel, DropdownMenu } from './ui/index'
-import type { ButtonProps, ButtonVariant, CardProps, BadgeProps, FieldProps, DisclosurePanelProps, DropdownMenuItem, DropdownMenuProps } from './ui/index'
+import { Button, Card, Badge, Field, TextInput, TextArea, Select, Checkbox, DisclosurePanel, DropdownMenu, AnimatedMetric, UserAvatar } from './ui/index'
+import type { ButtonProps, ButtonVariant, CardProps, BadgeProps, FieldProps, DisclosurePanelProps, DropdownMenuItem, DropdownMenuProps, AnimatedMetricProps, UserAvatarProps } from './ui/index'
+import { GradientCard } from './ui/GradientCard'
+import type { GradientCardProps } from './ui/GradientCard'
+import { IconBadge } from './ui/IconBadge'
+import type { IconBadgeProps, IconBadgeIcon, IconBadgeVariant, IconBadgeSize } from './ui/IconBadge'
 
-export { Button, Card, Badge, Field, TextInput, TextArea, Select, Checkbox, DisclosurePanel, DropdownMenu }
-export type { ButtonProps, ButtonVariant, CardProps, BadgeProps, FieldProps, DisclosurePanelProps, DropdownMenuItem, DropdownMenuProps }
+export { Button, Card, Badge, Field, TextInput, TextArea, Select, Checkbox, DisclosurePanel, DropdownMenu, GradientCard, IconBadge, AnimatedMetric, UserAvatar }
+export type { ButtonProps, ButtonVariant, CardProps, BadgeProps, FieldProps, DisclosurePanelProps, DropdownMenuItem, DropdownMenuProps, GradientCardProps, IconBadgeProps, IconBadgeIcon, IconBadgeVariant, IconBadgeSize, AnimatedMetricProps, UserAvatarProps }
 
 const toneClasses: Record<RecommendationTone, string> = {
   positive: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200',
@@ -112,17 +116,30 @@ export function InsightCard({
   value,
   message,
   tone = 'neutral',
+  icon,
 }: {
   title: ReactNode
   value?: ReactNode
   message?: ReactNode
   tone?: RecommendationTone
+  icon?: IconBadgeIcon
 }) {
   return (
     <div className={cn('min-w-0 rounded-lg border p-3 sm:p-4', toneAccentClasses[tone])}>
-      <p className={cn('text-xs font-medium', toneSoftTextClasses[tone])}>{title}</p>
-      {value ? <p className="mt-2 text-xl font-bold leading-tight tabular-nums sm:text-2xl">{value}</p> : null}
-      {message ? <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{message}</p> : null}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className={cn('text-xs font-medium', toneSoftTextClasses[tone])}>{title}</p>
+          {value ? <p className="mt-2 text-xl font-bold leading-tight tabular-nums sm:text-2xl">{value}</p> : null}
+          {message ? <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{message}</p> : null}
+        </div>
+        {icon ? (
+          <IconBadge
+            icon={icon}
+            variant={tone === 'positive' ? 'success' : tone === 'warning' ? 'warning' : tone === 'danger' ? 'danger' : 'primary'}
+            size="md"
+          />
+        ) : null}
+      </div>
     </div>
   )
 }
@@ -158,6 +175,7 @@ export function EmptyState({
   tone = 'neutral',
   compact = false,
   className = '',
+  icon,
 }: {
   title: ReactNode
   message?: ReactNode
@@ -165,6 +183,7 @@ export function EmptyState({
   tone?: RecommendationTone
   compact?: boolean
   className?: string
+  icon?: IconBadgeIcon
 }) {
   return (
     <div
@@ -175,6 +194,15 @@ export function EmptyState({
         className,
       )}
     >
+      {icon ? (
+        <div className="mb-4 flex justify-center">
+          <IconBadge
+            icon={icon}
+            variant={tone === 'positive' ? 'success' : tone === 'warning' ? 'warning' : tone === 'danger' ? 'danger' : 'neutral'}
+            size="lg"
+          />
+        </div>
+      ) : null}
       <p className="text-base font-semibold text-slate-800 dark:text-slate-100">{title}</p>
       {message ? <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{message}</p> : null}
       {actions ? <div className="mt-4 flex flex-wrap justify-center gap-2">{actions}</div> : null}
@@ -193,22 +221,30 @@ export function LoadingBlock({
 }) {
   return (
     <div
-      className={cn('rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900', className)}
+      className={cn('rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900', className)}
       aria-live="polite"
       aria-busy="true"
       role="status"
     >
-      <div className="h-6 w-40 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-700" />
+      <div className="skeleton-shimmer h-6 w-40 rounded-lg bg-slate-200 dark:bg-slate-700" />
       <div className="mt-5 grid gap-3">
         {Array.from({ length: lines }).map((_, index) => (
           <div
             key={index}
-            className="h-4 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800"
-            style={{ width: `${Math.max(45, 100 - index * 18)}%` }}
+            className="skeleton-shimmer h-4 rounded-lg bg-slate-100 dark:bg-slate-800"
+            style={{
+              width: `${Math.max(45, 100 - index * 18)}%`,
+              animationDelay: `${index * 150}ms`
+            }}
           />
         ))}
       </div>
-      <p className="mt-5 text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
+      <div className="mt-5 flex items-center gap-2">
+        <div className="h-2 w-2 animate-pulse rounded-full bg-teal-500 dark:bg-cyan-400" style={{ animationDelay: '0ms' }} />
+        <div className="h-2 w-2 animate-pulse rounded-full bg-teal-500 dark:bg-cyan-400" style={{ animationDelay: '200ms' }} />
+        <div className="h-2 w-2 animate-pulse rounded-full bg-teal-500 dark:bg-cyan-400" style={{ animationDelay: '400ms' }} />
+        <p className="ml-2 text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
+      </div>
     </div>
   )
 }
@@ -305,7 +341,7 @@ export function SegmentedControl<T extends string>({
   )
 }
 
-export function ProgressBar({ value }: { value: number }) {
+export function ProgressBar({ value, animated = true }: { value: number; animated?: boolean }) {
   const bounded = Math.min(100, Math.max(0, value))
   return (
     <div
@@ -315,7 +351,13 @@ export function ProgressBar({ value }: { value: number }) {
       aria-valuemax={100}
       aria-valuenow={Math.round(bounded)}
     >
-      <div className="h-full rounded-full bg-[var(--color-primary-600)] transition-[width] duration-[var(--motion-base)] ease-[var(--ease-out-smooth)] dark:bg-cyan-500" style={{ width: `${bounded}%` }} />
+      <div
+        className={cn(
+          'h-full rounded-full bg-gradient-to-r from-teal-600 to-cyan-500 transition-[width] dark:from-teal-500 dark:to-cyan-400',
+          animated && 'duration-[var(--motion-rest)] ease-[var(--ease-out-smooth)]'
+        )}
+        style={{ width: `${bounded}%` }}
+      />
     </div>
   )
 }
@@ -326,12 +368,14 @@ export function StatCard({
   helper,
   delta,
   size = 'normal',
+  icon,
 }: {
   label: string
   value: ReactNode
   helper?: string
   delta?: { direction: 'up' | 'down' | 'flat'; text: string; tone?: 'positive' | 'warning' | 'neutral' }
   size?: 'normal' | 'large'
+  icon?: IconBadgeIcon
 }) {
   const deltaTone = delta?.tone ?? 'neutral'
   const deltaClasses: Record<NonNullable<typeof delta>['tone'] & string, string> = {
@@ -339,10 +383,15 @@ export function StatCard({
     warning: 'text-rose-600 dark:text-rose-300',
     neutral: 'text-slate-500 dark:text-slate-400',
   }
-  const indicator = delta?.direction === 'up' ? '+' : delta?.direction === 'down' ? '-' : '='
+  const indicator = delta?.direction === 'up' ? '↑' : delta?.direction === 'down' ? '↓' : '→'
   const isLarge = size === 'large'
   return (
-    <Card className={cn(isLarge ? 'min-h-36' : 'min-h-28')}>
+    <Card className={cn(isLarge ? 'min-h-36' : 'min-h-28', 'relative overflow-hidden')}>
+      {icon ? (
+        <div className="absolute right-3 top-3 opacity-10">
+          <IconBadge icon={icon} variant="neutral" size={isLarge ? 'lg' : 'md'} />
+        </div>
+      ) : null}
       <p className={cn(isLarge ? 'text-sm' : 'text-xs', 'font-medium text-slate-500 dark:text-slate-400')}>{label}</p>
       <p className={cn('mt-3 font-semibold tabular-nums text-slate-950 dark:text-slate-50', isLarge ? 'text-3xl' : 'text-2xl')}>{value}</p>
       {delta ? (

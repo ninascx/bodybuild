@@ -8,7 +8,7 @@
     Inter, Barlow, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   color: #0f172a;
-  background: #f6f8fb;
+  background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -51,8 +51,38 @@
   --gradient-primary: linear-gradient(135deg, #0f9488 0%, #0ea5e9 100%);
   --gradient-success: linear-gradient(135deg, #10b981 0%, #22d3ee 100%);
   --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fb923c 100%);
+  --gradient-danger: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+  --gradient-info: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
   --gradient-surface: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
   --gradient-overlay: linear-gradient(180deg, rgb(15 23 42 / 0) 0%, rgb(15 23 42 / 0.6) 100%);
+
+  /* Semantic colors - Success */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+
+  /* Semantic colors - Warning */
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+
+  /* Semantic colors - Danger */
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+
+  /* Semantic colors - Info */
+  --color-info-50: #eff6ff;
+  --color-info-100: #dbeafe;
+  --color-info-500: #3b82f6;
+  --color-info-600: #2563eb;
+  --color-info-700: #1d4ed8;
 
   /* Interactive state colors */
   --color-hover-overlay: rgb(15 23 42 / 0.04);
@@ -108,7 +138,7 @@ h1,
 .dark {
   color-scheme: dark;
   color: #e2e8f0;
-  background: #0f172a;
+  background: linear-gradient(to bottom, #0f172a 0%, #020617 100%);
 
   --surface-page: #020617;
   --surface-panel: #0f172a;
@@ -129,8 +159,17 @@ h1,
   --gradient-primary: linear-gradient(135deg, #0f9488 0%, #0ea5e9 100%);
   --gradient-success: linear-gradient(135deg, #059669 0%, #0891b2 100%);
   --gradient-warning: linear-gradient(135deg, #d97706 0%, #ea580c 100%);
+  --gradient-danger: linear-gradient(135deg, #dc2626 0%, #ea580c 100%);
+  --gradient-info: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
   --gradient-surface: linear-gradient(180deg, #0f172a 0%, #020617 100%);
   --gradient-overlay: linear-gradient(180deg, rgb(15 23 42 / 0) 0%, rgb(15 23 42 / 0.9) 100%);
+
+  /* Dark mode accent colors - more vibrant for better visibility */
+  --color-accent-cyan: #22d3ee;
+  --color-accent-teal: #2dd4bf;
+  --color-accent-emerald: #34d399;
+  --color-accent-amber: #fbbf24;
+  --color-accent-rose: #fb7185;
 
   /* Dark mode interactive states */
   --color-hover-overlay: rgb(255 255 255 / 0.06);
@@ -338,6 +377,68 @@ select {
     }
   }
 
+  /* Number counter animation */
+  @keyframes metric-pop-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.5) translateY(10px);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(1.1) translateY(-2px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  /* Progress bar fill animation */
+  @keyframes progress-fill {
+    0% {
+      transform: scaleX(0);
+      transform-origin: left;
+    }
+    100% {
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+  }
+
+  /* Card stagger entrance */
+  @keyframes card-stagger-in {
+    0% {
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Button ripple effect */
+  @keyframes button-ripple {
+    0% {
+      transform: scale(0);
+      opacity: 0.6;
+    }
+    100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+
+  /* Glow pulse for emphasis */
+  @keyframes glow-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 var(--color-primary-500);
+    }
+    50% {
+      box-shadow: 0 0 20px 4px var(--color-primary-500);
+    }
+  }
+
   /* Error shake animation */
   @keyframes motion-error-shake {
     0%, 100% {
@@ -453,6 +554,19 @@ select {
 
   dialog::backdrop {
     animation: motion-dialog-backdrop var(--motion-base) var(--ease-out-smooth) both;
+  }
+
+  /* New animation utilities */
+  .metric-pop-in {
+    animation: metric-pop-in var(--motion-slow) var(--ease-spring) both;
+  }
+
+  .card-stagger-in {
+    animation: card-stagger-in var(--motion-base) var(--ease-momentum) both;
+  }
+
+  .glow-pulse {
+    animation: glow-pulse 2s var(--ease-out-smooth) infinite;
   }
 }
 

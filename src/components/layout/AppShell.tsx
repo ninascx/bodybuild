@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { DropdownMenu } from '../ui'
+import { DropdownMenu, UserAvatar } from '../ui'
 import type { DropdownMenuItem } from '../ui'
 import { MainNavigation } from './MainNavigation'
 import { SyncStatusBar } from './SyncStatusBar'
@@ -62,7 +62,7 @@ export function AppShell<T extends string>({
         : '浅色'
 
   return (
-    <main className="min-h-screen bg-[var(--surface-page)] text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <main className="min-h-screen bg-transparent text-slate-900 dark:bg-transparent dark:text-slate-100">
       <a
         href="#app-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-slate-950 focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 dark:focus:bg-slate-100 dark:focus:text-slate-950"
@@ -72,24 +72,31 @@ export function AppShell<T extends string>({
       <div className={`mx-auto flex min-h-screen w-full max-w-7xl flex-col px-3 pt-2 sm:px-6 sm:pt-4 lg:px-8 ${immersiveMode ? 'pb-4' : 'pb-56 md:pb-4'}`}>
         {!immersiveMode ? (
           <>
-            <header className="mb-2 border-b border-[var(--surface-border)] pb-1.5 dark:border-slate-800 sm:pb-2">
+            <header className="mb-2 border-b border-[var(--surface-border)] pb-1.5 shadow-sm dark:border-slate-800 sm:pb-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
                   <img
                     src="/favicon.png"
                     alt="LiftLog"
-                    className="h-7 w-7 shrink-0 rounded-md sm:h-8 sm:w-8"
+                    className="h-7 w-7 shrink-0 rounded-md shadow-md transition-transform duration-300 hover:scale-110 hover:rotate-3 sm:h-8 sm:w-8"
                     width={32}
                     height={32}
                   />
                   <span className="hidden text-[var(--surface-border-strong)] dark:text-slate-700 sm:inline">/</span>
-                  <h1 className="truncate text-xl font-bold tracking-tight text-slate-950 dark:text-slate-50 sm:text-2xl">{activeLabel}</h1>
+                  <h1 className="truncate bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-xl font-bold tracking-tight text-transparent dark:from-slate-50 dark:to-slate-300 sm:text-2xl">{activeLabel}</h1>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
+                  {currentUser ? (
+                    <UserAvatar
+                      displayName={currentUser.displayName}
+                      role={currentUser.role}
+                      size="sm"
+                    />
+                  ) : null}
                   <p className="hidden max-w-40 truncate text-sm text-slate-500 dark:text-slate-400 sm:block">
                     {currentUser?.displayName ?? '未登录'}
-                    {currentUser?.role === 'admin' ? <span className="ml-1 font-semibold text-teal-700 dark:text-cyan-300">管理员</span> : null}
+                    {currentUser?.role === 'admin' ? <span className="ml-1 font-semibold text-amber-600 dark:text-amber-400">管理员</span> : null}
                   </p>
                   <DropdownMenu
                     label="更多"

@@ -11,9 +11,9 @@ export function Card({ children, className = '', variant = 'default' }: CardProp
   return (
     <section
       className={cn(
-        'min-w-0 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-4 dark:border-slate-800 dark:bg-slate-900',
-        variant === 'nested' && 'bg-[var(--surface-muted)] dark:bg-slate-800/70',
-        variant === 'interactive' && 'card-hover cursor-pointer',
+        'min-w-0 rounded-xl border border-[var(--surface-border)] bg-[var(--surface-panel)] p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900',
+        variant === 'nested' && 'bg-[var(--surface-muted)] shadow-none dark:bg-slate-800/70',
+        variant === 'interactive' && 'card-hover cursor-pointer shadow-md hover:shadow-lg',
         className,
       )}
     >

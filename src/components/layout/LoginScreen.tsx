@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { Button, Field, LoadingBlock, StatusMessage, TextInput } from '../ui'
+import { Button, Field, IconBadge, LoadingBlock, StatusMessage, TextInput } from '../ui'
 import { ThemeToggle } from '../ThemeToggle'
 import type { ColorSchemePreference } from '../../hooks/useColorScheme'
 
@@ -32,23 +32,28 @@ export function LoginScreen({
 }: LoginScreenProps) {
   if (mode === 'checking') {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      <main className="flex min-h-screen items-center justify-center bg-transparent px-4 text-slate-900 dark:text-slate-100">
         <LoadingBlock className="w-full max-w-sm" title="正在检查登录状态..." />
       </main>
     )
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <main className="flex min-h-screen items-center justify-center bg-transparent px-4 py-8 text-slate-900 dark:text-slate-100">
       <form
-        className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6"
+        className="w-full max-w-md rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/90 sm:p-6"
         onSubmit={onSubmit}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-teal-700 dark:text-cyan-300">训练记录工具</p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">LiftLog</h1>
-            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+            <div className="flex items-center gap-2">
+              <IconBadge icon="dumbbell" variant="primary" size="md" />
+              <div>
+                <p className="text-sm font-semibold text-teal-700 dark:text-cyan-300">训练记录工具</p>
+                <h1 className="mt-0.5 text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">LiftLog</h1>
+              </div>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
               登录后记录训练、饮食和身体变化。邀请制使用，没有自助注册。
             </p>
           </div>

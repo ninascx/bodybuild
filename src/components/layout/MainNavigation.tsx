@@ -29,7 +29,7 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
   const mobileTabs = tabs.filter((tab) => tab.key !== 'admin')
   return (
     <>
-      <nav className="sticky top-0 z-20 mb-5 hidden overflow-x-auto border-y border-white/20 bg-white/70 py-2 shadow-lg backdrop-blur-md dark:border-slate-700/50 dark:bg-slate-950/70 md:block">
+      <nav className="sticky top-0 z-20 mb-5 hidden overflow-x-auto border-y border-white/30 bg-white/80 py-2 shadow-xl backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-950/80 md:block">
         <div className="flex min-w-max gap-1.5">
           {tabs.map((tab) => {
             const active = activeTab === tab.key
@@ -57,7 +57,7 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
       </nav>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-white/20 bg-white/75 px-3 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-1.5 shadow-lg backdrop-blur-lg dark:border-slate-700/50 dark:bg-slate-950/75 md:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-white/30 bg-white/85 px-3 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-1.5 shadow-2xl backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-950/85 md:hidden"
         aria-label="主要导航"
       >
         <div className={`mx-auto grid max-w-md gap-1 ${mobileTabs.length === 6 ? 'grid-cols-6' : 'grid-cols-5'}`}>

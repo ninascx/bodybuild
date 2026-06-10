@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { Badge, Button, Card, SectionHeader, StatusHero } from '../ui'
+import { Badge, Button, Card, GradientCard, SectionHeader, StatusHero } from '../ui'
 import { dayNames } from '../../data/plans'
 import type { DailyTarget } from '../../types'
 import type { DailyFocusKey, TodayTaskAction, TodayTaskPlan } from '../../lib/productFlow'
@@ -92,7 +92,7 @@ export function TodayOverview({
   return (
     <>
       <div className="md:hidden">
-        <section className="motion-enter rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-3 dark:border-slate-800 dark:bg-slate-900 sm:p-4">
+        <GradientCard variant="primary" className="motion-enter p-3 sm:p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -110,7 +110,7 @@ export function TodayOverview({
             <p className="mt-2 text-center text-sm leading-5 text-slate-600 dark:text-slate-300">{primary.helper}</p>
           </div>
           {taskPlan.secondaryActions.length > 0 ? (
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 border-t border-[var(--surface-border)] pt-4 dark:border-slate-700">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 border-t border-slate-200/50 pt-4 dark:border-slate-700/50">
               {taskPlan.secondaryActions.slice(0, 2).map((action) => (
                 <Button
                   key={`${action.kind}-${action.label}`}
@@ -123,7 +123,7 @@ export function TodayOverview({
               ))}
             </div>
           ) : null}
-        </section>
+        </GradientCard>
 
         <section className="motion-enter mt-3 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-3 dark:border-slate-800 dark:bg-slate-900 sm:p-4">
           <div className="flex items-center justify-between gap-2">

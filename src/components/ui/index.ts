@@ -4,6 +4,18 @@ export type { ButtonProps, ButtonVariant } from './Button'
 export { Card } from './Card'
 export type { CardProps } from './Card'
 
+export { GradientCard } from './GradientCard'
+export type { GradientCardProps } from './GradientCard'
+
+export { IconBadge } from './IconBadge'
+export type { IconBadgeProps, IconBadgeIcon, IconBadgeVariant, IconBadgeSize } from './IconBadge'
+
+export { AnimatedMetric } from './AnimatedMetric'
+export type { AnimatedMetricProps } from './AnimatedMetric'
+
+export { UserAvatar } from './UserAvatar'
+export type { UserAvatarProps } from './UserAvatar'
+
 export { Badge } from './Badge'
 export type { BadgeProps } from './Badge'
 
