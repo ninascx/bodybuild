@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import type { FormEvent } from 'react'
 import { dailyTargets as defaultDailyTargets, dayNames, workoutPlans as defaultWorkoutPlans } from './data/plans'
 import { formatDateInput, getDayKey, isValidDateInput } from './lib/dates'
-import { calculateDashboardStats, buildTrainingPerformanceData, buildTrendData, createWeeklySummary, findPreviousExerciseRecord, logsForWeek } from './lib/metrics'
+import { calculateDashboardStats, buildTrainingPerformanceData, buildTrendData, createWeeklySummary, findPreviousExerciseRecord } from './lib/metrics'
 import type { PreviousExerciseRecord, TrendPoint, TrainingPerformanceData } from './lib/metrics'
 import {
   buildDailyCopyText,
@@ -24,7 +24,6 @@ import {
   type WorkoutTemplateOption,
 } from './lib/workout'
 import {
-  getDailyRecommendations,
   getTwoWeekAdjustment,
   getWeekendRiskRecommendation,
 } from './lib/recommendations'
@@ -69,7 +68,6 @@ import { useColorScheme } from './hooks/useColorScheme'
 import { useConfirm } from './components/ConfirmDialog'
 import { AppShell } from './components/layout/AppShell'
 import { LoginScreen } from './components/layout/LoginScreen'
-import { TodayTab } from './tabs/TodayTab'
 import { DailyRecordSkeleton } from './components/DailyRecordSkeleton'
 const DailyRecordTab = lazy(() => import('./tabs/DailyRecordTab').then((mod) => ({ default: mod.DailyRecordTab })))
 const WorkoutTab = lazy(() => import('./tabs/WorkoutTab').then((mod) => ({ default: mod.WorkoutTab })))
@@ -78,10 +76,9 @@ const SettingsTab = lazy(() => import('./tabs/SettingsTab').then((mod) => ({ def
 const AdminUsersTab = lazy(() => import('./tabs/AdminUsersTab').then((mod) => ({ default: mod.AdminUsersTab })))
 const ExportDataDialog = lazy(() => import('./components/ExportDataDialog').then((mod) => ({ default: mod.ExportDataDialog })))
 
-type TabKey = 'today' | 'daily' | 'workout' | 'analytics' | 'settings' | 'admin'
+type TabKey = 'daily' | 'workout' | 'analytics' | 'settings' | 'admin'
 
 const baseTabs: Array<{ key: TabKey; label: string }> = [
-  { key: 'today', label: '今日' },
   { key: 'daily', label: '记录' },
   { key: 'workout', label: '训练' },
   { key: 'analytics', label: '复盘' },
@@ -117,23 +114,11 @@ function builtinTemplateIdToDay(templateId: string): DayKey | null {
 function readInitialTab(): TabKey {
   try {
     const saved = window.sessionStorage.getItem(ACTIVE_TAB_KEY)
-    return isTabKey(saved) ? saved : 'today'
+    return isTabKey(saved) ? saved : 'daily'
   } catch (error) {
     console.warn('读取上次激活的标签失败（sessionStorage 不可用）：', error)
-    return 'today'
+    return 'daily'
   }
-}
-
-function signedRemaining(targetValue: number | undefined, actualValue: number | undefined): string {
-  if (targetValue === undefined) return '无固定目标'
-  if (actualValue === undefined) return '未记录'
-  const diff = targetValue - actualValue
-  return diff >= 0 ? `还差 ${Math.round(diff)}` : `超出 ${Math.abs(Math.round(diff))}`
-}
-
-function remainingTone(targetValue: number | undefined, actualValue: number | undefined): 'positive' | 'warning' | 'neutral' {
-  if (targetValue === undefined || actualValue === undefined) return 'neutral'
-  return actualValue <= targetValue ? 'positive' : 'warning'
 }
 
 function formatSyncClock(value: string | null): string {
@@ -247,7 +232,7 @@ function App() {
   const planDebounceTimerRef = useRef<number | null>(null)
   const [initialLoaded, setInitialLoaded] = useState(false)
   const visibleTabs = currentUser?.role === 'admin' ? allTabs : baseTabs
-  const contentTab: TabKey = currentUser?.role === 'admin' || activeTab !== 'admin' ? activeTab : 'today'
+  const contentTab: TabKey = currentUser?.role === 'admin' || activeTab !== 'admin' ? activeTab : 'daily'
   const lastSyncedLabel = formatSyncClock(lastSyncedAt)
   const userWeeklyCalorieTarget = useMemo(
     () =>
@@ -294,7 +279,6 @@ function App() {
 
   const todayKey = getDayKey(today)
   const target = dailyTargetsByDay[todayKey]
-  const plan = workoutPlansByDay[todayKey]
   const todayLog = useMemo(() => dailyLogs.find((log) => log.date === today), [dailyLogs, today])
   const todayWorkout = useMemo(() => workoutLogs.find((log) => log.date === today), [workoutLogs, today])
   const selectedLog = useMemo(
@@ -335,15 +319,11 @@ function App() {
     () => (contentTab === 'analytics' ? createWeeklySummary(dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userWeeklyCalorieTarget, userPreference) : ({} as WeeklySummary)),
     [dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userWeeklyCalorieTarget, userPreference, contentTab],
   )
-  const dailyRecommendations = useMemo(
-    () => (contentTab === 'today' ? getDailyRecommendations(todayLog, dailyLogs, today, dailyTargetsByDay, userPreference) : ([] as AdjustmentRecommendation[])),
-    [todayLog, dailyLogs, today, dailyTargetsByDay, userPreference, contentTab],
-  )
   const twoWeekAdjustment = useMemo(() => getTwoWeekAdjustment(dailyLogs, today, userPreference), [dailyLogs, today, userPreference])
   const weekendRisk = useMemo(() => getWeekendRiskRecommendation(dailyLogs, today, userPreference), [dailyLogs, today, userPreference])
   const todaySnapshot = useMemo(
     () =>
-      contentTab === 'today' || contentTab === 'daily' || contentTab === 'workout' || contentTab === 'analytics'
+      contentTab === 'daily' || contentTab === 'workout' || contentTab === 'analytics'
         ? buildTodaySnapshot({
             today,
             log: todayLog,
@@ -359,7 +339,7 @@ function App() {
   )
   const todayTaskPlan = useMemo(
     () =>
-      contentTab === 'today' || contentTab === 'daily' || contentTab === 'workout' || contentTab === 'analytics'
+      contentTab === 'daily' || contentTab === 'workout' || contentTab === 'analytics'
         ? buildTodayTaskPlan({
             log: todayLog,
             target,
@@ -376,14 +356,8 @@ function App() {
     [todayTaskPlan],
   )
   const trendAlerts = useMemo(
-    () => (contentTab === 'today' || contentTab === 'analytics' ? buildTrendAlerts(dailyLogs, today, dailyTargetsByDay, userPreference) : ([] as AdjustmentRecommendation[])),
+    () => (contentTab === 'analytics' ? buildTrendAlerts(dailyLogs, today, dailyTargetsByDay, userPreference) : ([] as AdjustmentRecommendation[])),
     [contentTab, dailyLogs, today, dailyTargetsByDay, userPreference],
-  )
-  const todayCalorieTarget = target.calories ?? target.calorieRange?.[1]
-  const currentWeekLogs = useMemo(() => logsForWeek(dailyLogs, today), [dailyLogs, today])
-  const hasWeeklyCalorieLogs = useMemo(
-    () => currentWeekLogs.some((log) => log.calories !== undefined),
-    [currentWeekLogs],
   )
   const weeklyConclusionCard = useMemo(
     () => weeklyConclusion(weeklySummary, twoWeekAdjustment.title),
@@ -783,12 +757,6 @@ function App() {
     setSelectedDate(today)
     setDailyFocusKey(undefined)
     changeTab('workout')
-  }
-
-  function openTodayReview() {
-    setWeeklyAnchorDate(today)
-    setDailyFocusKey(undefined)
-    changeTab('analytics')
   }
 
   const retrySync = useCallback(async () => {
@@ -1659,30 +1627,6 @@ function App() {
           )
         ) : (
           <>
-        {contentTab === 'today' ? (
-          <TodayTab
-            today={today}
-            todayKey={todayKey}
-            target={target}
-            plan={plan}
-            todayLog={todayLog}
-            dashboardStats={dashboardStats}
-            todaySnapshot={todaySnapshot}
-            taskPlan={todayTaskPlan}
-            trendAlerts={trendAlerts}
-            dailyRecommendations={dailyRecommendations}
-            weekendRisk={weekendRisk}
-            hasWeeklyCalorieLogs={hasWeeklyCalorieLogs}
-            weeklyCalorieTarget={userWeeklyCalorieTarget}
-            todayCalorieTarget={todayCalorieTarget}
-            signedRemaining={signedRemaining}
-            remainingTone={remainingTone}
-            onRecordToday={openTodayRecord}
-            onStartWorkout={openTodayWorkout}
-            onReview={openTodayReview}
-          />
-        ) : null}
-
         {contentTab === 'settings' && currentUser ? (
           <Suspense fallback={<LoadingBlock title="正在加载设置..." lines={3} />}>
             <SettingsTab
@@ -1708,11 +1652,13 @@ function App() {
               syncState={syncState}
               savePending={savePending}
               lastSyncedLabel={lastSyncedLabel}
+              xunjiSyncPending={xunjiSyncPending}
               sleepFloorHours={userPreference.sleepFloorHours ?? defaultUserPreference.sleepFloorHours}
               fatigueThreshold={userPreference.fatigueThreshold ?? defaultUserPreference.fatigueThreshold}
               onDateChange={handleDateChange}
               onUpdateDailyLog={updateDailyLog}
               onQuickAction={quickDailyAction}
+              onSyncFromXunji={() => void syncSelectedDateFromXunji()}
               focusKey={dailyFocusKey}
               priorityKeys={dailyPriorityKeys}
               onFocusConsumed={() => setDailyFocusKey(undefined)}

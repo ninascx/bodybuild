@@ -1,6 +1,6 @@
 import { DateNavigator } from '../DateNavigator'
 import type { SyncState } from '../../lib/storage'
-import { Badge } from '../ui'
+import { Badge, Button } from '../ui'
 import { getDailySaveLabel } from './dailyRecordStatus'
 
 function syncTone(syncState: SyncState, savePending: boolean): 'positive' | 'warning' | 'danger' {
@@ -15,14 +15,18 @@ export function DailyRecordToolbar({
   syncState,
   savePending,
   lastSyncedLabel,
+  xunjiSyncPending,
   onDateChange,
+  onSyncFromXunji,
 }: {
   selectedDate: string
   today: string
   syncState: SyncState
   savePending: boolean
   lastSyncedLabel: string
+  xunjiSyncPending?: boolean
   onDateChange: (date: string) => void
+  onSyncFromXunji?: () => void
 }) {
   return (
     <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] px-3 py-3 dark:border-slate-800 dark:bg-slate-900 lg:flex lg:items-end lg:justify-between lg:gap-4 lg:px-4">
@@ -38,6 +42,16 @@ export function DailyRecordToolbar({
       </div>
       {syncState === 'offline' ? (
         <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300 lg:hidden">将在联网后自动同步</p>
+      ) : null}
+      {onSyncFromXunji ? (
+        <Button
+          variant="secondary"
+          className="mt-3 w-full shadow-none lg:hidden"
+          loading={xunjiSyncPending}
+          onClick={onSyncFromXunji}
+        >
+          同步训记
+        </Button>
       ) : null}
     </section>
   )

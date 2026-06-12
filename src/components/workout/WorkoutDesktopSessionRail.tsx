@@ -1,7 +1,8 @@
 import type { WorkoutLog } from '../../types'
 import type { WorkoutSummary } from '../../lib/workout'
+import type { SyncState } from '../../lib/storage'
 import { formatTime } from '../../lib/workout'
-import { Button, Card, Checkbox, ProgressBar } from '../ui'
+import { Badge, Button, Card, Checkbox, ProgressBar } from '../ui'
 
 function currentExerciseLabel(workout: WorkoutLog | undefined, index: number): string {
   const exercise = workout?.exercises[index]
@@ -9,7 +10,15 @@ function currentExerciseLabel(workout: WorkoutLog | undefined, index: number): s
   return `${index + 1}. ${exercise.name}`
 }
 
+function syncBadge(syncState: SyncState | undefined): { text: string; tone: 'positive' | 'warning' | 'danger' | 'neutral' } {
+  if (syncState === 'synced') return { text: '已保存', tone: 'positive' }
+  if (syncState === 'saving' || syncState === 'loading') return { text: '保存中', tone: 'warning' }
+  if (syncState === 'offline') return { text: '离线', tone: 'danger' }
+  return { text: '待同步', tone: 'neutral' }
+}
+
 export function WorkoutDesktopSessionRail({
+  restDay = false,
   selectedWorkout,
   workoutSummary,
   elapsedSeconds,
@@ -26,7 +35,12 @@ export function WorkoutDesktopSessionRail({
   hasNextIncompleteExercise,
   statusPrimaryLabel,
   completionHint,
+  syncState,
+  xunjiSyncPending = false,
+  primaryDisabled = false,
   onPrimaryAction,
+  onCreateBlankWorkout,
+  onSyncFromXunji,
   onJumpToCurrent,
   onJumpToNextIncomplete,
   onStartRest,
@@ -35,6 +49,7 @@ export function WorkoutDesktopSessionRail({
   onToggleAutoStart,
   onExitTrainingMode,
 }: {
+  restDay?: boolean
   selectedWorkout: WorkoutLog | undefined
   workoutSummary: WorkoutSummary
   elapsedSeconds: number
@@ -51,7 +66,12 @@ export function WorkoutDesktopSessionRail({
   hasNextIncompleteExercise: boolean
   statusPrimaryLabel: string | null
   completionHint: string
+  syncState?: SyncState
+  xunjiSyncPending?: boolean
+  primaryDisabled?: boolean
   onPrimaryAction: () => void
+  onCreateBlankWorkout?: () => void
+  onSyncFromXunji?: () => void
   onJumpToCurrent: () => void
   onJumpToNextIncomplete: () => void
   onStartRest: () => void
@@ -63,11 +83,19 @@ export function WorkoutDesktopSessionRail({
   const restLabel = restActive ? formatTime(restSeconds) : `${restDefaultDuration}s`
   const currentLabel = currentExerciseLabel(selectedWorkout, currentExerciseIndex)
   const nextLabel = currentExerciseLabel(selectedWorkout, suggestedExerciseIndex)
-  const primaryLabel = workoutMarkedComplete
-    ? '查看训练'
-    : workoutReadyToConfirm
-      ? '确认完成'
-      : statusPrimaryLabel ?? '继续训练'
+  const currentSyncBadge = syncBadge(syncState)
+  let primaryLabel: string | null = null
+  if (!restDay) {
+    if (!selectedWorkout) {
+      primaryLabel = '开始训练'
+    } else if (workoutMarkedComplete) {
+      primaryLabel = '查看训练'
+    } else if (workoutReadyToConfirm) {
+      primaryLabel = '确认完成'
+    } else {
+      primaryLabel = statusPrimaryLabel ?? '继续训练'
+    }
+  }
 
   return (
     <aside className="hidden lg:block lg:self-stretch">
@@ -76,9 +104,11 @@ export function WorkoutDesktopSessionRail({
         <div className="min-w-0">
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">训练会话</p>
           <h3 className="mt-1 truncate text-base font-semibold text-slate-950 dark:text-slate-50">
-            {selectedWorkout?.workoutName ?? '尚未开始训练'}
+            {restDay ? '今天休息' : selectedWorkout?.workoutName ?? '准备开始训练'}
           </h3>
-          <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{completionHint}</p>
+          <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+            {restDay ? '休息日不需要开始训练；可以同步训记或回看历史。' : completionHint}
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -106,6 +136,7 @@ export function WorkoutDesktopSessionRail({
           </div>
         </div>
 
+        {selectedWorkout ? (
         <div className="grid gap-2 rounded-lg border border-[var(--surface-border)] p-3 dark:border-slate-700">
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">当前位置</p>
           <button
@@ -121,7 +152,9 @@ export function WorkoutDesktopSessionRail({
             </Button>
           ) : null}
         </div>
+        ) : null}
 
+        {selectedWorkout && !workoutMarkedComplete ? (
         <div className="grid gap-2">
           {restActive ? (
             <div className={`rounded-lg border p-3 ${restSeconds === 0 ? 'border-amber-300 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-900/30' : 'border-[var(--surface-border)] bg-[var(--surface-muted)] dark:border-slate-700 dark:bg-slate-800'}`}>
@@ -142,14 +175,37 @@ export function WorkoutDesktopSessionRail({
             </>
           )}
         </div>
+        ) : null}
+
+        {onSyncFromXunji ? (
+          <div className="grid gap-2 rounded-lg border border-[var(--surface-border)] p-3 dark:border-slate-700">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">训记同步</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">从外部记录拉取今天训练。</p>
+              </div>
+              <Badge tone={currentSyncBadge.tone}>{currentSyncBadge.text}</Badge>
+            </div>
+            <Button variant="secondary" className="w-full justify-center shadow-none" loading={xunjiSyncPending} onClick={onSyncFromXunji}>
+              同步训记
+            </Button>
+          </div>
+        ) : null}
 
         <div className="grid gap-2">
-          <Button className="min-h-11 font-semibold" onClick={onPrimaryAction}>
-            {primaryLabel}
-          </Button>
-          {trainingMode ? (
+          {primaryLabel ? (
+            <Button className="min-h-11 font-semibold" onClick={onPrimaryAction} disabled={primaryDisabled}>
+              {primaryLabel}
+            </Button>
+          ) : null}
+          {!selectedWorkout && !restDay && onCreateBlankWorkout ? (
+            <Button variant="secondary" className="shadow-none" onClick={onCreateBlankWorkout}>
+              空白训练
+            </Button>
+          ) : null}
+          {trainingMode && selectedWorkout ? (
             <Button variant="secondary" className="shadow-none" onClick={onExitTrainingMode}>
-              {workoutMarkedComplete ? '返回记录' : '退出训练模式'}
+              {workoutMarkedComplete ? '返回记录' : '退出训练计时'}
             </Button>
           ) : null}
         </div>

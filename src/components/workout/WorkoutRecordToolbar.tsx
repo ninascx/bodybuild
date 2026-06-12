@@ -14,6 +14,8 @@ export function WorkoutRecordToolbar({
   xunjiSyncPending,
   onShowOnlyUnfinishedChange,
   onCycleCollapseMode,
+  showTrainingModeAction = true,
+  showSyncAction = true,
 }: {
   badgeLabel: string
   badgeTone: 'positive' | 'warning' | 'neutral'
@@ -28,6 +30,8 @@ export function WorkoutRecordToolbar({
   xunjiSyncPending: boolean
   onShowOnlyUnfinishedChange: (value: boolean) => void
   onCycleCollapseMode: () => void
+  showTrainingModeAction?: boolean
+  showSyncAction?: boolean
 }) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -37,7 +41,7 @@ export function WorkoutRecordToolbar({
       />
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={badgeTone}>{badgeLabel}</Badge>
-        {hasWorkout ? (
+        {hasWorkout && showTrainingModeAction ? (
           <Button variant={effectiveTrainingMode ? 'primary' : 'secondary'} className="px-3" onClick={onToggleTrainingMode}>
             {effectiveTrainingMode ? '训练模式中' : '训练模式'}
           </Button>
@@ -47,9 +51,11 @@ export function WorkoutRecordToolbar({
             新增动作
           </Button>
         ) : null}
-        <Button variant="secondary" className="px-3" loading={xunjiSyncPending} onClick={onSyncFromXunji}>
-          同步训记
-        </Button>
+        {showSyncAction ? (
+          <Button variant="secondary" className="px-3" loading={xunjiSyncPending} onClick={onSyncFromXunji}>
+            同步训记
+          </Button>
+        ) : null}
         {hasWorkout ? (
           <SegmentedControl
             value={showOnlyUnfinished ? 'unfinished' : 'all'}

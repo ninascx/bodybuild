@@ -27,6 +27,11 @@ function NavigationIcon({ tabKey }: { tabKey: string }) {
 
 export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: MainNavigationProps<T>) {
   const mobileTabs = tabs.filter((tab) => tab.key !== 'admin')
+  const mobileGridClass = mobileTabs.length === 4
+    ? 'grid-cols-4'
+    : mobileTabs.length === 6
+      ? 'grid-cols-6'
+      : 'grid-cols-5'
   return (
     <>
       <nav className="sticky top-0 z-20 mb-5 hidden overflow-x-auto border-y border-white/30 bg-white/80 py-2 shadow-xl backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-950/80 md:block">
@@ -60,7 +65,7 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
         className="fixed inset-x-0 bottom-0 z-50 border-t border-white/30 bg-white/85 px-3 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-1.5 shadow-2xl backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-950/85 md:hidden"
         aria-label="主要导航"
       >
-        <div className={`mx-auto grid max-w-md gap-1 ${mobileTabs.length === 6 ? 'grid-cols-6' : 'grid-cols-5'}`}>
+        <div className={`mx-auto grid max-w-md gap-1 ${mobileGridClass}`}>
           {mobileTabs.map((tab) => {
             const active = activeTab === tab.key
             return (

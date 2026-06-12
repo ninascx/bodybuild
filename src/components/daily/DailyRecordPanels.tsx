@@ -95,6 +95,62 @@ function buildDimensionSummary(selectedLog: Partial<DailyLog>, previousLogs: Dai
     .join(' · ')
 }
 
+export function DailyMeasurementCard({
+  selectedLog,
+  previousLogs,
+  onUpdateDailyLog,
+  className = '',
+}: {
+  selectedLog: Partial<DailyLog>
+  previousLogs: DailyLog[]
+  onUpdateDailyLog: (patch: Partial<DailyLog>) => void
+  className?: string
+}) {
+  const dimensionSummary = buildDimensionSummary(selectedLog, previousLogs)
+
+  return (
+    <section className={`rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-4 dark:border-slate-800 dark:bg-slate-900 ${className}`}>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-slate-950 dark:text-slate-50">围度 / 更多记录</h3>
+          <p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">
+            {dimensionSummary || '记录围度、碳水和脂肪；录入后保持当前位置不折叠。'}
+          </p>
+        </div>
+      </div>
+      <MeasurementFields
+        selectedLog={selectedLog}
+        onUpdateDailyLog={onUpdateDailyLog}
+      />
+    </section>
+  )
+}
+
+export function MeasurementFields({
+  selectedLog,
+  onUpdateDailyLog,
+  compact = false,
+}: {
+  selectedLog: Partial<DailyLog>
+  onUpdateDailyLog: (patch: Partial<DailyLog>) => void
+  compact?: boolean
+}) {
+  const gridClassName = compact
+    ? 'grid gap-3 sm:grid-cols-2 lg:grid-cols-2'
+    : 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4'
+
+  return (
+    <div className={gridClassName}>
+      <NumberField label="腰围 cm" value={selectedLog.waistCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => onUpdateDailyLog({ waistCm: value })} />
+      <NumberField label="胸围 cm" value={selectedLog.chestCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => onUpdateDailyLog({ chestCm: value })} />
+      <NumberField label="上臂围 cm" value={selectedLog.upperArmCm} step="0.1" kind="decimal" range={{ min: 10, max: 80 }} onChange={(value) => onUpdateDailyLog({ upperArmCm: value })} />
+      <NumberField label="大腿围 cm" value={selectedLog.thighCm} step="0.1" kind="decimal" range={{ min: 20, max: 120 }} onChange={(value) => onUpdateDailyLog({ thighCm: value })} />
+      <NumberField label="实际碳水 g" value={selectedLog.carbs} range={{ min: 0, max: 1000, allowZero: true }} onChange={(value) => onUpdateDailyLog({ carbs: value })} />
+      <NumberField label="实际脂肪 g" value={selectedLog.fat} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => onUpdateDailyLog({ fat: value })} />
+    </div>
+  )
+}
+
 export function MeasurementPanel({
   selectedLog,
   previousLogs,
@@ -109,20 +165,14 @@ export function MeasurementPanel({
   compact?: boolean
 }) {
   const dimensionSummary = buildDimensionSummary(selectedLog, previousLogs)
-  const gridClassName = compact
-    ? 'grid gap-3 sm:grid-cols-2 lg:grid-cols-2'
-    : 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4'
 
   return (
     <DetailPanel title="围度 / 更多记录" summary={dimensionSummary} className={className}>
-      <div className={gridClassName}>
-        <NumberField label="腰围 cm" value={selectedLog.waistCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => onUpdateDailyLog({ waistCm: value })} />
-        <NumberField label="胸围 cm" value={selectedLog.chestCm} step="0.1" kind="decimal" range={{ min: 30, max: 200 }} onChange={(value) => onUpdateDailyLog({ chestCm: value })} />
-        <NumberField label="上臂围 cm" value={selectedLog.upperArmCm} step="0.1" kind="decimal" range={{ min: 10, max: 80 }} onChange={(value) => onUpdateDailyLog({ upperArmCm: value })} />
-        <NumberField label="大腿围 cm" value={selectedLog.thighCm} step="0.1" kind="decimal" range={{ min: 20, max: 120 }} onChange={(value) => onUpdateDailyLog({ thighCm: value })} />
-        <NumberField label="实际碳水 g" value={selectedLog.carbs} range={{ min: 0, max: 1000, allowZero: true }} onChange={(value) => onUpdateDailyLog({ carbs: value })} />
-        <NumberField label="实际脂肪 g" value={selectedLog.fat} range={{ min: 0, max: 500, allowZero: true }} onChange={(value) => onUpdateDailyLog({ fat: value })} />
-      </div>
+      <MeasurementFields
+        selectedLog={selectedLog}
+        onUpdateDailyLog={onUpdateDailyLog}
+        compact={compact}
+      />
     </DetailPanel>
   )
 }

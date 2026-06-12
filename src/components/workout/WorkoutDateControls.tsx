@@ -5,13 +5,15 @@ export function WorkoutDateControls({
   selectedDate,
   today,
   onDateChange,
+  compact = false,
 }: {
   selectedDate: string
   today: string
   onDateChange: (date: string) => void
+  compact?: boolean
 }) {
   return (
-    <div className="grid gap-2 sm:grid-cols-[minmax(9.5rem,10rem)_repeat(3,4.75rem)]">
+    <div className={compact ? 'grid gap-2' : 'grid gap-2 sm:grid-cols-[minmax(9.5rem,10rem)_repeat(3,4.75rem)]'}>
       <Field label="训练日期">
         <TextInput
           type="date"
@@ -19,7 +21,7 @@ export function WorkoutDateControls({
           onChange={(event) => onDateChange(event.target.value)}
         />
       </Field>
-      <div className="grid grid-cols-3 gap-1 self-end sm:contents">
+      <div className={compact ? 'grid grid-cols-3 gap-1 self-end' : 'grid grid-cols-3 gap-1 self-end sm:contents'}>
         <Button
           variant="secondary"
           className="min-h-10 whitespace-nowrap px-2 text-xs"

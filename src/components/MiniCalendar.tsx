@@ -46,12 +46,14 @@ export function MiniCalendar({
   dailyLogs,
   workoutLogs,
   onSelectDate,
+  density = 'default',
 }: {
   selectedDate: string
   today: string
   dailyLogs: DailyLog[]
   workoutLogs: WorkoutLog[]
   onSelectDate: (date: string) => void
+  density?: 'default' | 'compact'
 }) {
   const dailyByDate = useMemo(() => {
     const map = new Map<string, DailyLog>()
@@ -87,12 +89,33 @@ export function MiniCalendar({
   }, [today])
 
   if (cells.length === 0) return null
+  const compact = density === 'compact'
+  const containerClass = compact
+    ? 'rounded-lg border border-slate-200 bg-white p-2.5 dark:border-slate-700 dark:bg-slate-900'
+    : 'rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900'
+  const headingClass = compact
+    ? 'grid gap-1.5'
+    : 'flex items-center justify-between'
+  const legendClass = compact
+    ? 'flex items-center gap-2 text-[11px] leading-none text-slate-500 dark:text-slate-400'
+    : 'flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400'
+  const weekdayClass = compact
+    ? 'mt-2 grid grid-cols-7 gap-0.5 text-center text-[11px] text-slate-400 dark:text-slate-500'
+    : 'mt-2 grid grid-cols-7 gap-1 text-center text-xs text-slate-400 dark:text-slate-500'
+  const calendarGridClass = compact
+    ? 'mt-1 grid grid-cols-7 gap-0.5'
+    : 'mt-1 grid grid-cols-7 gap-1'
+  const cellBaseClass = compact
+    ? 'relative h-8 min-h-0 min-w-0 w-full flex-col gap-0.5 rounded-md px-0.5 py-1 text-[11px] font-medium shadow-none'
+    : 'relative min-h-11 min-w-11 w-full flex-col gap-0.5 rounded-md px-1 py-1 text-xs font-medium shadow-none'
+  const dotClass = compact ? 'h-1 w-1 rounded-full' : 'h-1.5 w-1.5 rounded-full'
+  const dotRowClass = compact ? 'mt-0.5 flex h-1 items-center gap-0.5' : 'mt-0.5 flex h-1.5 items-center gap-0.5'
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-      <div className="flex items-center justify-between">
+    <div className={containerClass}>
+      <div className={headingClass}>
         <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">最近 6 周</p>
-        <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <p className={legendClass}>
           <span className="inline-flex items-center gap-1">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" /> 已记录
           </span>
@@ -101,21 +124,19 @@ export function MiniCalendar({
           </span>
         </p>
       </div>
-      <div className="mt-2 grid grid-cols-7 gap-1 text-center text-xs text-slate-400 dark:text-slate-500">
+      <div className={weekdayClass}>
         {weekHeaders.map((label) => (
           <div key={label} className="py-0.5">
             {label}
           </div>
         ))}
       </div>
-      <div className="mt-1 grid grid-cols-7 gap-1">
+      <div className={calendarGridClass}>
         {cells.map((cell) => {
           const isSelected = cell.date === selectedDate
           const isToday = cell.date === today
           const dailyHit = hasDailyContent(dailyByDate.get(cell.date))
           const workoutHit = hasWorkoutContent(workoutByDate.get(cell.date))
-          const baseClass =
-            'relative min-h-11 min-w-11 w-full flex-col gap-0.5 rounded-md px-1 py-1 text-xs font-medium shadow-none'
           let stateClass: string
           if (isSelected) {
             stateClass = 'border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500'
@@ -141,17 +162,17 @@ export function MiniCalendar({
               aria-label={ariaLabel}
               aria-current={isToday ? 'date' : undefined}
               aria-pressed={isSelected}
-              className={`${baseClass} ${stateClass}`}
+              className={`${cellBaseClass} ${stateClass}`}
             >
               <span className="leading-none">{cell.day}</span>
-              <span className="mt-0.5 flex h-1.5 items-center gap-0.5">
+              <span className={dotRowClass}>
                 <span
-                  className={`h-1.5 w-1.5 rounded-full ${
+                  className={`${dotClass} ${
                     dailyHit ? (isSelected ? 'bg-white' : 'bg-emerald-500') : 'bg-transparent'
                   }`}
                 />
                 <span
-                  className={`h-1.5 w-1.5 rounded-full ${
+                  className={`${dotClass} ${
                     workoutHit ? (isSelected ? 'bg-white' : 'bg-sky-500') : 'bg-transparent'
                   }`}
                 />
