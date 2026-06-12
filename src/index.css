@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Custom breakpoints for ultra-wide screens */
+@custom-media --screen-3xl (min-width: 1920px);
+
 /* 让 dark: 同时支持系统偏好和 .dark class（手动覆盖） */
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -46,6 +49,11 @@
   --shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.08);
   --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.08);
   --shadow-xl: 0 20px 25px -5px rgb(15 23 42 / 0.08), 0 8px 10px -6px rgb(15 23 42 / 0.08);
+
+  /* Card elevation levels */
+  --elevation-1: var(--shadow-sm);
+  --elevation-2: var(--shadow-md);
+  --elevation-3: var(--shadow-lg);
 
   /* Gradient tokens */
   --gradient-primary: linear-gradient(135deg, #0f9488 0%, #0ea5e9 100%);
@@ -154,6 +162,11 @@ h1,
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+
+  /* Dark mode card elevation levels */
+  --elevation-1: var(--shadow-sm);
+  --elevation-2: var(--shadow-md);
+  --elevation-3: var(--shadow-lg);
 
   /* Dark mode gradients */
   --gradient-primary: linear-gradient(135deg, #0f9488 0%, #0ea5e9 100%);
@@ -684,5 +697,38 @@ select {
   }
   50% {
     box-shadow: 0 0 0 8px rgb(14 165 233 / 0.2), 0 0 0 2px rgb(14 165 233 / 0.8);
+  }
+}
+
+/* ── Elevation Utilities ── */
+.elevation-1 {
+  box-shadow: var(--elevation-1);
+  position: relative;
+  z-index: 1;
+}
+
+.elevation-2 {
+  box-shadow: var(--elevation-2);
+  position: relative;
+  z-index: 10;
+}
+
+.elevation-3 {
+  box-shadow: var(--elevation-3);
+  position: relative;
+  z-index: 20;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .elevation-hover {
+    transition: box-shadow var(--motion-base) var(--ease-momentum);
+  }
+
+  .elevation-1.elevation-hover:hover {
+    box-shadow: var(--elevation-2);
+  }
+
+  .elevation-2.elevation-hover:hover {
+    box-shadow: var(--elevation-3);
   }
 }
