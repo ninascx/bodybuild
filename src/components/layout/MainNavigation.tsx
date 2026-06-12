@@ -33,63 +33,34 @@ export function MainNavigation<T extends string>({ tabs, activeTab, onChange }: 
       ? 'grid-cols-6'
       : 'grid-cols-5'
   return (
-    <>
-      <nav className="sticky top-0 z-20 mb-5 hidden overflow-x-auto border-y border-white/30 bg-white/80 py-2 shadow-xl backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-950/80 md:block">
-        <div className="flex min-w-max gap-1.5">
-          {tabs.map((tab) => {
-            const active = activeTab === tab.key
-            return (
-              <Button
-                key={tab.key}
-                variant={active ? 'primary' : 'ghost'}
-                onClick={() => onChange(tab.key)}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'rounded-md px-4 text-sm font-semibold shadow-none',
-                  active
-                    ? 'bg-[var(--color-primary-700)] text-white shadow-sm hover:bg-[var(--color-primary-600)] dark:bg-cyan-600 dark:text-white dark:hover:bg-cyan-500'
-                    : 'text-slate-700 hover:bg-white/80 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-800/80 dark:hover:text-slate-50',
-                  // 增加文字阴影以提高可读性
-                  active ? 'drop-shadow-sm' : 'drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)] dark:drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]',
-                )}
-              >
-                <NavigationIcon tabKey={tab.key} />
-                {tab.label}
-              </Button>
-            )
-          })}
-        </div>
-      </nav>
-
-      <nav
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-white/30 bg-white/85 px-3 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-1.5 shadow-2xl backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-950/85 md:hidden"
-        aria-label="主要导航"
-      >
-        <div className={`mx-auto grid max-w-md gap-1 ${mobileGridClass}`}>
-          {mobileTabs.map((tab) => {
-            const active = activeTab === tab.key
-            return (
-              <Button
-                key={tab.key}
-                variant="ghost"
-                onClick={() => onChange(tab.key)}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'relative min-h-12 flex-col gap-0.5 rounded-lg px-1 py-1 text-xs font-semibold shadow-none',
-                  active
-                    ? 'motion-nav-active bg-[var(--surface-selected)] text-[var(--color-primary-700)] hover:bg-[var(--surface-selected)] dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950/40 after:absolute after:inset-x-4 after:top-1 after:h-0.5 after:rounded-full after:bg-[var(--color-primary-700)] dark:after:bg-cyan-400'
-                    : 'text-slate-600 hover:bg-white/60 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-slate-50',
-                  // 文字阴影提高可读性
-                  'drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)] dark:drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]',
-                )}
-              >
-                <NavigationIcon tabKey={tab.key} />
-                <span className="whitespace-nowrap leading-5">{tab.label}</span>
-              </Button>
-            )
-          })}
-        </div>
-      </nav>
-    </>
+    <nav
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-white/30 bg-white/85 px-3 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-1.5 shadow-2xl backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-950/85 lg:hidden"
+      aria-label="主要导航"
+    >
+      <div className={`mx-auto grid max-w-md gap-1 ${mobileGridClass}`}>
+        {mobileTabs.map((tab) => {
+          const active = activeTab === tab.key
+          return (
+            <Button
+              key={tab.key}
+              variant="ghost"
+              onClick={() => onChange(tab.key)}
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'relative min-h-12 flex-col gap-0.5 rounded-lg px-1 py-1 text-xs font-semibold shadow-none',
+                active
+                  ? 'motion-nav-active bg-[var(--surface-selected)] text-[var(--color-primary-700)] hover:bg-[var(--surface-selected)] dark:bg-cyan-950/40 dark:text-cyan-200 dark:hover:bg-cyan-950/40 after:absolute after:inset-x-4 after:top-1 after:h-0.5 after:rounded-full after:bg-[var(--color-primary-700)] dark:after:bg-cyan-400'
+                  : 'text-slate-600 hover:bg-white/60 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-slate-50',
+                // 文字阴影提高可读性
+                'drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)] dark:drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]',
+              )}
+            >
+              <NavigationIcon tabKey={tab.key} />
+              <span className="whitespace-nowrap leading-5">{tab.label}</span>
+            </Button>
+          )
+        })}
+      </div>
+    </nav>
   )
 }
