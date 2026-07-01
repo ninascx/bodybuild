@@ -97,7 +97,6 @@ function QuickAdjustButtons({
 
 export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
   const allFields: EssentialField[] = [
-    { key: 'weight', label: '体重 kg', value: props.selectedLog.morningWeightKg, step: '0.1', kind: 'decimal', range: { min: 20, max: 300 }, quickStep: 0.1, quickStepLabel: '0.1', patch: (value: number | undefined) => ({ morningWeightKg: value }) },
     { key: 'calories', label: '热量 kcal', value: props.selectedLog.calories, step: '1', kind: 'integer', range: { min: 0, max: 10000, allowZero: true }, quickStep: 100, quickStepLabel: '100', patch: (value: number | undefined) => ({ calories: value }) },
     { key: 'protein', label: '蛋白质 g', value: props.selectedLog.protein, step: '1', kind: 'integer', range: { min: 0, max: 500, allowZero: true }, quickStep: 10, quickStepLabel: '10', patch: (value: number | undefined) => ({ protein: value }) },
     { key: 'steps', label: '步数', value: props.selectedLog.steps, step: '1', kind: 'integer', range: { min: 0, max: 100000, allowZero: true }, quickStep: 1000, quickStepLabel: '1k', patch: (value: number | undefined) => ({ steps: value }) },
@@ -105,7 +104,7 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
     { key: 'fatigue', label: `疲劳 ≤${props.fatigueThreshold}`, value: props.selectedLog.fatigueScore, step: '1', kind: 'integer', range: { min: 0, max: 10, allowZero: true }, quickStep: 1, quickStepLabel: '1', patch: (value: number | undefined) => ({ fatigueScore: value }) },
   ]
 
-  const priorityFieldKeys = props.priorityKeys || ['weight', 'calories', 'protein']
+  const priorityFieldKeys = props.priorityKeys || ['calories', 'protein']
   const essentialFields = priorityFieldKeys.map(key => allFields.find(f => f.key === key)).filter(Boolean) as EssentialField[]
   const supplementaryFields = allFields.filter(f => !priorityFieldKeys.includes(f.key))
   const showSaveStatus = props.showSaveStatus ?? true

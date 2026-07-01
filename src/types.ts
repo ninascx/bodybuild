@@ -5,12 +5,6 @@ export interface UserProfile {
   birthDate?: string
   heightCm?: number
   initialWeightKg?: number
-  currentWeightKg?: number
-  estimatedBodyFatPercent?: number
-  waistCm?: number
-  chestCm?: number
-  upperArmCm?: number
-  thighCm?: number
   targetWeeks?: string
   goal?: string
   sleepHours?: number
@@ -87,10 +81,15 @@ export interface WorkoutTemplate {
 
 export interface DailyLog {
   date: string
+  /** @deprecated Computed compatibility view; persisted body data lives in BodyRecord. */
   morningWeightKg?: number
+  /** @deprecated Computed compatibility view; persisted body data lives in BodyRecord. */
   waistCm?: number
+  /** @deprecated Computed compatibility view; persisted body data lives in BodyRecord. */
   chestCm?: number
+  /** @deprecated Computed compatibility view; persisted body data lives in BodyRecord. */
   upperArmCm?: number
+  /** @deprecated Computed compatibility view; persisted body data lives in BodyRecord. */
   thighCm?: number
   calories?: number
   protein?: number
@@ -102,6 +101,36 @@ export interface DailyLog {
   workoutCompletion?: number
   fatigueScore?: number
   notes?: string
+}
+
+export type BodyMetricType =
+  | 'weight'
+  | 'bodyfat'
+  | 'neck'
+  | 'chest'
+  | 'weist'
+  | 'shoulder'
+  | 'bot'
+  | 'arm_left'
+  | 'arm_right'
+  | 'forearm_left'
+  | 'forearm_right'
+  | 'leg_left'
+  | 'leg_right'
+  | 'cav_left'
+  | 'cav_right'
+
+export type BodyRecordOrigin = 'local' | 'xunji' | 'legacy_daily' | 'legacy_profile'
+
+export interface BodyRecord {
+  datestr: string
+  type: BodyMetricType
+  value: number
+  unit: 'kg' | '%' | 'cm'
+  label: string
+  label_en: string
+  origin?: BodyRecordOrigin
+  synced_at?: string
 }
 
 export interface ExerciseSetLog {
@@ -158,17 +187,19 @@ export interface AdjustmentRecommendation {
 }
 
 export interface BackupPayload {
-  version: 1
+  version: 2
   exportedAt: string
   dailyLogs: DailyLog[]
+  bodyRecords: BodyRecord[]
   workoutLogs: WorkoutLog[]
   workoutTemplates?: WorkoutTemplate[]
 }
 
 export interface ServerData {
-  version: 1
+  version: 2
   updatedAt: string
   dailyLogs: DailyLog[]
+  bodyRecords: BodyRecord[]
   workoutLogs: WorkoutLog[]
   workoutTemplates: WorkoutTemplate[]
 }

@@ -1,7 +1,8 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useMemo } from 'react'
 import { Badge, Card, InsightCard, PageHeader, SegmentedControl, StatCard } from '../components/ui'
 import { Skeleton } from '../components/Skeleton'
-import { roundMetric, buildWeightDelta, buildNeutralDelta, buildHigherIsBetterDelta } from '../lib/metrics'
+import { TrendIndicator } from '../components/TrendIndicator'
+import { roundMetric, buildWeightDelta, buildHigherIsBetterDelta } from '../lib/metrics'
 import type { TrendPoint, DashboardStats, TrainingPerformanceData } from '../lib/metrics'
 import type { RecommendationTone } from '../types'
 
@@ -61,6 +62,31 @@ export function DashboardTab(props: DashboardTabProps) {
     proteinTrendPoints < 3 ? `蛋白记录还差 ${3 - proteinTrendPoints} 天` : null,
     trainingTrendPoints < 2 ? `训练重量记录还差 ${2 - trainingTrendPoints} 次` : null,
   ].filter((item): item is string => item !== null)
+
+  // Calculate sparkline data for last 7-10 points
+  const weightSparkline = useMemo(() =>
+    props.trendData
+      .filter(p => p.weightAverage7 !== undefined)
+      .slice(-10)
+      .map(p => p.weightAverage7 as number),
+    [props.trendData]
+  )
+
+  const calorieSparkline = useMemo(() =>
+    props.trendData
+      .filter(p => p.calories !== undefined)
+      .slice(-10)
+      .map(p => p.calories as number),
+    [props.trendData]
+  )
+
+  const stepsSparkline = useMemo(() =>
+    props.trendData
+      .filter(p => p.steps !== undefined)
+      .slice(-10)
+      .map(p => p.steps as number),
+    [props.trendData]
+  )
 
   if (hasSparseData) {
     return (
@@ -154,18 +180,46 @@ export function DashboardTab(props: DashboardTabProps) {
       </section>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard size="large" label="当前体重" value={`${roundMetric(props.dashboardStats.currentWeight)} kg`} />
+        <StatCard
+          size="large"
+          label="当前体重"
+          value={
+            <TrendIndicator
+              value={props.dashboardStats.currentWeight ?? 0}
+              previousValue={props.dashboardStats.previous.averageWeight7}
+              format={(v) => `${roundMetric(v)} kg`}
+              showSparkline={weightSparkline.length >= 3}
+              sparklineData={weightSparkline}
+              inverse={true}
+            />
+          }
+        />
         <StatCard
           size="large"
           label="7 日平均体重"
-          value={`${roundMetric(props.dashboardStats.averageWeight7)} kg`}
-          delta={buildWeightDelta(props.dashboardStats.averageWeight7, props.dashboardStats.previous.averageWeight7)}
+          value={
+            <TrendIndicator
+              value={props.dashboardStats.averageWeight7 ?? 0}
+              previousValue={props.dashboardStats.previous.averageWeight7}
+              format={(v) => `${roundMetric(v)} kg`}
+              showSparkline={weightSparkline.length >= 3}
+              sparklineData={weightSparkline}
+              inverse={true}
+            />
+          }
         />
         <StatCard
           size="large"
           label="本周平均热量"
-          value={`${roundMetric(props.dashboardStats.weekAverageCalories, 0)} kcal`}
-          delta={buildNeutralDelta(props.dashboardStats.weekAverageCalories, props.dashboardStats.previous.weekAverageCalories, 'kcal', 0)}
+          value={
+            <TrendIndicator
+              value={props.dashboardStats.weekAverageCalories ?? 0}
+              previousValue={props.dashboardStats.previous.weekAverageCalories}
+              format={(v) => `${roundMetric(v, 0)} kcal`}
+              showSparkline={calorieSparkline.length >= 3}
+              sparklineData={calorieSparkline}
+            />
+          }
         />
         <StatCard
           size="large"
@@ -183,8 +237,15 @@ export function DashboardTab(props: DashboardTabProps) {
         />
         <StatCard
           label="本周平均步数"
-          value={`${roundMetric(props.dashboardStats.averageSteps, 0)} 步`}
-          delta={buildHigherIsBetterDelta(props.dashboardStats.averageSteps, props.dashboardStats.previous.averageSteps, '步', 0)}
+          value={
+            <TrendIndicator
+              value={props.dashboardStats.averageSteps ?? 0}
+              previousValue={props.dashboardStats.previous.averageSteps}
+              format={(v) => `${roundMetric(v, 0)} 步`}
+              showSparkline={stepsSparkline.length >= 3}
+              sparklineData={stepsSparkline}
+            />
+          }
         />
         <StatCard label="周总热量进度" value={`${props.dashboardStats.weekTotalCalories} kcal`} helper={`目标约 ${props.weeklyCalorieTarget} kcal`} />
       </div>

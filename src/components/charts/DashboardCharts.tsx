@@ -1,12 +1,13 @@
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { ChartCard, ChartLegend, WeightTrendTooltip } from '../ChartCard'
+import { ChartToolbar } from './ChartToolbar'
 import type { TrendPoint, TrainingPerformanceData, TrainingPerformancePoint, TrainingPerformanceSeries, TrainingPerformanceSetDetail } from '../../lib/metrics'
 import { hasChartData } from '../../lib/workout'
 
 // Helper functions moved from DashboardTab
 function summarizeTrend(
   data: TrendPoint[],
-  key: keyof Pick<TrendPoint, 'weight' | 'weightAverage7' | 'waist' | 'calories' | 'proteinMet'>,
+  key: keyof Pick<TrendPoint, 'weight' | 'weightAverage7' | 'waist' | 'bodyfat' | 'calories' | 'proteinMet'>,
   label: string,
   unit: string,
   digits = 1,
@@ -126,91 +127,160 @@ export function DashboardCharts({
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {/* Weight trend chart */}
-      <ChartCard
-        title="体重 7 日均值是否下降"
-        description="看均值，不被单日水分波动带跑。"
-        isEmpty={!hasChartData(trendData, ['weight', 'weightAverage7'])}
-        emptyMessage="连续记录晨起体重后，这里会显示每日体重和 7 日均值。"
-        chartSummary={summarizeTrend(trendData, 'weightAverage7', '体重 7 日均值', ' kg')}
-        legend={
-          <ChartLegend
-            items={[
-              { label: '每日体重', color: '#059669' },
-              { label: '7 日均重', color: '#2563eb', pattern: 'dashed' },
-            ]}
-          />
-        }
-      >
-        <LineChart data={trendData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
-          <Tooltip content={<WeightTrendTooltip />} />
-          <Line type="monotone" name="每日体重" dataKey="weight" stroke="#059669" strokeWidth={2} dot={false} />
-          <Line type="monotone" name="7 日均重" dataKey="weightAverage7" stroke="#2563eb" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-        </LineChart>
-      </ChartCard>
+      <div className="flex flex-col">
+        <ChartToolbar
+          title="体重 7 日均值"
+          showDateRangePicker={false}
+          onExport={() => {
+            const data = trendData.filter(d => d.weight !== undefined || d.weightAverage7 !== undefined)
+            const csv = 'Date,Weight,7-Day Average\n' + data.map(d => `${d.fullDate},${d.weight ?? ''},${d.weightAverage7 ?? ''}`).join('\n')
+            const blob = new Blob([csv], { type: 'text/csv' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'weight-trend.csv'
+            a.click()
+            URL.revokeObjectURL(url)
+          }}
+        />
+        <ChartCard
+          title="体重 7 日均值是否下降"
+          description="看均值，不被单日水分波动带跑。"
+          isEmpty={!hasChartData(trendData, ['weight', 'weightAverage7'])}
+          emptyMessage="连续记录晨起体重后，这里会显示每日体重和 7 日均值。"
+          chartSummary={summarizeTrend(trendData, 'weightAverage7', '体重 7 日均值', ' kg')}
+          legend={
+            <ChartLegend
+              items={[
+                { label: '每日体重', color: '#059669' },
+                { label: '7 日均重', color: '#2563eb', pattern: 'dashed' },
+              ]}
+            />
+          }
+        >
+          <LineChart data={trendData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
+            <Tooltip content={<WeightTrendTooltip />} />
+            <Line type="monotone" name="每日体重" dataKey="weight" stroke="#059669" strokeWidth={2} dot={false} />
+            <Line type="monotone" name="7 日均重" dataKey="weightAverage7" stroke="#2563eb" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+          </LineChart>
+        </ChartCard>
+      </div>
 
-      {/* Waist chart */}
-      <ChartCard
-        title="腰围是否同步变化"
-        description="体重不动但腰围下降时，不急着压热量。"
-        isEmpty={!hasChartData(trendData, ['waist'])}
-        emptyMessage="连续记录腰围后，这里会显示腰围趋势。"
-        chartSummary={summarizeTrend(trendData, 'waist', '腰围', ' cm')}
-        legend={<ChartLegend items={[{ label: '腰围', color: '#2563eb' }]} />}
-      >
-        <LineChart data={trendData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
-          <Tooltip />
-          <Line type="monotone" dataKey="waist" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} />
-        </LineChart>
-      </ChartCard>
+      {/* Body composition chart */}
+      <div className="flex flex-col">
+        <ChartToolbar
+          title="腰围 / 体脂趋势"
+          showDateRangePicker={false}
+          onExport={() => {
+            const data = trendData.filter(d => d.waist !== undefined || d.bodyfat !== undefined)
+            const csv = 'Date,Weist(cm),Bodyfat(%)\n' + data.map(d => `${d.fullDate},${d.waist ?? ''},${d.bodyfat ?? ''}`).join('\n')
+            const blob = new Blob([csv], { type: 'text/csv' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'waist-trend.csv'
+            a.click()
+            URL.revokeObjectURL(url)
+          }}
+        />
+        <ChartCard
+          title="身体组成是否同步变化"
+          description="体重、腰围与体脂放在一起观察，避免被单日波动带偏。"
+          isEmpty={!hasChartData(trendData, ['waist', 'bodyfat'])}
+          emptyMessage="连续记录腰围或体脂后，这里会显示身体组成趋势。"
+          chartSummary={`${summarizeTrend(trendData, 'waist', '腰围', ' cm')} ${summarizeTrend(trendData, 'bodyfat', '体脂率', '%')}`}
+          legend={<ChartLegend items={[{ label: '腰围', color: '#2563eb' }, { label: '体脂率', color: '#d97706' }]} />}
+        >
+          <LineChart data={trendData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
+            <Tooltip />
+            <Line type="monotone" dataKey="waist" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="bodyfat" stroke="#d97706" strokeWidth={2} dot={{ r: 3 }} />
+          </LineChart>
+        </ChartCard>
+      </div>
 
       {/* Calories chart */}
-      <ChartCard
-        title="每日热量是否合理"
-        description="工作日保持目标，周末允许放松。"
-        isEmpty={!hasChartData(trendData, ['calories'])}
-        emptyMessage="连续记录热量后，这里会显示每日热量摄入趋势。"
-        chartSummary={summarizeTrend(trendData, 'calories', '热量摄入', ' kcal', 0)}
-        legend={<ChartLegend items={[{ label: '每日热量', color: '#f59e0b', pattern: 'area' }]} />}
-      >
-        <AreaChart data={trendData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis />
-          <Tooltip />
-          <Area type="monotone" dataKey="calories" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.2} strokeWidth={2} />
-        </AreaChart>
-      </ChartCard>
+      <div className="flex flex-col">
+        <ChartToolbar
+          title="每日热量"
+          showDateRangePicker={false}
+          onExport={() => {
+            const data = trendData.filter(d => d.calories !== undefined)
+            const csv = 'Date,Calories(kcal)\n' + data.map(d => `${d.fullDate},${d.calories}`).join('\n')
+            const blob = new Blob([csv], { type: 'text/csv' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'calories-trend.csv'
+            a.click()
+            URL.revokeObjectURL(url)
+          }}
+        />
+        <ChartCard
+          title="每日热量是否合理"
+          description="工作日保持目标，周末允许放松。"
+          isEmpty={!hasChartData(trendData, ['calories'])}
+          emptyMessage="连续记录热量后，这里会显示每日热量摄入趋势。"
+          chartSummary={summarizeTrend(trendData, 'calories', '热量摄入', ' kcal', 0)}
+          legend={<ChartLegend items={[{ label: '每日热量', color: '#f59e0b', pattern: 'area' }]} />}
+        >
+          <AreaChart data={trendData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Area type="monotone" dataKey="calories" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.2} strokeWidth={2} />
+          </AreaChart>
+        </ChartCard>
+      </div>
 
       {/* Protein chart */}
-      <ChartCard
-        title="蛋白质是否达标"
-        description="目标每日 120g 以上，有助保持肌肉量。"
-        isEmpty={!hasChartData(trendData, ['proteinMet'])}
-        emptyMessage="连续记录蛋白质后，这里会显示每日达标情况。"
-        chartSummary={summarizeProteinMet(trendData)}
-        legend={
-          <ChartLegend
-            items={[
-              { label: '达标', color: '#10b981' },
-              { label: '未达标', color: '#f43f5e' },
-            ]}
-          />
-        }
-      >
-        <BarChart data={trendData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis ticks={[0, 1]} />
-          <Tooltip />
-          <Bar dataKey="proteinMet" fill="#10b981" radius={[4, 4, 0, 0]} />
-        </BarChart>
-      </ChartCard>
+      <div className="flex flex-col">
+        <ChartToolbar
+          title="蛋白质达标"
+          showDateRangePicker={false}
+          onExport={() => {
+            const data = trendData.filter(d => d.proteinMet !== undefined)
+            const csv = 'Date,ProteinMet\n' + data.map(d => `${d.fullDate},${d.proteinMet}`).join('\n')
+            const blob = new Blob([csv], { type: 'text/csv' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'protein-met.csv'
+            a.click()
+            URL.revokeObjectURL(url)
+          }}
+        />
+        <ChartCard
+          title="蛋白质是否达标"
+          description="目标每日 120g 以上，有助保持肌肉量。"
+          isEmpty={!hasChartData(trendData, ['proteinMet'])}
+          emptyMessage="连续记录蛋白质后，这里会显示每日达标情况。"
+          chartSummary={summarizeProteinMet(trendData)}
+          legend={
+            <ChartLegend
+              items={[
+                { label: '达标', color: '#10b981' },
+                { label: '未达标', color: '#f43f5e' },
+              ]}
+            />
+          }
+        >
+          <BarChart data={trendData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis ticks={[0, 1]} />
+            <Tooltip />
+            <Bar dataKey="proteinMet" fill="#10b981" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ChartCard>
+      </div>
 
       {/* Training performance chart - full width */}
       <div className="lg:col-span-2">

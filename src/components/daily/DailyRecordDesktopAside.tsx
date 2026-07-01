@@ -1,17 +1,13 @@
-import type { DailyLog, WorkoutLog } from '../../types'
+import { bodyValue, latestBodyRecord } from '../../lib/bodyMetrics'
+import type { BodyRecord, DailyLog, WorkoutLog } from '../../types'
 import { Badge, Button, Card } from '../ui'
 
 const trackedDailyFields: Array<keyof DailyLog> = [
-  'morningWeightKg',
   'calories',
   'protein',
   'steps',
   'sleepHours',
   'fatigueScore',
-  'waistCm',
-  'chestCm',
-  'upperArmCm',
-  'thighCm',
   'carbs',
   'fat',
 ]
@@ -38,6 +34,8 @@ function buildTrendLabel(current: number | undefined, previous: number | undefin
 export function DailyRecordDesktopAside({
   selectedDate,
   selectedLog,
+  selectedBodyRecords,
+  bodyRecords,
   previousLogs,
   workoutLogs,
   xunjiSyncPending,
@@ -46,6 +44,8 @@ export function DailyRecordDesktopAside({
 }: {
   selectedDate: string
   selectedLog: Partial<DailyLog>
+  selectedBodyRecords: BodyRecord[]
+  bodyRecords: BodyRecord[]
   previousLogs: DailyLog[]
   dailyLogs: DailyLog[]
   workoutLogs: WorkoutLog[]
@@ -55,9 +55,11 @@ export function DailyRecordDesktopAside({
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
 }) {
   const selectedWorkout = workoutLogs.find((log) => log.date === selectedDate)
-  const previousWeightLog = previousLogs.find((log) => log.morningWeightKg !== undefined)
-  const previousWaistLog = previousLogs.find((log) => log.waistCm !== undefined)
-  const filledFieldCount = countFilledFields(selectedLog)
+  const previousWeight = latestBodyRecord(bodyRecords, 'weight', previousLogs[0]?.date)?.value
+  const previousWaist = latestBodyRecord(bodyRecords, 'weist', previousLogs[0]?.date)?.value
+  const selectedWeight = bodyValue(selectedBodyRecords, selectedDate, 'weight')
+  const selectedWaist = bodyValue(selectedBodyRecords, selectedDate, 'weist')
+  const filledFieldCount = countFilledFields(selectedLog) + selectedBodyRecords.length
   const recentLogs = previousLogs.slice(0, 5)
   const workoutState = selectedLog.workoutCompletion !== undefined
     ? `${selectedLog.workoutCompletion}%`
@@ -82,7 +84,7 @@ export function DailyRecordDesktopAside({
           <dl className="mt-3 grid gap-2">
             <div className="flex items-center justify-between gap-3 rounded-md bg-[var(--surface-muted)] px-3 py-2 dark:bg-slate-800">
               <dt className="text-xs text-slate-500 dark:text-slate-400">体重</dt>
-              <dd className="text-sm font-semibold tabular-nums text-slate-950 dark:text-slate-50">{formatNumber(selectedLog.morningWeightKg, 'kg')}</dd>
+              <dd className="text-sm font-semibold tabular-nums text-slate-950 dark:text-slate-50">{formatNumber(selectedWeight, 'kg')}</dd>
             </div>
             <div className="flex items-center justify-between gap-3 rounded-md bg-[var(--surface-muted)] px-3 py-2 dark:bg-slate-800">
               <dt className="text-xs text-slate-500 dark:text-slate-400">热量 / 蛋白</dt>
@@ -100,7 +102,9 @@ export function DailyRecordDesktopAside({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400">训记同步</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">从训记拉取当天训练。</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  从训记拉取当天训练、饮食汇总与身体数据。
+                </p>
               </div>
               {selectedWorkout ? <Badge tone="positive">已有训练</Badge> : null}
             </div>
@@ -121,19 +125,19 @@ export function DailyRecordDesktopAside({
             <div>
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">体重</p>
-                <p className="text-sm tabular-nums text-slate-600 dark:text-slate-300">{formatNumber(previousWeightLog?.morningWeightKg, 'kg')}</p>
+                <p className="text-sm tabular-nums text-slate-600 dark:text-slate-300">{formatNumber(previousWeight, 'kg')}</p>
               </div>
               <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                {buildTrendLabel(selectedLog.morningWeightKg, previousWeightLog?.morningWeightKg, 'kg')}
+                {buildTrendLabel(selectedWeight, previousWeight, 'kg')}
               </p>
             </div>
             <div>
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">腰围</p>
-                <p className="text-sm tabular-nums text-slate-600 dark:text-slate-300">{formatNumber(previousWaistLog?.waistCm, 'cm')}</p>
+                <p className="text-sm tabular-nums text-slate-600 dark:text-slate-300">{formatNumber(previousWaist, 'cm')}</p>
               </div>
               <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                {buildTrendLabel(selectedLog.waistCm, previousWaistLog?.waistCm, 'cm')}
+                {buildTrendLabel(selectedWaist, previousWaist, 'cm')}
               </p>
             </div>
           </div>
@@ -157,7 +161,7 @@ export function DailyRecordDesktopAside({
                   {log.trained ? <Badge tone="positive">训练</Badge> : null}
                 </div>
                 <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                  {formatNumber(log.morningWeightKg, 'kg')} · {formatNumber(log.calories, 'kcal')} · {formatNumber(log.protein, 'g')}
+                  {formatNumber(bodyValue(bodyRecords, log.date, 'weight'), 'kg')} · {formatNumber(log.calories, 'kcal')} · {formatNumber(log.protein, 'g')}
                 </p>
               </button>
             )) : (

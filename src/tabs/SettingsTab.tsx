@@ -3,14 +3,16 @@ import { SegmentedControl } from '../components/ui'
 import { ProfileTab } from './ProfileTab'
 import { PlanTab } from './PlanTab'
 import type { CurrentUser } from '../lib/storage'
-import type { UserPlanData, UserPreference } from '../types'
+import type { BodyRecord, UserPlanData, UserPreference } from '../types'
 
 type SettingsTabProps = {
   currentUser: CurrentUser
   preference: UserPreference
   planData: UserPlanData
+  bodyRecords: BodyRecord[]
   onSavePreference: (preference: UserPreference) => Promise<UserPreference>
   onSavePlan: (planData: UserPlanData) => Promise<UserPlanData>
+  onOpenBodyDate: (date: string) => void
 }
 
 export function SettingsTab(props: SettingsTabProps) {
@@ -34,8 +36,10 @@ export function SettingsTab(props: SettingsTabProps) {
           currentUser={props.currentUser}
           preference={props.preference}
           planData={props.planData}
+          bodyRecords={props.bodyRecords}
           onSavePreference={props.onSavePreference}
           onSavePlan={props.onSavePlan}
+          onOpenBodyDate={props.onOpenBodyDate}
         />
       ) : (
         <PlanTab planData={props.planData} onSave={props.onSavePlan} />

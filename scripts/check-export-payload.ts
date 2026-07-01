@@ -3,12 +3,15 @@ import { buildExportCsvText, buildExportResultSummary, buildExportSummaryText, b
 import type { UserExportPayload } from '../src/lib/storage'
 
 const fixture: UserExportPayload = {
-  version: 1,
+  version: 2,
   exportedAt: '2026-05-28T00:00:00.000Z',
   dailyLogs: [
     { date: '2026-05-01' },
-    { date: '2026-05-20', morningWeightKg: 80, calories: 2200 },
+    { date: '2026-05-20', calories: 2200 },
     { date: '2026-05-28', notes: 'manual check, "ok"' },
+  ],
+  bodyRecords: [
+    { datestr: '2026-05-20', type: 'weight', value: 80, unit: 'kg', label: '体重', label_en: 'Weight' },
   ],
   workoutLogs: [
     {
@@ -79,21 +82,24 @@ assert.equal(slim.workoutLogs?.[0]?.exercises.length, 1)
 assert.equal(slim.workoutLogs?.[0]?.exercises[0]?.sets.length, 2)
 const summary = buildExportSummaryText(slim)
 assert.match(summary, /训练饮食记录摘要/)
-assert.match(summary, /内容：每日记录、训练记录/)
-assert.match(summary, /2026-05-20：80kg，2200kcal/)
+assert.match(summary, /内容：每日记录、身体数据、训练记录/)
+assert.match(summary, /2026-05-20：2200kcal/)
+assert.match(summary, /2026-05-20：体重 80kg（weight）/)
 assert.match(summary, /卧推：1\. 80kg x 8次；2\. RIR2/)
 assert.match(summary, /有氧 跑步机：25min；强度：中；备注：坡度 5/)
 const csv = buildExportCsvText(slim)
 assert.match(csv, /daily_logs\n/)
-assert.match(csv, /date,morningWeightKg,calories,notes/)
+assert.match(csv, /date,calories,notes/)
 assert.doesNotMatch(csv, /protein/)
-assert.match(csv, /2026-05-28,,,"manual check, ""ok"""/)
+assert.match(csv, /2026-05-28,,"manual check, ""ok"""/)
+assert.match(csv, /body_records\ndatestr,weight/)
+assert.match(csv, /2026-05-20,80/)
 assert.match(csv, /workout_sets\n/)
 assert.match(csv, /2026-05-20,推,卧推,1,80,8,/)
 assert.match(csv, /2026-05-20,推,卧推,2,,,2/)
 assert.match(csv, /workout_cardio\n/)
 assert.match(csv, /2026-05-20,推,跑步机,25,中,坡度 5/)
-assert.equal(buildExportResultSummary(slim, 'csv'), '每日行 2 条，训练组 2 条，有氧 1 条，模板 0 个')
+assert.equal(buildExportResultSummary(slim, 'csv'), '每日行 2 条，身体 1 天，训练组 2 条，有氧 1 条，模板 0 个')
 assert.equal(buildExportResultSummary(slim, 'summary'), '每日 2 条，训练 1 条，模板 0 个')
 
 const repsOnlyCsv = buildExportCsvText({

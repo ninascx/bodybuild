@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from './ui'
 
 type ShortcutGroup = {
@@ -7,6 +7,17 @@ type ShortcutGroup = {
 }
 
 const SHORTCUTS: ShortcutGroup[] = [
+  {
+    title: '全局导航',
+    shortcuts: [
+      { keys: 'Ctrl + 1', description: '切换到记录' },
+      { keys: 'Ctrl + 2', description: '切换到训练' },
+      { keys: 'Ctrl + 3', description: '切换到复盘' },
+      { keys: 'Ctrl + 4', description: '切换到设置' },
+      { keys: 'Ctrl + N', description: '新建今日训练' },
+      { keys: 'Ctrl + S', description: '立即保存' },
+    ]
+  },
   {
     title: '训练控制',
     shortcuts: [
@@ -27,6 +38,29 @@ const SHORTCUTS: ShortcutGroup[] = [
 
 export function KeyboardShortcutsHelp() {
   const [isOpen, setIsOpen] = useState(false)
+
+  useEffect(() => {
+    function handleKeyPress(event: KeyboardEvent) {
+      if (event.key === '?' && !event.ctrlKey && !event.metaKey) {
+        const target = event.target as HTMLElement
+        if (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable
+        ) {
+          return
+        }
+        event.preventDefault()
+        setIsOpen(true)
+      }
+      if (event.key === 'Escape' && isOpen) {
+        setIsOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [isOpen])
 
   if (!isOpen) {
     return (

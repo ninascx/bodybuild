@@ -21,11 +21,6 @@ const exportFormats: Array<{ value: ExportFormat; label: string }> = [
 ]
 
 const dailyFieldLabels: Partial<Record<keyof DailyLog, string>> = {
-  morningWeightKg: '体重',
-  waistCm: '腰围',
-  chestCm: '胸围',
-  upperArmCm: '上臂',
-  thighCm: '大腿',
   calories: '热量',
   protein: '蛋白',
   carbs: '碳水',
@@ -208,7 +203,7 @@ export function ExportDataDialog({
     options.includePreference ? '规则配置' : null,
   ].filter((label): label is string => label !== null)
   const estimatedPayload: ScopedExportPayload = {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     exportScope: {
       rangePreset: options.rangePreset,
@@ -216,6 +211,7 @@ export function ExportDataDialog({
       endDate: range.endDate,
       sections: selectedContentLabels,
       dailyLogCount: dailyCount,
+      bodyRecordCount: 0,
       workoutLogCount: workoutCount,
       workoutTemplateCount: resolvedTemplateCount,
       slimMode: options.slimMode,

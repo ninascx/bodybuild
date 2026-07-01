@@ -176,6 +176,7 @@ export function EmptyState({
   compact = false,
   className = '',
   icon,
+  children,
 }: {
   title: ReactNode
   message?: ReactNode
@@ -184,6 +185,7 @@ export function EmptyState({
   compact?: boolean
   className?: string
   icon?: IconBadgeIcon
+  children?: ReactNode
 }) {
   return (
     <div
@@ -205,7 +207,7 @@ export function EmptyState({
       ) : null}
       <p className="text-base font-semibold text-slate-800 dark:text-slate-100">{title}</p>
       {message ? <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{message}</p> : null}
-      {actions ? <div className="mt-4 flex flex-wrap justify-center gap-2">{actions}</div> : null}
+      {actions ?? children ? <div className="mt-4 flex flex-wrap justify-center gap-2">{actions ?? children}</div> : null}
     </div>
   )
 }

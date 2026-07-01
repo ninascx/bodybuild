@@ -4,14 +4,21 @@ import { MiniCalendar } from '../components/MiniCalendar'
 import { QuickRecordSection } from '../components/QuickRecordSection'
 import { DailyRecordDesktopAside } from '../components/daily/DailyRecordDesktopAside'
 import { DailyRecordToolbar } from '../components/daily/DailyRecordToolbar'
-import { DailyCalendarPanel, DailyMeasurementCard, MeasurementPanel } from '../components/daily/DailyRecordPanels'
+import { DailyCalendarPanel } from '../components/daily/DailyRecordPanels'
 import { getDailySaveLabel } from '../components/daily/dailyRecordStatus'
 import { addDays } from '../lib/dates'
 import { useSwipe } from '../hooks/useSwipe'
-import { useMemo, useState, type ComponentProps } from 'react'
-import type { DailyLog, DailyTarget, WorkoutLog } from '../types'
+import { lazy, Suspense, useMemo, useState, type ComponentProps } from 'react'
+import type { BodyMetricType, BodyRecord, DailyLog, DailyTarget, WorkoutLog } from '../types'
 import type { SyncState } from '../lib/storage'
 import type { DailyFocusKey } from '../lib/productFlow'
+
+const DailyMeasurementCard = lazy(() =>
+  import('../components/daily/DailyBodyPanels').then((module) => ({ default: module.DailyMeasurementCard })),
+)
+const MeasurementPanel = lazy(() =>
+  import('../components/daily/DailyBodyPanels').then((module) => ({ default: module.MeasurementPanel })),
+)
 
 function targetCalories(target: DailyTarget): number | undefined {
   if (target.calories !== undefined) return target.calories
@@ -96,6 +103,8 @@ type DailyRecordTabProps = {
   selectedDate: string
   today: string
   selectedLog: Partial<DailyLog> & { date: string }
+  selectedBodyRecords: BodyRecord[]
+  bodyRecords: BodyRecord[]
   selectedTarget: DailyTarget
   dailyLogs: DailyLog[]
   workoutLogs: WorkoutLog[]
@@ -107,8 +116,10 @@ type DailyRecordTabProps = {
   fatigueThreshold: number
   onDateChange: (date: string) => void
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
+  onUpdateBodyRecord: (type: BodyMetricType, value: number | undefined) => void
   onQuickAction: (patch: Partial<DailyLog>) => void
   onSyncFromXunji: () => void
+  onSyncBodyToXunji: () => void
   focusKey?: DailyFocusKey
   priorityKeys?: DailyFocusKey[]
   onFocusConsumed?: () => void
@@ -137,7 +148,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
   const copyYesterdayQuickFields = () => {
     if (!yesterdayLog) return
     props.onQuickAction({
-      morningWeightKg: yesterdayLog.morningWeightKg,
       calories: yesterdayLog.calories,
       protein: yesterdayLog.protein,
       steps: yesterdayLog.steps,
@@ -208,17 +218,21 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
             onFocusConsumed={props.onFocusConsumed}
           />
 
-          <DailyMeasurementCard
-            className="hidden lg:block"
-            selectedLog={props.selectedLog}
-            previousLogs={previousLogs}
-            onUpdateDailyLog={props.onUpdateDailyLog}
-          />
+          <Suspense fallback={null}>
+            <DailyMeasurementCard
+              className="hidden lg:block"
+              records={props.selectedBodyRecords}
+              onChange={props.onUpdateBodyRecord}
+              onSync={props.onSyncBodyToXunji}
+            />
+          </Suspense>
         </main>
 
         <DailyRecordDesktopAside
           selectedDate={props.selectedDate}
           selectedLog={props.selectedLog}
+          selectedBodyRecords={props.selectedBodyRecords}
+          bodyRecords={props.bodyRecords}
           previousLogs={previousLogs}
           dailyLogs={props.dailyLogs}
           workoutLogs={props.workoutLogs}
@@ -229,20 +243,23 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         />
       </div>
 
-      <DisclosurePanel className="lg:hidden" title="日历与补充详情" contentClassName="grid gap-3" open={true}>
-        <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">日历和围度放在这里，避免打断今日录入。</p>
+      <Suspense fallback={null}>
+        <MeasurementPanel
+          className="lg:hidden"
+          records={props.selectedBodyRecords}
+          onChange={props.onUpdateBodyRecord}
+          onSync={props.onSyncBodyToXunji}
+        />
+      </Suspense>
+
+      <DisclosurePanel className="lg:hidden" title="最近 6 周日历" contentClassName="grid gap-3">
+        <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">查看历史记录或切换到其他日期。</p>
         <DailyCalendarPanel
           selectedDate={props.selectedDate}
           today={props.today}
           dailyLogs={props.dailyLogs}
           workoutLogs={props.workoutLogs}
           onSelectDate={props.onDateChange}
-        />
-
-        <MeasurementPanel
-          selectedLog={props.selectedLog}
-          previousLogs={previousLogs}
-          onUpdateDailyLog={props.onUpdateDailyLog}
         />
       </DisclosurePanel>
     </Card>

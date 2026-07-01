@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { Field, TextInput } from './ui'
 
@@ -24,6 +24,7 @@ export function NumberField({
   inputRef,
   className,
   labelAction,
+  showControls = true,
 }: {
   label: string
   value?: number
@@ -36,6 +37,7 @@ export function NumberField({
   inputRef?: (el: HTMLInputElement | null) => void
   className?: string
   labelAction?: ReactNode
+  showControls?: boolean
 }) {
   const effectiveRange: NumberRange | undefined =
     range ?? (min !== undefined || max !== undefined ? { min, max, allowZero: min === 0 } : undefined)
@@ -43,6 +45,8 @@ export function NumberField({
   const pattern = kind === 'decimal' ? '[0-9]*[.,]?[0-9]*' : '[0-9]*'
   const [rawValue, setRawValue] = useState(displayNumber(value))
   const [outOfRange, setOutOfRange] = useState(false)
+  const localInputRef = useRef<HTMLInputElement | null>(null)
+  const stepValue = Number(step)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -58,6 +62,18 @@ export function NumberField({
     }, 0)
     return () => window.clearTimeout(timer)
   }, [value])
+
+  const increment = () => {
+    const newValue = (value ?? 0) + stepValue
+    if (effectiveRange?.max !== undefined && newValue > effectiveRange.max) return
+    onChange(newValue)
+  }
+
+  const decrement = () => {
+    const newValue = (value ?? 0) - stepValue
+    if (effectiveRange?.min !== undefined && newValue < effectiveRange.min) return
+    onChange(newValue)
+  }
 
   const handleChange = (next: string) => {
     setRawValue(next)
@@ -91,6 +107,27 @@ export function NumberField({
     onChange(parsed)
   }
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      increment()
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      decrement()
+    }
+  }
+
+  const handleWheel = (event: React.WheelEvent<HTMLInputElement>) => {
+    if (document.activeElement === localInputRef.current) {
+      event.preventDefault()
+      if (event.deltaY < 0) {
+        increment()
+      } else {
+        decrement()
+      }
+    }
+  }
+
   const rangeHint =
     effectiveRange && (effectiveRange.min !== undefined || effectiveRange.max !== undefined)
       ? effectiveRange.min !== undefined && effectiveRange.max !== undefined
@@ -104,19 +141,48 @@ export function NumberField({
 
   return (
     <Field label={label} error={outOfRange ? rangeHint : undefined} labelAction={labelAction}>
-      <TextInput
-        type="text"
-        inputMode={inputMode}
-        pattern={pattern}
-        value={rawValue}
-        data-min={min}
-        data-max={max}
-        data-step={step}
-        ref={inputRef}
-        aria-invalid={outOfRange}
-        className={`${outOfRange ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-100 dark:border-rose-500 dark:focus:border-rose-400 dark:focus:ring-rose-900/40' : ''} ${className ?? ''}`}
-        onChange={(event) => handleChange(event.target.value)}
-      />
+      <div className="relative flex items-center gap-1">
+        {showControls && (
+          <button
+            type="button"
+            onClick={decrement}
+            disabled={effectiveRange?.min !== undefined && (value ?? 0) <= effectiveRange.min}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+            aria-label={`减少${label}`}
+          >
+            −
+          </button>
+        )}
+        <TextInput
+          type="text"
+          inputMode={inputMode}
+          pattern={pattern}
+          value={rawValue}
+          data-min={min}
+          data-max={max}
+          data-step={step}
+          ref={(el) => {
+            localInputRef.current = el
+            if (inputRef) inputRef(el)
+          }}
+          aria-invalid={outOfRange}
+          className={`${outOfRange ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-100 dark:border-rose-500 dark:focus:border-rose-400 dark:focus:ring-rose-900/40' : ''} ${className ?? ''}`}
+          onChange={(event) => handleChange(event.target.value)}
+          onKeyDown={handleKeyDown}
+          onWheel={handleWheel}
+        />
+        {showControls && (
+          <button
+            type="button"
+            onClick={increment}
+            disabled={effectiveRange?.max !== undefined && (value ?? 0) >= effectiveRange.max}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+            aria-label={`增加${label}`}
+          >
+            +
+          </button>
+        )}
+      </div>
     </Field>
   )
 }

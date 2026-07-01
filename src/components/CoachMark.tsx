@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState, useEffect } from 'react'
 import { Button } from './ui'
 
@@ -55,12 +56,13 @@ export function CoachMark({ steps, storageKey, onComplete }: CoachMarkProps) {
         break
     }
 
-    setPosition({ top, left })
+    const frame = window.requestAnimationFrame(() => setPosition({ top, left }))
 
     // Highlight target element
     targetElement.classList.add('coach-mark-highlight')
 
     return () => {
+      window.cancelAnimationFrame(frame)
       targetElement.classList.remove('coach-mark-highlight')
     }
   }, [currentStep, step, dismissed])

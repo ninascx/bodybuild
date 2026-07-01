@@ -46,7 +46,6 @@ import {
   exportCurrentUserData,
   exportWorkoutTemplateToken,
   fetchCurrentUser,
-  fetchUserProfile,
   fetchUserPreference,
   fetchUserPlanData,
   importWorkoutTemplateToken,
@@ -56,19 +55,22 @@ import {
   saveAppData,
   saveUserPreference,
   saveUserPlanData,
-  saveUserProfile,
   syncXunjiTrainingDate,
 } from './lib/storage'
 import { defaultUserPreference, mergeUserPreference } from './lib/userPreferences'
 import { buildExportCsvText, buildExportResultSummary, buildExportSummaryText, buildScopedExportPayload, type ExportFormat, type ExportOptions, type ExportRangePreset } from './lib/exportPayload'
 import { createId } from './lib/ids'
-import type { AdjustmentRecommendation, CardioPlan, DailyLog, DayKey, ExerciseLog, ExercisePlan, ExerciseSetLog, RecommendationTone, UserPlanData, UserPreference, UserProfile, WeeklySummary, WorkoutLog, WorkoutPlan, WorkoutTemplate } from './types'
+import { bodyMetricDefinition, bodyRecordsForDate, bodyValue, dailyLogsWithBodyMetrics, removeBodyRecord, upsertBodyRecords } from './lib/bodyMetrics'
+import type { AdjustmentRecommendation, BodyRecord, CardioPlan, DailyLog, DayKey, ExerciseLog, ExercisePlan, ExerciseSetLog, RecommendationTone, UserPlanData, UserPreference, WeeklySummary, WorkoutLog, WorkoutPlan, WorkoutTemplate } from './types'
 import { LoadingBlock } from './components/ui'
 import { useColorScheme } from './hooks/useColorScheme'
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useConfirm } from './components/ConfirmDialog'
 import { AppShell } from './components/layout/AppShell'
 import { LoginScreen } from './components/layout/LoginScreen'
 import { DailyRecordSkeleton } from './components/DailyRecordSkeleton'
+import { XunjiBodySyncDialog } from './components/XunjiBodySyncDialog'
+import { XunjiDailySyncDialog } from './components/XunjiDailySyncDialog'
 const DailyRecordTab = lazy(() => import('./tabs/DailyRecordTab').then((mod) => ({ default: mod.DailyRecordTab })))
 const WorkoutTab = lazy(() => import('./tabs/WorkoutTab').then((mod) => ({ default: mod.WorkoutTab })))
 const AnalyticsTab = lazy(() => import('./tabs/AnalyticsTab').then((mod) => ({ default: mod.AnalyticsTab })))
@@ -190,6 +192,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabKey>(() => readInitialTab())
   const [selectedDate, setSelectedDate] = useState<string>(() => formatDateInput())
   const [dailyLogs, setDailyLogs] = useState<DailyLog[]>([])
+  const [bodyRecords, setBodyRecords] = useState<BodyRecord[]>([])
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([])
   const [workoutTemplates, setWorkoutTemplates] = useState<WorkoutTemplate[]>([])
   const [dailyTargetsByDay, setDailyTargetsByDay] = useState(defaultDailyTargets)
@@ -213,6 +216,8 @@ function App() {
   const [exportAnchorDate, setExportAnchorDate] = useState<string>(() => formatDateInput())
   const [exportPending, setExportPending] = useState(false)
   const [xunjiSyncPending, setXunjiSyncPending] = useState(false)
+  const [showXunjiDailySync, setShowXunjiDailySync] = useState(false)
+  const [showXunjiBodySync, setShowXunjiBodySync] = useState(false)
   const [showOnlyUnfinishedExercises, setShowOnlyUnfinishedExercises] = useState(false)
   const [workoutImmersiveMode, setWorkoutImmersiveMode] = useState(false)
   const [dailyFocusKey, setDailyFocusKey] = useState<DailyFocusKey | undefined>()
@@ -279,11 +284,19 @@ function App() {
 
   const todayKey = getDayKey(today)
   const target = dailyTargetsByDay[todayKey]
-  const todayLog = useMemo(() => dailyLogs.find((log) => log.date === today), [dailyLogs, today])
+  const dailyLogsForAnalysis = useMemo(
+    () => dailyLogsWithBodyMetrics(dailyLogs, bodyRecords),
+    [dailyLogs, bodyRecords],
+  )
+  const todayLog = useMemo(() => dailyLogsForAnalysis.find((log) => log.date === today), [dailyLogsForAnalysis, today])
   const todayWorkout = useMemo(() => workoutLogs.find((log) => log.date === today), [workoutLogs, today])
   const selectedLog = useMemo(
     () => dailyLogs.find((log) => log.date === selectedDate) ?? { date: selectedDate },
     [dailyLogs, selectedDate],
+  )
+  const selectedBodyRecords = useMemo(
+    () => bodyRecordsForDate(bodyRecords, selectedDate),
+    [bodyRecords, selectedDate],
   )
   const selectedTarget = dailyTargetsByDay[getDayKey(selectedDate)]
   const selectedWorkout = useMemo(
@@ -301,12 +314,17 @@ function App() {
     [templateOptions, selectedTemplateId],
   )
   const dashboardStats = useMemo(
-    () => calculateDashboardStats(dailyLogs, today, dailyTargetsByDay, userWeeklyCalorieTarget),
-    [dailyLogs, today, dailyTargetsByDay, userWeeklyCalorieTarget],
+    () => calculateDashboardStats(dailyLogsForAnalysis, today, dailyTargetsByDay, userWeeklyCalorieTarget),
+    [dailyLogsForAnalysis, today, dailyTargetsByDay, userWeeklyCalorieTarget],
   )
   const trendData = useMemo(
-    () => (contentTab === 'analytics' ? buildTrendData(dailyLogs, today, trendDays, dailyTargetsByDay) : ([] as TrendPoint[])),
-    [dailyLogs, today, trendDays, dailyTargetsByDay, contentTab],
+    () => (contentTab === 'analytics'
+      ? buildTrendData(dailyLogsForAnalysis, today, trendDays, dailyTargetsByDay).map((point) => ({
+          ...point,
+          bodyfat: bodyValue(bodyRecords, point.fullDate, 'bodyfat'),
+        }))
+      : ([] as TrendPoint[])),
+    [dailyLogsForAnalysis, bodyRecords, today, trendDays, dailyTargetsByDay, contentTab],
   )
   const trainingPerformanceData = useMemo(
     () =>
@@ -316,10 +334,10 @@ function App() {
     [workoutLogs, today, trendDays, contentTab],
   )
   const weeklySummary = useMemo(
-    () => (contentTab === 'analytics' ? createWeeklySummary(dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userWeeklyCalorieTarget, userPreference) : ({} as WeeklySummary)),
-    [dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userWeeklyCalorieTarget, userPreference, contentTab],
+    () => (contentTab === 'analytics' ? createWeeklySummary(dailyLogsForAnalysis, weeklyAnchorDate, dailyTargetsByDay, userWeeklyCalorieTarget, userPreference) : ({} as WeeklySummary)),
+    [dailyLogsForAnalysis, weeklyAnchorDate, dailyTargetsByDay, userWeeklyCalorieTarget, userPreference, contentTab],
   )
-  const twoWeekAdjustment = useMemo(() => getTwoWeekAdjustment(dailyLogs, today, userPreference), [dailyLogs, today, userPreference])
+  const twoWeekAdjustment = useMemo(() => getTwoWeekAdjustment(dailyLogsForAnalysis, today, userPreference), [dailyLogsForAnalysis, today, userPreference])
   const weekendRisk = useMemo(() => getWeekendRiskRecommendation(dailyLogs, today, userPreference), [dailyLogs, today, userPreference])
   const todaySnapshot = useMemo(
     () =>
@@ -329,13 +347,13 @@ function App() {
             log: todayLog,
             workout: todayWorkout,
             target,
-            logs: dailyLogs,
+            logs: dailyLogsForAnalysis,
             dashboardStats,
             targets: dailyTargetsByDay,
             preference: userPreference,
           })
         : ({} as TodaySnapshot),
-    [contentTab, today, todayLog, todayWorkout, target, dailyLogs, dashboardStats, dailyTargetsByDay, userPreference],
+    [contentTab, today, todayLog, todayWorkout, target, dailyLogsForAnalysis, dashboardStats, dailyTargetsByDay, userPreference],
   )
   const todayTaskPlan = useMemo(
     () =>
@@ -356,8 +374,8 @@ function App() {
     [todayTaskPlan],
   )
   const trendAlerts = useMemo(
-    () => (contentTab === 'analytics' ? buildTrendAlerts(dailyLogs, today, dailyTargetsByDay, userPreference) : ([] as AdjustmentRecommendation[])),
-    [contentTab, dailyLogs, today, dailyTargetsByDay, userPreference],
+    () => (contentTab === 'analytics' ? buildTrendAlerts(dailyLogsForAnalysis, today, dailyTargetsByDay, userPreference) : ([] as AdjustmentRecommendation[])),
+    [contentTab, dailyLogsForAnalysis, today, dailyTargetsByDay, userPreference],
   )
   const weeklyConclusionCard = useMemo(
     () => weeklyConclusion(weeklySummary, twoWeekAdjustment.title),
@@ -366,9 +384,9 @@ function App() {
   const weeklyActionRecommendations = useMemo(
     () =>
       contentTab === 'analytics'
-        ? buildWeeklyActionRecommendations(weeklySummary, dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userPreference)
+        ? buildWeeklyActionRecommendations(weeklySummary, dailyLogsForAnalysis, weeklyAnchorDate, dailyTargetsByDay, userPreference)
         : ([] as AdjustmentRecommendation[]),
-    [contentTab, weeklySummary, dailyLogs, weeklyAnchorDate, dailyTargetsByDay, userPreference],
+    [contentTab, weeklySummary, dailyLogsForAnalysis, weeklyAnchorDate, dailyTargetsByDay, userPreference],
   )
   const visibleWorkoutExercises = useMemo(
     () =>
@@ -391,6 +409,7 @@ function App() {
 
   const applyData = useCallback((nextData: AppData) => {
     setDailyLogs(nextData.dailyLogs)
+    setBodyRecords(nextData.bodyRecords)
     setWorkoutLogs(nextData.workoutLogs)
     setWorkoutTemplates(nextData.workoutTemplates)
     if (currentUser) {
@@ -631,6 +650,7 @@ function App() {
         setAuthState(user ? 'authenticated' : 'anonymous')
         if (!user) {
           setDailyLogs([])
+          setBodyRecords([])
           setWorkoutLogs([])
           setWorkoutTemplates([])
           setDailyTargetsByDay(defaultDailyTargets)
@@ -705,11 +725,13 @@ function App() {
         setAutoRetryEnabled(false)
         setSyncMessage('服务器数据为空，使用本地缓存')
         setDailyLogs(appResult.data.dailyLogs)
+        setBodyRecords(appResult.data.bodyRecords)
         setWorkoutLogs(appResult.data.workoutLogs)
         setWorkoutTemplates(appResult.data.workoutTemplates)
         return
       }
       setDailyLogs(appResult.data.dailyLogs)
+      setBodyRecords(appResult.data.bodyRecords)
       setWorkoutLogs(appResult.data.workoutLogs)
       setWorkoutTemplates(appResult.data.workoutTemplates)
       if (appResult.source === 'server') {
@@ -747,6 +769,16 @@ function App() {
     }
   }
 
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    { key: '1', ctrl: true, handler: () => changeTab('daily') },
+    { key: '2', ctrl: true, handler: () => changeTab('workout') },
+    { key: '3', ctrl: true, handler: () => changeTab('analytics') },
+    { key: '4', ctrl: true, handler: () => changeTab('settings') },
+    { key: 'n', ctrl: true, handler: () => { changeTab('workout'); setSelectedDate(today); } },
+    { key: 's', ctrl: true, handler: () => flushPending() },
+  ], authState === 'authenticated')
+
   function openTodayRecord(focusKey?: DailyFocusKey) {
     setSelectedDate(today)
     setDailyFocusKey(focusKey)
@@ -766,7 +798,7 @@ function App() {
     setSyncMessage('同步中...')
     flushPending()
     try {
-      const saved = await saveAppData(currentUser.id, { dailyLogs, workoutLogs, workoutTemplates })
+      const saved = await saveAppData(currentUser.id, { dailyLogs, bodyRecords, workoutLogs, workoutTemplates })
       applyData(saved)
       setSyncState('synced')
       setLastSyncedAt(new Date().toISOString())
@@ -783,7 +815,7 @@ function App() {
           : '服务器仍然无法保存，请稍后再试。'
       setSyncMessage(message)
     }
-  }, [applyData, currentUser, dailyLogs, flushPending, workoutLogs, workoutTemplates])
+  }, [applyData, bodyRecords, currentUser, dailyLogs, flushPending, workoutLogs, workoutTemplates])
 
   useEffect(() => {
     if (!currentUser || syncState !== 'offline' || !autoRetryEnabled) return
@@ -820,39 +852,57 @@ function App() {
     [],
   )
 
-  function syncDailyMeasurementsToProfile(patch: Partial<DailyLog>) {
-    const profilePatch: Partial<UserProfile> = {}
-    if (patch.morningWeightKg !== undefined) profilePatch.currentWeightKg = patch.morningWeightKg
-    if (patch.waistCm !== undefined) profilePatch.waistCm = patch.waistCm
-    if (patch.chestCm !== undefined) profilePatch.chestCm = patch.chestCm
-    if (patch.upperArmCm !== undefined) profilePatch.upperArmCm = patch.upperArmCm
-    if (patch.thighCm !== undefined) profilePatch.thighCm = patch.thighCm
-
-    if (!currentUser || Object.keys(profilePatch).length === 0) return
-
-    void fetchUserProfile()
-      .then((profile) =>
-        saveUserProfile({
-          ...profile,
-          ...profilePatch,
-          trainingDays: profile.trainingDays ?? [],
-        }),
-      )
-      .catch((error) => {
-        console.warn('Failed to sync daily measurements to profile:', error)
-      })
-  }
-
   function updateDailyLog(patch: Partial<DailyLog>) {
     const nextLogs = upsertByDate(dailyLogs, selectedDate, patch)
-    schedulePersist({ dailyLogs: nextLogs, workoutLogs, workoutTemplates })
-    syncDailyMeasurementsToProfile(patch)
+    schedulePersist({ dailyLogs: nextLogs, bodyRecords, workoutLogs, workoutTemplates })
+  }
+
+  function updateBodyRecord(type: BodyRecord['type'], value: number | undefined) {
+    const previous = bodyRecords.find((item) => item.datestr === selectedDate && item.type === type)
+    const nextBodyRecords = value === undefined
+      ? removeBodyRecord(bodyRecords, selectedDate, type)
+      : upsertBodyRecords(bodyRecords, [{
+          datestr: selectedDate,
+          type,
+          value,
+          unit: bodyMetricDefinition(type).unit,
+          label: bodyMetricDefinition(type).label,
+          label_en: bodyMetricDefinition(type).label_en,
+          origin: 'local',
+          synced_at: previous?.synced_at,
+        }])
+    schedulePersist(
+      { dailyLogs, bodyRecords: nextBodyRecords, workoutLogs, workoutTemplates },
+      value === undefined,
+    )
+    if (value === undefined) {
+      if (previous) {
+        setSaveFeedback({
+          tone: 'neutral',
+          message: `${previous.label}已从本项目删除，不会删除训记中的记录。`,
+        })
+      }
+      return
+    }
+    setSaveFeedback({
+      tone: 'neutral',
+      message: `${bodyMetricDefinition(type).label}已保存在本项目，可按需批量同步到训记。`,
+    })
+  }
+
+  function applyXunjiBodySync(records: BodyRecord[]) {
+    const nextBodyRecords = upsertBodyRecords(bodyRecords, records)
+    const nextData = { dailyLogs, bodyRecords: nextBodyRecords, workoutLogs, workoutTemplates }
+    applyData(nextData)
+    setLastSyncedAt(new Date().toISOString())
+    setSyncState('synced')
+    setSyncMessage('已同步')
+    setSaveFeedback({ tone: 'positive', message: `已同步 ${records.length} 项身体数据到训记。` })
   }
 
   function quickDailyAction(patch: Partial<DailyLog>) {
     const nextLogs = upsertByDate(dailyLogs, selectedDate, patch)
-    schedulePersist({ dailyLogs: nextLogs, workoutLogs, workoutTemplates }, true)
-    syncDailyMeasurementsToProfile(patch)
+    schedulePersist({ dailyLogs: nextLogs, bodyRecords, workoutLogs, workoutTemplates }, true)
   }
 
   function finishSelectedWorkout() {
@@ -864,13 +914,13 @@ function App() {
       selectedWorkout || !selectedTemplateHasContent || !selectedTemplate
         ? workoutLogs
         : upsertByDate(workoutLogs, selectedDate, createWorkoutFromTemplate(selectedDate, selectedTemplate))
-    schedulePersist({ dailyLogs: nextLogs, workoutLogs: nextWorkoutLogs, workoutTemplates }, true)
+    schedulePersist({ dailyLogs: nextLogs, bodyRecords, workoutLogs: nextWorkoutLogs, workoutTemplates }, true)
   }
 
-  async function syncSelectedDateFromXunji() {
-    if (!currentUser || xunjiSyncPending) return
+  async function syncTrainingFromXunji(skipConfirm = false) {
+    if (!currentUser || xunjiSyncPending) return undefined
     const shouldReplace = hasWorkoutContent(selectedWorkout)
-    if (shouldReplace) {
+    if (shouldReplace && !skipConfirm) {
       const ok = await confirm({
         title: '覆盖当天训练？',
         message: '同步训记会用训记当天训练替换当前项目里的当天训练记录，已有动作、组数和有氧记录会被覆盖。',
@@ -893,11 +943,11 @@ function App() {
         setSaveFeedback({ tone: 'warning', message: '训记当天没有训练记录可同步。' })
         setSyncState('synced')
         setSyncMessage('已同步')
-        return
+        return result
       }
       const nextWorkoutLogs = upsertByDate(workoutLogs, selectedDate, result.workoutLog)
       const nextDailyLogs = result.dailyLog ? upsertByDate(dailyLogs, selectedDate, result.dailyLog) : dailyLogs
-      const nextData = { dailyLogs: nextDailyLogs, workoutLogs: nextWorkoutLogs, workoutTemplates }
+      const nextData = { dailyLogs: nextDailyLogs, bodyRecords, workoutLogs: nextWorkoutLogs, workoutTemplates }
       applyData(nextData)
       setSyncState('synced')
       setSyncMessage('已同步')
@@ -908,14 +958,43 @@ function App() {
         tone: 'positive',
         message: `已从训记同步 ${result.trainCount} 条训练、${result.movementCount} 个动作。`,
       })
+      return result
     } catch (error) {
       setSyncState('offline')
       const message = error instanceof Error && error.message ? error.message : '同步训记训练数据失败'
       setSyncMessage(message)
       setSaveFeedback({ tone: 'warning', message })
+      throw error
     } finally {
       setXunjiSyncPending(false)
     }
+  }
+
+  function applyXunjiDailySync(result: {
+    dailyLog?: DailyLog
+    bodyRecords: BodyRecord[]
+    results: {
+      food: { status: 'success' | 'skipped'; count: number }
+      body: { status: 'success' | 'skipped'; count: number }
+    }
+  }) {
+    const nextDailyLogs = result.dailyLog
+      ? upsertByDate(dailyLogs, selectedDate, result.dailyLog)
+      : dailyLogs
+    const nextBodyRecords = upsertBodyRecords(bodyRecords, result.bodyRecords)
+    const nextData = { dailyLogs: nextDailyLogs, bodyRecords: nextBodyRecords, workoutLogs, workoutTemplates }
+    applyData(nextData)
+    setLastSyncedAt(new Date().toISOString())
+    setSyncState('synced')
+    setSyncMessage('已同步')
+    const parts = [
+      result.results.food.count > 0 ? `${result.results.food.count} 项饮食` : '',
+      result.results.body.count > 0 ? `${result.results.body.count} 项身体数据` : '',
+    ].filter(Boolean)
+    setSaveFeedback({
+      tone: parts.length > 0 ? 'positive' : 'neutral',
+      message: parts.length > 0 ? `已从训记导入${parts.join('、')}。` : '本地数据已是最新。',
+    })
   }
 
   function updateWorkoutLog(nextLog: WorkoutLog, immediate = false, options: { syncCompletion?: boolean } = {}) {
@@ -934,7 +1013,7 @@ function App() {
           })
         })()
       : dailyLogs
-    schedulePersist({ dailyLogs: nextDailyLogs, workoutLogs: nextLogs, workoutTemplates }, immediate)
+    schedulePersist({ dailyLogs: nextDailyLogs, bodyRecords, workoutLogs: nextLogs, workoutTemplates }, immediate)
   }
 
   function updateExercise(index: number, patch: Partial<ExerciseLog>) {
@@ -1096,7 +1175,7 @@ function App() {
 
   function persistTemplates(nextTemplates: WorkoutTemplate[], immediate = false) {
     const customTemplates = nextTemplates.filter((t) => !t.isBuiltin)
-    schedulePersist({ dailyLogs, workoutLogs, workoutTemplates: customTemplates }, immediate)
+    schedulePersist({ dailyLogs, bodyRecords, workoutLogs, workoutTemplates: customTemplates }, immediate)
   }
 
   function persistBuiltinTemplate(day: DayKey, nextPlan: WorkoutPlan, immediate = false) {
@@ -1382,7 +1461,7 @@ function App() {
     if (!currentUser) throw new Error('请先登录')
     const result = await importWorkoutTemplateToken(token)
     setWorkoutTemplates(result.workoutTemplates)
-    cacheData(currentUser.id, { dailyLogs, workoutLogs, workoutTemplates: result.workoutTemplates })
+    cacheData(currentUser.id, { dailyLogs, bodyRecords, workoutLogs, workoutTemplates: result.workoutTemplates })
     setSyncState('synced')
     setLastSyncedAt(new Date().toISOString())
     setAutoRetryEnabled(false)
@@ -1526,6 +1605,7 @@ function App() {
       setLoginPassword('')
       const empty = emptyAppData()
       setDailyLogs(empty.dailyLogs)
+      setBodyRecords(empty.bodyRecords)
       setWorkoutLogs(empty.workoutLogs)
       setWorkoutTemplates(empty.workoutTemplates)
     } catch (error) {
@@ -1544,6 +1624,7 @@ function App() {
     setAuthState('anonymous')
     const empty = emptyAppData()
     setDailyLogs(empty.dailyLogs)
+    setBodyRecords(empty.bodyRecords)
     setWorkoutLogs(empty.workoutLogs)
     setWorkoutTemplates(empty.workoutTemplates)
     setDailyTargetsByDay(defaultDailyTargets)
@@ -1634,8 +1715,13 @@ function App() {
               currentUser={currentUser}
               preference={userPreference}
               planData={currentPlanData}
+              bodyRecords={bodyRecords}
               onSavePreference={savePreferenceData}
               onSavePlan={savePlanData}
+              onOpenBodyDate={(date) => {
+                setSelectedDate(date)
+                changeTab('daily')
+              }}
             />
           </Suspense>
         ) : null}
@@ -1646,8 +1732,10 @@ function App() {
               selectedDate={selectedDate}
               today={today}
               selectedLog={selectedLog}
+              selectedBodyRecords={selectedBodyRecords}
+              bodyRecords={bodyRecords}
               selectedTarget={selectedTarget}
-              dailyLogs={dailyLogs}
+              dailyLogs={dailyLogsForAnalysis}
               workoutLogs={workoutLogs}
               syncState={syncState}
               savePending={savePending}
@@ -1657,8 +1745,10 @@ function App() {
               fatigueThreshold={userPreference.fatigueThreshold ?? defaultUserPreference.fatigueThreshold}
               onDateChange={handleDateChange}
               onUpdateDailyLog={updateDailyLog}
+              onUpdateBodyRecord={updateBodyRecord}
               onQuickAction={quickDailyAction}
-              onSyncFromXunji={() => void syncSelectedDateFromXunji()}
+              onSyncFromXunji={() => setShowXunjiDailySync(true)}
+              onSyncBodyToXunji={() => setShowXunjiBodySync(true)}
               focusKey={dailyFocusKey}
               priorityKeys={dailyPriorityKeys}
               onFocusConsumed={() => setDailyFocusKey(undefined)}
@@ -1691,7 +1781,7 @@ function App() {
               onTemplateChange={setSelectedTemplateId}
               onApplyTemplate={(template) => void replaceWorkoutFromTemplate(template)}
               onApplyRecommended={() => void replaceWorkoutFromTemplate(templateOptions.find((template) => template.id === `builtin-${getDayKey(selectedDate)}`))}
-              onSyncFromXunji={() => void syncSelectedDateFromXunji()}
+              onSyncFromXunji={() => setShowXunjiDailySync(true)}
               onToggleShowUnfinished={handleToggleShowUnfinished}
               onUpdateWorkout={updateWorkoutLog}
               onUpdateExercise={updateExercise}
@@ -1771,6 +1861,30 @@ function App() {
       </>
       )}
       {confirmDialog}
+      <XunjiDailySyncDialog
+        open={showXunjiDailySync}
+        date={selectedDate}
+        defaultTraining={contentTab === 'workout'}
+        hasExistingWorkout={hasWorkoutContent(selectedWorkout)}
+        onClose={() => setShowXunjiDailySync(false)}
+        onOpenSettings={() => {
+          setShowXunjiDailySync(false)
+          changeTab('settings')
+        }}
+        onSyncTraining={() => syncTrainingFromXunji(true)}
+        onSynced={applyXunjiDailySync}
+      />
+      <XunjiBodySyncDialog
+        open={showXunjiBodySync}
+        date={selectedDate}
+        records={selectedBodyRecords}
+        onClose={() => setShowXunjiBodySync(false)}
+        onOpenSettings={() => {
+          setShowXunjiBodySync(false)
+          changeTab('settings')
+        }}
+        onSynced={applyXunjiBodySync}
+      />
       {showExportDialog ? (
         <Suspense fallback={<DialogLoadingFallback />}>
           <ExportDataDialog

@@ -1,4 +1,5 @@
-import type { DailyTarget, DayKey, UserPreference, UserProfile } from '../../types'
+import type { BodyRecord, DailyTarget, DayKey, UserPreference, UserProfile } from '../../types'
+import { bodyMetricDefinition, latestBodyRecord } from '../../lib/bodyMetrics'
 import { dayNames } from '../../data/plans'
 import { NumberField } from '../NumberField'
 import { Button, Field, Select, TextArea, TextInput } from '../ui'
@@ -15,7 +16,7 @@ export function BasicProfileSection({
 }) {
   return (
     <FormSection title="个人资料">
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         <Field label="性别">
           <Select
             value={profile.sex ?? ''}
@@ -31,30 +32,29 @@ export function BasicProfileSection({
           <TextInput type="date" value={profile.birthDate ?? ''} onChange={(event) => onUpdateProfile({ birthDate: event.target.value || undefined })} />
         </Field>
         <NumberField label="身高 cm" value={profile.heightCm} kind="decimal" range={{ min: 80, max: 260 }} onChange={(value) => onUpdateProfile({ heightCm: value })} />
-        <NumberField label="估算体脂 %" value={profile.estimatedBodyFatPercent} kind="decimal" range={{ min: 1, max: 80 }} onChange={(value) => onUpdateProfile({ estimatedBodyFatPercent: value })} />
       </div>
     </FormSection>
   )
 }
 
-export function BodyMeasurementsSection({
-  profile,
-  onUpdateProfile,
-}: {
-  profile: UserProfile
-  onUpdateProfile: (patch: Partial<UserProfile>) => void
-}) {
+export function LatestBodyMetricsSection({ records }: { records: BodyRecord[] }) {
+  const types = ['weight', 'bodyfat', 'weist', 'chest'] as const
   return (
-    <FormSection title="基准身体数据">
-      <p className="mb-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
-        这里作为长期资料基准；每日体重和围度变化优先在记录页更新。
-      </p>
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
-        <NumberField label="当前体重 kg" value={profile.currentWeightKg} kind="decimal" range={{ min: 20, max: 300 }} onChange={(value) => onUpdateProfile({ currentWeightKg: value })} />
-        <NumberField label="腰围 cm" value={profile.waistCm} kind="decimal" range={{ min: 30, max: 250 }} onChange={(value) => onUpdateProfile({ waistCm: value })} />
-        <NumberField label="胸围 cm" value={profile.chestCm} kind="decimal" range={{ min: 30, max: 250 }} onChange={(value) => onUpdateProfile({ chestCm: value })} />
-        <NumberField label="上臂围 cm" value={profile.upperArmCm} kind="decimal" range={{ min: 10, max: 100 }} onChange={(value) => onUpdateProfile({ upperArmCm: value })} />
-        <NumberField label="大腿围 cm" value={profile.thighCm} kind="decimal" range={{ min: 20, max: 150 }} onChange={(value) => onUpdateProfile({ thighCm: value })} />
+    <FormSection title="最新身体状态" description="身体指标统一在“记录”页维护，这里只显示最新值。">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {types.map((type) => {
+          const record = latestBodyRecord(records, type)
+          const definition = bodyMetricDefinition(type)
+          return (
+            <div key={type} className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] p-3 dark:border-slate-700 dark:bg-slate-800/60">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{definition.label}</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums text-slate-950 dark:text-slate-50">
+                {record ? `${record.value}${record.unit}` : '未记录'}
+              </p>
+              <p className="mt-1 font-mono text-[10px] text-slate-400">{record?.datestr ?? type}</p>
+            </div>
+          )
+        })}
       </div>
     </FormSection>
   )

@@ -107,7 +107,7 @@ export function AppShell<T extends string>({
                         height={32}
                       />
                       <span className="hidden text-[var(--surface-border-strong)] dark:text-slate-700 sm:inline">/</span>
-                      <h1 className="truncate bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-xl font-bold tracking-tight text-transparent dark:from-slate-50 dark:to-slate-300 sm:text-2xl">{activeLabel}</h1>
+                      <h1 className="truncate text-xl font-bold tracking-tight text-slate-950 dark:text-slate-50 sm:text-2xl">{activeLabel}</h1>
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2">
@@ -151,7 +151,7 @@ export function AppShell<T extends string>({
                 {/* Desktop Header (Simplified) */}
                 <header className="mb-4 hidden lg:block">
                   <div className="flex items-center justify-between">
-                    <h1 className="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-3xl font-bold tracking-tight text-transparent dark:from-slate-50 dark:to-slate-300">
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-50">
                       {activeLabel}
                     </h1>
                     <DropdownMenu
@@ -180,6 +180,7 @@ export function AppShell<T extends string>({
 
         {/* Context Rail */}
         {!immersiveMode && contextRail}
+      </div>
       </div>
 
       {/* Keyboard shortcuts help */}
