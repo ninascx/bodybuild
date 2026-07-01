@@ -46,7 +46,7 @@ globalThis.fetch = async (input, init) => {
     })
   }
   if (url.endsWith('/api_trains_for_llm_v2')) {
-    return Response.json({ success: true, res: { trains: [] } })
+    return Response.json({ res: { trains: [] } })
   }
   return Response.json({ success: false, message: `unexpected mock URL: ${url}` }, { status: 500 })
 }
@@ -56,6 +56,7 @@ const { ensureDatabaseSchema } = await import('../server/ensureDatabase')
 const {
   commitXunjiBodyMutation,
   commitXunjiDailySync,
+  extractXunjiFoodSummary,
   getXunjiConnections,
   previewXunjiBodyMutation,
   previewXunjiDailySync,
@@ -64,6 +65,44 @@ const {
 } = await import('../server/xunjiData')
 
 try {
+  assert.deepEqual(
+    extractXunjiFoodSummary(
+      { days: [{ date: '2026-06-30', ntr: { cal: 2300, protein: 168, carb: 250, fat: 70 } }] },
+      '2026-06-30',
+    ),
+    { calories: 2300, protein: 168, carbs: 250, fat: 70 },
+  )
+  assert.deepEqual(
+    extractXunjiFoodSummary(
+      {
+        days: [{
+          datestr: '2026-07-01',
+          totals: { totalProtein: 157.76, totalCarb: 114.22, totalFat: 69.68, totalCal: 1725.4 },
+        }],
+      },
+      '2026-07-01',
+    ),
+    { calories: 1725.4, protein: 157.76, carbs: 114.22, fat: 69.68 },
+  )
+  assert.deepEqual(
+    extractXunjiFoodSummary(
+      [{ datestr: '2026-06-30', total_ntr: { kcal: '2100', protein: '150', carbohydrates: '220' } }],
+      '2026-06-30',
+    ),
+    { calories: 2100, protein: 150, carbs: 220 },
+  )
+  assert.deepEqual(
+    extractXunjiFoodSummary(
+      [
+        { date: '2026-06-30', amount: 150, unit: 'g', ntr: { cal: 100, protein: 20 } },
+        { date: '2026-06-30', amount: 50, unit: 'g', ntr: { cal: 200 } },
+      ],
+      '2026-06-30',
+    ),
+    { calories: 250, protein: 30 },
+    'missing nutrients must stay absent instead of being imported as zero',
+  )
+
   await ensureDatabaseSchema()
   await ensureDatabaseSchema()
   const preferenceColumns = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
@@ -86,12 +125,18 @@ try {
 
   const mockBodyKey = ['xjbody_', '12345678901234567890'].join('')
   const mockFoodKey = ['xjfood_', '12345678901234567890'].join('')
+  const mockTrainingKey = ['xjllm_', '12345678901234567890'].join('')
   const beforeInvalidPrefix = fetchCalls
   await assert.rejects(
     validateAndSaveXunjiConnection(user.id, 'food', { apiKey: mockBodyKey }),
     /xjfood_/,
   )
   assert.equal(fetchCalls, beforeInvalidPrefix, 'invalid prefix must not call upstream')
+
+  const trainingConnections = await validateAndSaveXunjiConnection(user.id, 'training', {
+    apiKey: mockTrainingKey,
+  })
+  assert.equal(trainingConnections.training.validationStatus, 'valid')
 
   const foodConnections = await validateAndSaveXunjiConnection(user.id, 'food', {
     apiKey: mockFoodKey,

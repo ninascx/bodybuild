@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useId, useState, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { Field, TextInput } from './ui'
+import { TextInput } from './ui'
 
 export type NumberRange = {
   min?: number
@@ -47,6 +47,8 @@ export function NumberField({
   const [outOfRange, setOutOfRange] = useState(false)
   const localInputRef = useRef<HTMLInputElement | null>(null)
   const stepValue = Number(step)
+  const inputId = useId()
+  const errorId = `${inputId}-error`
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -140,7 +142,10 @@ export function NumberField({
       : '请输入有效数字'
 
   return (
-    <Field label={label} error={outOfRange ? rangeHint : undefined} labelAction={labelAction}>
+    <div className="grid min-w-0 gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+      <label htmlFor={inputId} className="min-w-0">
+        {label}
+      </label>
       <div className="relative flex items-center gap-1">
         {showControls && (
           <button
@@ -154,6 +159,7 @@ export function NumberField({
           </button>
         )}
         <TextInput
+          id={inputId}
           type="text"
           inputMode={inputMode}
           pattern={pattern}
@@ -166,6 +172,7 @@ export function NumberField({
             if (inputRef) inputRef(el)
           }}
           aria-invalid={outOfRange}
+          aria-describedby={outOfRange ? errorId : undefined}
           className={`${outOfRange ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-100 dark:border-rose-500 dark:focus:border-rose-400 dark:focus:ring-rose-900/40' : ''} ${className ?? ''}`}
           onChange={(event) => handleChange(event.target.value)}
           onKeyDown={handleKeyDown}
@@ -183,6 +190,12 @@ export function NumberField({
           </button>
         )}
       </div>
-    </Field>
+      {labelAction ? <div className="flex justify-end">{labelAction}</div> : null}
+      {outOfRange ? (
+        <span id={errorId} className="text-xs font-semibold leading-5 text-rose-600 dark:text-rose-400" role="alert">
+          {rangeHint}
+        </span>
+      ) : null}
+    </div>
   )
 }

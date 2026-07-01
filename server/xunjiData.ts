@@ -474,7 +474,11 @@ async function probeCredential(kind: XunjiConnectionKind, token: string): Promis
 
   const payload = (await response.json().catch(() => null)) as unknown
   const root = asObject(payload)
-  if (!response.ok || root?.success !== true) {
+  const trainingRes = kind === 'training' ? asObject(root?.res) : null
+  const succeeded = kind === 'training'
+    ? Boolean(response.ok && root && root.success !== false && Array.isArray(trainingRes?.trains))
+    : response.ok && root?.success === true
+  if (!succeeded) {
     const retryAfterMs = asNumber(root?.retry_after_ms)
     const rawMessage = upstreamMessage(root, `训记连接验证失败（HTTP ${response.status}）。`)
     const message = friendlyUpstreamMessage(rawMessage, kind, retryAfterMs)
@@ -618,10 +622,28 @@ function normalizeNutrition(value: unknown): Partial<Record<NutritionField, numb
   const object = asObject(value)
   if (!object) return {}
   const result: Partial<Record<NutritionField, number>> = {}
-  const calories = asNumber(object.calories ?? object.cal ?? object.kcal)
-  const protein = asNumber(object.protein)
-  const carbs = asNumber(object.carbs ?? object.carb)
-  const fat = asNumber(object.fat)
+  const calories = asNumber(
+    object.calories ??
+    object.calorie ??
+    object.cal ??
+    object.kcal ??
+    object.total_calories ??
+    object.totalCalories ??
+    object.total_cal ??
+    object.totalCal,
+  )
+  const protein = asNumber(object.protein ?? object.proteins ?? object.total_protein ?? object.totalProtein)
+  const carbs = asNumber(
+    object.carbs ??
+    object.carb ??
+    object.carbohydrate ??
+    object.carbohydrates ??
+    object.total_carbs ??
+    object.totalCarbs ??
+    object.total_carb ??
+    object.totalCarb,
+  )
+  const fat = asNumber(object.fat ?? object.fats ?? object.total_fat ?? object.totalFat)
   if (calories !== undefined) result.calories = calories
   if (protein !== undefined) result.protein = protein
   if (carbs !== undefined) result.carbs = carbs
@@ -633,55 +655,144 @@ function nutritionCount(summary: Partial<Record<NutritionField, number>>): numbe
   return Object.values(summary).filter((value) => value !== undefined).length
 }
 
-function extractFoodSummary(res: unknown, datestr: string): Partial<Record<NutritionField, number>> {
-  const root = asObject(res)
-  const byDate = asObject(root?.by_date ?? root?.byDate)
-  const days = Array.isArray(root?.days) ? root.days : []
-  const day = days.find((item) => {
-    const object = asObject(item)
-    return object?.datestr === datestr || object?.date === datestr
-  })
-  const candidates = [
-    byDate?.[datestr],
-    day,
-    root?.summary,
-    root?.total,
-    root?.totals,
-    root,
-  ]
-  for (const candidate of candidates) {
-    const summary = normalizeNutrition(candidate)
+const aggregateNutritionKeys = [
+  'summary',
+  'total',
+  'totals',
+  'nutrition',
+  'nutrients',
+  'total_ntr',
+  'totalNtr',
+  'sum_ntr',
+  'sumNtr',
+] as const
+
+function aggregateNutrition(value: unknown, allowUnscaledNtr = false): Partial<Record<NutritionField, number>> {
+  const object = asObject(value)
+  if (!object) return {}
+  const direct = normalizeNutrition(object)
+  if (nutritionCount(direct) > 0) return direct
+  for (const key of aggregateNutritionKeys) {
+    const summary = normalizeNutrition(object[key])
     if (nutritionCount(summary) > 0) return summary
   }
-
-  const rows = [root?.records, root?.foods, root?.details].find(Array.isArray) as unknown[] | undefined
-  if (!rows) return {}
-  const total: Record<NutritionField, number> = { calories: 0, protein: 0, carbs: 0, fat: 0 }
-  let recognized = 0
-  for (const row of rows) {
-    const object = asObject(row)
-    if (!object) continue
-    const rowDate = object.datestr ?? object.date
-    if (typeof rowDate === 'string' && rowDate !== datestr) continue
-    let summary = normalizeNutrition(object.summary ?? object.total ?? object.nutrition ?? object)
-    if (nutritionCount(summary) === 0) {
-      const ntr = normalizeNutrition(object.ntr)
-      const amount = asNumber(object.amount ?? object.gram ?? object.weight)
-      const unit = typeof object.unit === 'string' ? object.unit.toLowerCase() : 'g'
-      if (amount !== undefined && unit === 'g' && nutritionCount(ntr) > 0) {
-        summary = Object.fromEntries(
-          Object.entries(ntr).map(([key, value]) => [key, value === undefined ? undefined : (value * amount) / 100]),
-        ) as Partial<Record<NutritionField, number>>
-      }
-    }
-    if (nutritionCount(summary) === 0) continue
-    recognized += 1
-    for (const field of Object.keys(total) as NutritionField[]) total[field] += summary[field] ?? 0
+  const hasPortionAmount = asNumber(
+    object.amount ??
+    object.gram ??
+    object.grams ??
+    object.weight ??
+    object.total_gram ??
+    object.totalGram,
+  ) !== undefined
+  if (allowUnscaledNtr && !hasPortionAmount) {
+    const ntr = normalizeNutrition(object.ntr)
+    if (nutritionCount(ntr) > 0) return ntr
   }
-  if (recognized === 0) return {}
+  return {}
+}
+
+function recordDate(value: unknown): string | undefined {
+  const object = asObject(value)
+  const date = object?.datestr ?? object?.date ?? object?.day
+  return typeof date === 'string' ? date.slice(0, 10) : undefined
+}
+
+function detailRows(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value
+  const object = asObject(value)
+  if (!object) return []
+  for (const key of ['foods', 'details', 'items', 'records', 'list']) {
+    if (Array.isArray(object[key])) return object[key]
+  }
+  if (Array.isArray(object.meals)) {
+    return object.meals.flatMap((meal) => detailRows(meal))
+  }
+  return []
+}
+
+function detailNutrition(value: unknown): Partial<Record<NutritionField, number>> {
+  const object = asObject(value)
+  if (!object) return {}
+  const aggregate = aggregateNutrition(object)
+  if (nutritionCount(aggregate) > 0) return aggregate
+
+  const ntr = normalizeNutrition(object.ntr)
+  if (nutritionCount(ntr) === 0) return {}
+  const explicitGrams = asNumber(
+    object.gram ??
+    object.grams ??
+    object.weight ??
+    object.total_gram ??
+    object.totalGram ??
+    object.total_grams ??
+    object.totalGrams,
+  )
+  const amount = explicitGrams ?? asNumber(object.amount)
+  const unit = typeof object.unit === 'string' ? object.unit.trim().toLowerCase() : ''
+  const amountIsGrams = explicitGrams !== undefined || unit === '' || unit === 'g' || unit === '克'
+  if (amount === undefined || !amountIsGrams) return {}
+
   return Object.fromEntries(
-    Object.entries(total).map(([key, value]) => [key, Math.round(value * 10) / 10]),
-  ) as Record<NutritionField, number>
+    Object.entries(ntr).map(([key, nutrient]) => [
+      key,
+      nutrient === undefined ? undefined : (nutrient * amount) / 100,
+    ]),
+  ) as Partial<Record<NutritionField, number>>
+}
+
+function sumNutritionRows(rows: unknown[], datestr: string): Partial<Record<NutritionField, number>> {
+  const totals: Partial<Record<NutritionField, number>> = {}
+  for (const row of rows) {
+    const rowDatestr = recordDate(row)
+    if (rowDatestr && rowDatestr !== datestr) continue
+    const summary = detailNutrition(row)
+    for (const field of ['calories', 'protein', 'carbs', 'fat'] as const) {
+      const nutrient = summary[field]
+      if (nutrient !== undefined) totals[field] = (totals[field] ?? 0) + nutrient
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(totals).map(([key, nutrient]) => [key, Math.round(nutrient * 10) / 10]),
+  ) as Partial<Record<NutritionField, number>>
+}
+
+export function extractXunjiFoodSummary(
+  res: unknown,
+  datestr: string,
+): Partial<Record<NutritionField, number>> {
+  const root = asObject(res)
+  const rootRows = Array.isArray(res) ? res : []
+  const byDate = asObject(root?.by_date ?? root?.byDate ?? root?.days)
+  const dayCollections = [
+    ...(Array.isArray(root?.days) ? [root.days] : []),
+    ...(Array.isArray(root?.data) ? [root.data] : []),
+    ...(Array.isArray(root?.list) ? [root.list] : []),
+    ...(rootRows.length > 0 ? [rootRows] : []),
+  ]
+  const matchingDays = dayCollections
+    .flat()
+    .filter((item) => recordDate(item) === datestr)
+  const datedCandidate = byDate?.[datestr]
+  const dayCandidates = [datedCandidate, ...matchingDays].filter((candidate) => candidate !== undefined)
+
+  for (const candidate of dayCandidates) {
+    const summary = aggregateNutrition(candidate, true)
+    if (nutritionCount(summary) > 0) return summary
+    const rows = detailRows(candidate)
+    if (rows.length > 0) {
+      const total = sumNutritionRows(rows, datestr)
+      if (nutritionCount(total) > 0) return total
+    }
+  }
+
+  const rootAggregate = aggregateNutrition(root)
+  if (nutritionCount(rootAggregate) > 0) return rootAggregate
+
+  const rows = [
+    ...(rootRows.length > 0 ? rootRows : []),
+    ...detailRows(root),
+  ]
+  return sumNutritionRows(rows, datestr)
 }
 
 function normalizeBodyRecords(res: unknown, fallbackRecords: unknown[] = []): BodyRecord[] {
@@ -754,7 +865,7 @@ export async function previewXunjiDailySync(
     prisma.bodyRecord.findMany({ where: { userId, datestr } }),
   ])
 
-  const food = foodResult?.ok ? extractFoodSummary(foodResult.value.res, datestr) : {}
+  const food = foodResult?.ok ? extractXunjiFoodSummary(foodResult.value.res, datestr) : {}
   const body = bodyResult?.ok ? normalizeBodyRecords(bodyResult.value.res) : []
   const currentDaily = currentLog ? toClientDailyLog(currentLog) : ({ date: datestr } as DailyLog)
   const currentBodyMap = new Map(currentBody.map((record) => [record.type, record.value]))
