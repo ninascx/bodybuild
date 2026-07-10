@@ -44,8 +44,8 @@ export function WorkoutDesktopCommandRail({
   const summaryCardioCount = (selectedWorkout?.cardio ?? selectedTemplate?.cardio ?? []).length
 
   return (
-    <aside className="hidden lg:block lg:self-start">
-      <div className="sticky top-20 grid max-h-[calc(100vh-6rem)] gap-3 overflow-y-auto pr-1">
+    <aside className="hidden xl:block xl:self-start">
+      <div className="sticky top-20 grid gap-3">
         <Card className="p-3 shadow-none">
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">训练日期</p>
           <div className="mt-2">
@@ -70,7 +70,7 @@ export function WorkoutDesktopCommandRail({
 
           {restDay ? (
             <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
-              今日记录已标记为休息，训练页只保留同步和回看。
+              当日记录已标记为休息，训练页只保留导入和回看。
             </p>
           ) : (
             <div className="mt-3 grid gap-3">
@@ -106,7 +106,7 @@ export function WorkoutDesktopCommandRail({
                     填入所选
                   </Button>
                   <Button variant="secondary" className="w-full justify-center shadow-none" onClick={onApplyRecommended}>
-                    今日推荐
+                    当日推荐
                   </Button>
                 </div>
               ) : null}
@@ -115,7 +115,7 @@ export function WorkoutDesktopCommandRail({
         </Card>
 
         <Card className="p-3 shadow-none">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">今日建议</p>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">当日建议</p>
           <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-slate-50">{taskPlan.workoutActionLabel}</p>
           <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{taskPlan.workoutMessage}</p>
           {taskPlan.review.readiness === 'insufficient-data' && taskPlan.review.primaryDestination === 'workout' ? (

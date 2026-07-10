@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Field, TextArea } from '../ui'
-import type { DailyLog, DailyTarget } from '../../types'
+import type { BodyMetricType, BodyRecord, DailyLog, DailyTarget } from '../../types'
 import type { SyncState } from '../../lib/storage'
 import type { DailyFocusKey } from '../../lib/productFlow'
 import { getMotionScrollBehavior } from '../../lib/motion'
@@ -9,6 +9,7 @@ import { findDailyFocusTarget } from './dailyFocus'
 
 export type DailyCheckInPanelProps = {
   selectedLog: Partial<DailyLog> & { date: string }
+  selectedBodyRecords: BodyRecord[]
   selectedTarget: DailyTarget
   yesterdayLog: DailyLog | undefined
   calorieTarget: number | undefined
@@ -18,16 +19,17 @@ export type DailyCheckInPanelProps = {
   lastSyncedLabel: string
   showSaveStatus?: boolean
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
-  onQuickAction: (patch: Partial<DailyLog>) => void
+  onUpdateBodyRecord: (type: BodyMetricType, value: number | undefined) => void
+  onQuickAction: (patch: Partial<DailyLog>, feedback?: string) => void
   onCopyYesterday: () => void
   onFillTarget: () => void
+  hasCopyableYesterdayFields: boolean
   hasFillableTargetFields: boolean
   focusKey?: DailyFocusKey
-  priorityKeys?: DailyFocusKey[]
   onFocusConsumed?: () => void
 }
 
-function DailyNotesSection({
+export function DailyNotesSection({
   selectedLog,
   onUpdateDailyLog,
 }: {
@@ -66,11 +68,6 @@ export function DailyCheckInPanel(props: DailyCheckInPanelProps) {
   }, [focusKey, onFocusConsumed])
 
   return (
-    <div className="grid gap-3 sm:gap-4">
-      <div className="grid gap-3 sm:gap-4">
-        <DailyEssentialsForm {...props} />
-        <DailyNotesSection selectedLog={props.selectedLog} onUpdateDailyLog={props.onUpdateDailyLog} />
-      </div>
-    </div>
+    <DailyEssentialsForm {...props} />
   )
 }

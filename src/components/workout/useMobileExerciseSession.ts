@@ -147,9 +147,9 @@ export function useMobileExerciseSession({
       ? '确认完成'
       : '确认本组'
   const bottomPrimaryTitle = workoutMarkedComplete
-    ? '已同步到今日记录'
+    ? '已更新当日记录'
     : canConfirmWorkout
-      ? '所有组已填完，确认后同步到今日记录'
+      ? '所有组已填完，确认后更新当日记录'
       : currentSetComplete
         ? currentSetActionLabel
         : '先填写重量和次数'
@@ -157,7 +157,7 @@ export function useMobileExerciseSession({
   const bottomFinishLabel = workoutMarkedComplete ? '返回' : '结束'
   const bottomFinishTitle = workoutMarkedComplete
     ? '返回记录'
-    : '现在结束本次训练，已记录的组会保留，今日记录不会丢失'
+    : '现在结束本次训练，已记录的组会保留，当日记录不会丢失'
   const bottomNextLabel = hasAnotherIncompleteSet
     ? '下一组'
     : shouldSuggestNextExercise
@@ -165,9 +165,9 @@ export function useMobileExerciseSession({
       : '下一动作'
   const bottomNextDisabled = !hasAnotherIncompleteSet && !shouldSuggestNextExercise && currentExerciseIndex >= workout.exercises.length - 1
   const bottomCompletionHint = workoutMarkedComplete
-    ? '本次训练已同步到今日记录。'
+    ? '本次训练已更新当日记录。'
     : canConfirmWorkout
-      ? '所有组已填完，点确认完成即可同步到今日记录。'
+      ? '所有组已填完，点确认完成即可更新当日记录。'
       : shouldSuggestNextExercise
         ? '当前动作已完成，点下一动作继续。'
         : `${completionHint} 可随时结束训练。`

@@ -1,4 +1,4 @@
-import type { AriaRole, ReactNode, KeyboardEvent } from 'react'
+import { useRef, type AriaRole, type ReactNode, type KeyboardEvent } from 'react'
 import type { RecommendationTone } from '../types'
 import { cn } from '../lib/cn'
 import { Button, Card, Badge, Field, TextInput, TextArea, Select, Checkbox, DisclosurePanel, DropdownMenu, AnimatedMetric, UserAvatar } from './ui/index'
@@ -223,7 +223,7 @@ export function LoadingBlock({
 }) {
   return (
     <div
-      className={cn('rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900', className)}
+      className={cn('rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900', className)}
       aria-live="polite"
       aria-busy="true"
       role="status"
@@ -290,11 +290,14 @@ export function SegmentedControl<T extends string>({
   value,
   options,
   onChange,
+  ariaLabel,
 }: {
   value: T
   options: Array<{ value: T; label: ReactNode; disabled?: boolean }>
   onChange: (value: T) => void
+  ariaLabel: string
 }) {
+  const optionRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>, currentValue: T) => {
     const enabledOptions = options.filter((o) => !o.disabled)
     const currentIndex = enabledOptions.findIndex((o) => o.value === currentValue)
@@ -307,13 +310,16 @@ export function SegmentedControl<T extends string>({
       nextIndex = (currentIndex - 1 + enabledOptions.length) % enabledOptions.length
     }
     if (nextIndex !== undefined) {
-      onChange(enabledOptions[nextIndex].value)
+      const nextValue = enabledOptions[nextIndex].value
+      onChange(nextValue)
+      window.requestAnimationFrame(() => optionRefs.current[nextValue]?.focus())
     }
   }
 
   return (
     <div
       role="radiogroup"
+      aria-label={ariaLabel}
       className="inline-flex max-w-full flex-wrap rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] p-1 dark:border-slate-700 dark:bg-slate-900"
     >
       {options.map((option) => {
@@ -322,6 +328,9 @@ export function SegmentedControl<T extends string>({
           <button
             key={option.value}
             type="button"
+            ref={(element) => {
+              optionRefs.current[option.value] = element
+            }}
             role="radio"
             aria-checked={selected}
             disabled={option.disabled}
@@ -355,7 +364,7 @@ export function ProgressBar({ value, animated = true }: { value: number; animate
     >
       <div
         className={cn(
-          'h-full rounded-full bg-gradient-to-r from-teal-600 to-cyan-500 transition-[width] dark:from-teal-500 dark:to-cyan-400',
+          'h-full rounded-full bg-[var(--color-primary-600)] transition-[width] dark:bg-cyan-500',
           animated && 'duration-[var(--motion-rest)] ease-[var(--ease-out-smooth)]'
         )}
         style={{ width: `${bounded}%` }}

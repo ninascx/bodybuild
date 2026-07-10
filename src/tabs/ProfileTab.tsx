@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { CurrentUser } from '../lib/storage'
 import { fetchUserProfile, saveUserProfile } from '../lib/storage'
 import type { BodyRecord, UserPlanData, UserPreference } from '../types'
@@ -8,13 +8,10 @@ import {
   BasicProfileSection,
   LatestBodyMetricsSection,
   PersonalizationSection,
+  ProfileSaveFooter,
   ProfileGoalsSection,
 } from '../components/profile/ProfileFormSections'
 import { useProfileDraft } from '../components/profile/useProfileDraft'
-
-const XunjiDataSettings = lazy(() =>
-  import('../components/profile/XunjiDataSettings').then((module) => ({ default: module.XunjiDataSettings })),
-)
 
 type ProfileTabProps = {
   currentUser: CurrentUser
@@ -23,7 +20,7 @@ type ProfileTabProps = {
   bodyRecords: BodyRecord[]
   onSavePreference: (preference: UserPreference) => Promise<UserPreference>
   onSavePlan: (planData: UserPlanData) => Promise<UserPlanData>
-  onOpenBodyDate: (date: string) => void
+  onDirtyChange?: (dirty: boolean) => void
 }
 
 export function ProfileTab({
@@ -33,7 +30,7 @@ export function ProfileTab({
   bodyRecords,
   onSavePreference,
   onSavePlan,
-  onOpenBodyDate,
+  onDirtyChange,
 }: ProfileTabProps) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -65,6 +62,12 @@ export function ProfileTab({
   } = useProfileDraft({ preference, planData, onDraftChange: clearFeedback })
   const saveDisabled = saving || loading
   const saveLabel = saving ? '保存中...' : dirty ? '保存修改' : '保存资料'
+
+  useEffect(() => {
+    onDirtyChange?.(dirty)
+  }, [dirty, onDirtyChange])
+
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange])
 
   useEffect(() => {
     if (dirty) return
@@ -157,16 +160,23 @@ export function ProfileTab({
               onUpdateWeekendUpper={updateWeekendUpper}
               onToggleTrainingDay={toggleTrainingDay}
             />
-            <Suspense fallback={<LoadingBlock title="正在加载训记连接…" lines={2} />}>
-              <XunjiDataSettings
-                userId={currentUser.id}
-                bodyRecords={bodyRecords}
-                onOpenBodyDate={onOpenBodyDate}
-              />
-            </Suspense>
+            <ProfileSaveFooter
+              dirty={dirty}
+              saveDisabled={saveDisabled}
+              saveLabel={saveLabel}
+              onSave={() => void handleSave()}
+            />
           </div>
         )}
       </FormPanel>
+      {dirty ? (
+        <div className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 rounded-lg border border-[var(--surface-border-strong)] bg-[var(--surface-panel)] p-3 dark:border-slate-700 dark:bg-slate-900 sm:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">有未保存修改</p>
+            <Button onClick={() => void handleSave()} disabled={saveDisabled}>{saveLabel}</Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

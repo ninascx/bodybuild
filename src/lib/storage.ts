@@ -408,7 +408,7 @@ export async function syncXunjiTrainingDate(
       includeFullData: options.includeFullData === true,
     }),
   })
-  return readApiJson<XunjiSyncResult>(response, '同步训记训练数据失败')
+  return readApiJson<XunjiSyncResult>(response, '从训记导入训练数据失败')
 }
 
 export async function exportWorkoutTemplateToken(

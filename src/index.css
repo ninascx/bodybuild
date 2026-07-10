@@ -33,7 +33,7 @@
     Inter, Barlow, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   color: #0f172a;
-  background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
+  background: var(--surface-page);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -76,7 +76,7 @@ h1,
 .dark {
   color-scheme: dark;
   color: #e2e8f0;
-  background: linear-gradient(to bottom, #0f172a 0%, #020617 100%);
+  background: var(--surface-page);
 
   --surface-page: #020617;
   --surface-panel: #0f172a;

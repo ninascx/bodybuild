@@ -179,7 +179,7 @@ export function commitXunjiDailySync(input: {
     body: { status: 'success' | 'skipped'; count: number }
   }
 }> {
-  return post('/api/xunji/daily-sync/commit', { ...input, confirmed: true }, '同步训记每日数据失败')
+  return post('/api/xunji/daily-sync/commit', { ...input, confirmed: true }, '从训记导入每日数据失败')
 }
 
 export function previewXunjiBodyRecords<T = unknown>(payload: {

@@ -1,7 +1,8 @@
 import { BODY_METRIC_DEFINITIONS } from '../../lib/bodyMetrics'
 import type { BodyMetricType, BodyRecord } from '../../types'
-import { NumberField } from '../NumberField'
+import { QuickAdjustNumberField } from '../NumberField'
 import { Badge, Button, DisclosurePanel } from '../ui'
+import { getBodyRecordStatus } from './bodyRecordStatus'
 
 function recordsByType(records: BodyRecord[]): Map<BodyMetricType, BodyRecord> {
   return new Map(records.map((record) => [record.type, record]))
@@ -17,14 +18,7 @@ function bodySummary(records: BodyRecord[]): string {
     .join(' · ')
 }
 
-const commonMetricTypes: BodyMetricType[] = ['weight', 'bodyfat', 'weist']
-
-function recordStatus(record: BodyRecord): { label: string; tone: 'positive' | 'warning' | 'neutral' } {
-  if (record.origin === 'xunji') return { label: '已同步', tone: 'positive' }
-  if (record.origin?.startsWith('legacy')) return { label: '旧数据', tone: 'neutral' }
-  if (record.synced_at) return { label: '已修改，待同步', tone: 'warning' }
-  return { label: '仅本地', tone: 'neutral' }
-}
+const commonMetricTypes: BodyMetricType[] = ['bodyfat', 'weist']
 
 function MetricFields({
   records,
@@ -40,26 +34,24 @@ function MetricFields({
     <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
       {definitions.map((definition) => {
         const record = byType.get(definition.type)
-        const status = record ? recordStatus(record) : undefined
+        const status = record ? getBodyRecordStatus(record) : undefined
         return (
           <div
             key={definition.type}
-            data-daily-focus={definition.type === 'weight' ? 'weight' : undefined}
             className="min-w-0 border-b border-[var(--surface-border)] pb-3 last:border-b-0 dark:border-slate-700 sm:[&:nth-last-child(-n+2)]:border-b-0"
           >
-            <NumberField
+            <QuickAdjustNumberField
+              className="h-11 min-w-[7.5rem] text-base tabular-nums"
               label={`${definition.label} ${definition.unit}`}
               value={record?.value}
-              step="0.1"
+              inputStep="0.1"
               kind="decimal"
               range={{ min: definition.min, max: definition.max }}
+              quickStep={0.1}
+              quickStepLabel="0.1"
+              footerLeading={status ? <Badge tone={status.tone}>{status.label}</Badge> : undefined}
               onChange={(value) => onChange(definition.type, value)}
             />
-            {status ? (
-              <div className="mt-2 flex justify-end">
-                <Badge tone={status.tone}>{status.label}</Badge>
-              </div>
-            ) : null}
           </div>
         )
       })}
@@ -76,7 +68,9 @@ function BodyMetricFields({
 }) {
   const common = BODY_METRIC_DEFINITIONS.filter((item) => commonMetricTypes.includes(item.type))
   const upper = BODY_METRIC_DEFINITIONS.filter(
-    (item) => item.group === 'upper' || (item.group === 'basic' && !commonMetricTypes.includes(item.type)),
+    (item) => item.type !== 'weight' && (
+      item.group === 'upper' || (item.group === 'basic' && !commonMetricTypes.includes(item.type))
+    ),
   )
   const lower = BODY_METRIC_DEFINITIONS.filter((item) => item.group === 'lower')
   return (
@@ -128,8 +122,4 @@ export function DailyMeasurementCard({
       <BodyMetricFields records={records} onChange={onChange} />
     </section>
   )
-}
-
-export function MeasurementPanel(props: Parameters<typeof DailyMeasurementCard>[0]) {
-  return <DailyMeasurementCard {...props} />
 }

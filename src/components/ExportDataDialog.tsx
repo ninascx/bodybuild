@@ -346,7 +346,7 @@ export function ExportDataDialog({
               </p>
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
-              <SegmentedControl value={options.rangePreset} options={presets} onChange={setPreset} />
+              <SegmentedControl ariaLabel="导出日期范围" value={options.rangePreset} options={presets} onChange={setPreset} />
             </div>
             {options.rangePreset === 'custom' ? (
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -436,6 +436,7 @@ export function ExportDataDialog({
             <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">输出</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <SegmentedControl
+                ariaLabel="导出格式"
                 value={activeOutputFormat}
                 options={exportFormats.map((format) => ({
                   ...format,

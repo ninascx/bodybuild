@@ -11,6 +11,7 @@ import { WorkoutDesktopCommandRail } from '../components/workout/WorkoutDesktopC
 import { WorkoutTemplateManager } from '../components/workout/WorkoutTemplateManager'
 import { TrainingHeader, TrainingTimerFloat } from '../components/workout/TrainingHeader'
 import { WorkoutDesktopSessionRail } from '../components/workout/WorkoutDesktopSessionRail'
+import { WorkoutSessionSummaryBar } from '../components/workout/WorkoutSessionSummaryBar'
 import { WorkoutPlanPreview } from '../components/workout/WorkoutPlanPreview'
 import { WorkoutRecordToolbar } from '../components/workout/WorkoutRecordToolbar'
 import { WorkoutMobileActionPanel, WorkoutMoreActionsPanel } from '../components/workout/WorkoutSessionActions'
@@ -200,7 +201,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
     <div className={`grid gap-4 ${effectiveTrainingMode ? 'pb-44 md:pb-56 lg:pb-0' : ''}`}>
       {effectiveTrainingMode ? (
         <>
-          <div className="hidden md:block lg:hidden">
+          <div className="hidden md:block xl:hidden">
             <TrainingHeader
               workoutName={props.selectedWorkout?.workoutName ?? props.selectedTemplate.name}
               workoutSummary={props.workoutSummary}
@@ -208,7 +209,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
               onExitTrainingMode={() => setTrainingMode(false)}
             />
           </div>
-          <div className="hidden md:block lg:hidden">
+          <div className="hidden md:block xl:hidden">
             <TrainingTimerFloat
               elapsedSeconds={elapsedSeconds}
               restSeconds={restSeconds}
@@ -261,7 +262,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
         </>
       ) : (
         <>
-          <div className="lg:hidden">
+          <div className="xl:hidden">
             <WorkoutControlPanel
               selectedDate={props.selectedDate}
               today={props.today}
@@ -294,7 +295,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
               onSyncFromXunji={props.onSyncFromXunji}
             />
           </div>
-          <div className="hidden md:block lg:hidden">
+          <div className="hidden md:block xl:hidden">
             <WorkoutStatusOverview
               restDay={props.restDay}
               selectedWorkout={props.selectedWorkout}
@@ -310,7 +311,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
         </>
       )}
 
-      <section className="hidden gap-4 lg:grid lg:grid-cols-[17.5rem_minmax(0,1fr)_20rem] lg:items-start">
+      <section className="hidden gap-4 xl:grid xl:grid-cols-[17.5rem_minmax(32rem,1fr)] xl:items-start 2xl:grid-cols-[17.5rem_minmax(32rem,1fr)_20rem]">
         <WorkoutDesktopCommandRail
           selectedDate={props.selectedDate}
           today={props.today}
@@ -328,6 +329,23 @@ export function WorkoutTab(props: WorkoutTabProps) {
         />
 
         <main className="min-w-0">
+          <WorkoutSessionSummaryBar
+            restDay={props.restDay}
+            selectedWorkout={props.selectedWorkout}
+            workoutSummary={props.workoutSummary}
+            elapsedSeconds={elapsedSeconds}
+            restSeconds={restSeconds}
+            restActive={restActive}
+            restDefaultDuration={restDefaultDuration}
+            remainingSetCount={remainingSetCount}
+            primaryLabel={statusPrimaryLabel ?? (props.selectedWorkout ? '查看训练' : '开始训练')}
+            primaryDisabled={!props.selectedWorkout && !canStartSelectedTemplate}
+            xunjiSyncPending={props.xunjiSyncPending}
+            onPrimaryAction={handleDesktopPrimaryAction}
+            onStartRest={handleStartRest}
+            onSkipRest={handleSkipRest}
+            onSyncFromXunji={props.onSyncFromXunji}
+          />
           {props.restDay ? (
             <EmptyState
               title="今天休息"
@@ -465,7 +483,7 @@ export function WorkoutTab(props: WorkoutTabProps) {
             }}
           />
         ) : null}
-      <section className={`gap-4 ${props.selectedWorkout ? 'hidden md:grid lg:hidden' : 'hidden'}`}>
+      <section className={`gap-4 ${props.selectedWorkout ? 'hidden md:grid xl:hidden' : 'hidden'}`}>
         <div className="min-w-0">
           <WorkoutRecordToolbar
             badgeLabel={workoutRecordBadge.label}

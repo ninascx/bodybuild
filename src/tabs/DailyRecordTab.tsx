@@ -1,14 +1,16 @@
-import { Badge, Card, DisclosurePanel } from '../components/ui'
+import { Badge, Button, Card, DisclosurePanel } from '../components/ui'
 import { DateNavigator } from '../components/DateNavigator'
 import { MiniCalendar } from '../components/MiniCalendar'
 import { QuickRecordSection } from '../components/QuickRecordSection'
+import { DailyNotesSection } from '../components/daily/DailyCheckInPanel'
 import { DailyRecordDesktopAside } from '../components/daily/DailyRecordDesktopAside'
 import { DailyRecordToolbar } from '../components/daily/DailyRecordToolbar'
 import { DailyCalendarPanel } from '../components/daily/DailyRecordPanels'
+import { buildCopyYesterdayPatch } from '../components/daily/dailyRecordActions'
 import { getDailySaveLabel } from '../components/daily/dailyRecordStatus'
 import { addDays } from '../lib/dates'
 import { useSwipe } from '../hooks/useSwipe'
-import { lazy, Suspense, useMemo, useState, type ComponentProps } from 'react'
+import { lazy, Suspense, useMemo } from 'react'
 import type { BodyMetricType, BodyRecord, DailyLog, DailyTarget, WorkoutLog } from '../types'
 import type { SyncState } from '../lib/storage'
 import type { DailyFocusKey } from '../lib/productFlow'
@@ -16,22 +18,10 @@ import type { DailyFocusKey } from '../lib/productFlow'
 const DailyMeasurementCard = lazy(() =>
   import('../components/daily/DailyBodyPanels').then((module) => ({ default: module.DailyMeasurementCard })),
 )
-const MeasurementPanel = lazy(() =>
-  import('../components/daily/DailyBodyPanels').then((module) => ({ default: module.MeasurementPanel })),
-)
 
 function targetCalories(target: DailyTarget): number | undefined {
   if (target.calories !== undefined) return target.calories
   return target.calorieRange?.[1]
-}
-
-const visibleDailyFieldKeys: DailyFocusKey[] = ['weight', 'calories', 'protein', 'steps', 'sleep', 'fatigue']
-const defaultDailyPriorityKeys: DailyFocusKey[] = ['weight', 'calories', 'protein']
-
-function normalizePriorityKeys(priorityKeys: DailyFocusKey[] | undefined, focusKey: DailyFocusKey | undefined) {
-  const keys = [...(focusKey ? [focusKey] : []), ...(priorityKeys ?? [])]
-  const normalized = keys.filter((key, index) => visibleDailyFieldKeys.includes(key) && keys.indexOf(key) === index)
-  return normalized.length > 0 ? normalized : defaultDailyPriorityKeys
 }
 
 function syncTone(syncState: SyncState, savePending: boolean): 'positive' | 'warning' | 'danger' {
@@ -48,7 +38,9 @@ function DailyRecordDesktopDateRail({
   syncState,
   savePending,
   lastSyncedLabel,
+  xunjiSyncPending,
   onDateChange,
+  onSyncFromXunji,
 }: {
   selectedDate: string
   today: string
@@ -57,11 +49,13 @@ function DailyRecordDesktopDateRail({
   syncState: SyncState
   savePending: boolean
   lastSyncedLabel: string
+  xunjiSyncPending: boolean
   onDateChange: (date: string) => void
+  onSyncFromXunji: () => void
 }) {
   return (
-    <aside className="hidden lg:block lg:self-start">
-      <div className="sticky top-20 grid max-h-[calc(100vh-6rem)] gap-3 overflow-y-auto pr-1">
+    <aside className="hidden self-start xl:block">
+      <div className="sticky top-20 grid gap-3">
         <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-3 dark:border-slate-800 dark:bg-slate-900">
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">记录日期</p>
           <div className="mt-2">
@@ -69,13 +63,23 @@ function DailyRecordDesktopDateRail({
           </div>
           <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--surface-border)] pt-3 dark:border-slate-700">
             <span className="text-xs text-slate-500 dark:text-slate-400">保存状态</span>
-            <Badge tone={syncTone(syncState, savePending)} className="justify-center">
-              {getDailySaveLabel(syncState, savePending, lastSyncedLabel)}
-            </Badge>
+            <span role="status" aria-live="polite" aria-atomic="true">
+              <Badge tone={syncTone(syncState, savePending)} className="justify-center">
+                {getDailySaveLabel(syncState, savePending, lastSyncedLabel)}
+              </Badge>
+            </span>
           </div>
           {syncState === 'offline' ? (
             <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300">将在联网后自动同步</p>
           ) : null}
+          <Button
+            variant="secondary"
+            className="mt-3 w-full shadow-none"
+            loading={xunjiSyncPending}
+            onClick={onSyncFromXunji}
+          >
+            从训记导入
+          </Button>
         </section>
 
         <MiniCalendar
@@ -89,14 +93,6 @@ function DailyRecordDesktopDateRail({
       </div>
     </aside>
   )
-}
-
-type QuickRecordSectionProps = ComponentProps<typeof QuickRecordSection>
-
-function StableQuickRecordSection(props: QuickRecordSectionProps) {
-  const [stablePriorityKeys] = useState(() => normalizePriorityKeys(props.priorityKeys, props.focusKey))
-
-  return <QuickRecordSection {...props} priorityKeys={stablePriorityKeys} />
 }
 
 type DailyRecordTabProps = {
@@ -117,11 +113,10 @@ type DailyRecordTabProps = {
   onDateChange: (date: string) => void
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
   onUpdateBodyRecord: (type: BodyMetricType, value: number | undefined) => void
-  onQuickAction: (patch: Partial<DailyLog>) => void
+  onQuickAction: (patch: Partial<DailyLog>, feedback?: string) => void
   onSyncFromXunji: () => void
   onSyncBodyToXunji: () => void
   focusKey?: DailyFocusKey
-  priorityKeys?: DailyFocusKey[]
   onFocusConsumed?: () => void
 }
 
@@ -146,23 +141,21 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
   )
 
   const copyYesterdayQuickFields = () => {
-    if (!yesterdayLog) return
-    props.onQuickAction({
-      calories: yesterdayLog.calories,
-      protein: yesterdayLog.protein,
-      steps: yesterdayLog.steps,
-      sleepHours: yesterdayLog.sleepHours,
-      fatigueScore: yesterdayLog.fatigueScore,
-    })
+    const result = buildCopyYesterdayPatch(props.selectedLog, yesterdayLog)
+    if (result.filledCount === 0) return
+    const preservedMessage = result.preservedCount > 0 ? `，保留 ${result.preservedCount} 项现有值` : ''
+    props.onQuickAction(result.patch, `已补入 ${result.filledCount} 项昨天记录${preservedMessage}。`)
   }
+  const copyYesterdayPreview = buildCopyYesterdayPatch(props.selectedLog, yesterdayLog)
   const fillTargetQuickFields = () => {
     const patch: Partial<DailyLog> = {}
     if (props.selectedLog.calories === undefined && calorieTarget !== undefined) patch.calories = calorieTarget
     if (props.selectedLog.protein === undefined) patch.protein = props.selectedTarget.protein
     if (props.selectedLog.steps === undefined) patch.steps = props.selectedTarget.stepTarget
     if (props.selectedLog.sleepHours === undefined) patch.sleepHours = props.sleepFloorHours
-    if (Object.keys(patch).length === 0) return
-    props.onQuickAction(patch)
+    const filledCount = Object.keys(patch).length
+    if (filledCount === 0) return
+    props.onQuickAction(patch, `已填入 ${filledCount} 项目标值。`)
   }
   const hasFillableTargetQuickFields =
     (props.selectedLog.calories === undefined && calorieTarget !== undefined) ||
@@ -171,7 +164,7 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
     props.selectedLog.sleepHours === undefined
   return (
     <Card {...swipeHandlers} className="space-y-3 border-0 bg-transparent p-0 shadow-none dark:bg-transparent sm:space-y-4 md:border-[var(--surface-border)] md:bg-[var(--surface-panel)] md:p-4 md:dark:border-slate-800 md:dark:bg-slate-900">
-      <div className="lg:hidden">
+      <div className="xl:hidden">
         <DailyRecordToolbar
           selectedDate={props.selectedDate}
           today={props.today}
@@ -184,7 +177,7 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         />
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[17.5rem_minmax(0,1fr)_19rem] lg:items-start">
+      <div className="grid gap-3 xl:grid-cols-[17.5rem_minmax(0,1fr)] xl:items-start 2xl:grid-cols-[17.5rem_minmax(32rem,1fr)_19rem]">
         <DailyRecordDesktopDateRail
           selectedDate={props.selectedDate}
           today={props.today}
@@ -193,13 +186,16 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
           syncState={props.syncState}
           savePending={props.savePending}
           lastSyncedLabel={props.lastSyncedLabel}
+          xunjiSyncPending={props.xunjiSyncPending}
           onDateChange={props.onDateChange}
+          onSyncFromXunji={props.onSyncFromXunji}
         />
 
         <main className="grid min-w-0 gap-3">
-          <StableQuickRecordSection
+          <QuickRecordSection
             key={props.selectedDate}
             selectedLog={props.selectedLog}
+            selectedBodyRecords={props.selectedBodyRecords}
             selectedTarget={props.selectedTarget}
             yesterdayLog={yesterdayLog}
             calorieTarget={calorieTarget}
@@ -209,23 +205,28 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
             lastSyncedLabel={props.lastSyncedLabel}
             showSaveStatus={false}
             onUpdateDailyLog={props.onUpdateDailyLog}
+            onUpdateBodyRecord={props.onUpdateBodyRecord}
             onQuickAction={props.onQuickAction}
             onCopyYesterday={copyYesterdayQuickFields}
             onFillTarget={fillTargetQuickFields}
+            hasCopyableYesterdayFields={copyYesterdayPreview.filledCount > 0}
             hasFillableTargetFields={hasFillableTargetQuickFields}
             focusKey={props.focusKey}
-            priorityKeys={props.priorityKeys}
             onFocusConsumed={props.onFocusConsumed}
           />
 
           <Suspense fallback={null}>
             <DailyMeasurementCard
-              className="hidden lg:block"
               records={props.selectedBodyRecords}
               onChange={props.onUpdateBodyRecord}
               onSync={props.onSyncBodyToXunji}
             />
           </Suspense>
+
+          <DailyNotesSection
+            selectedLog={props.selectedLog}
+            onUpdateDailyLog={props.onUpdateDailyLog}
+          />
         </main>
 
         <DailyRecordDesktopAside
@@ -234,25 +235,12 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
           selectedBodyRecords={props.selectedBodyRecords}
           bodyRecords={props.bodyRecords}
           previousLogs={previousLogs}
-          dailyLogs={props.dailyLogs}
           workoutLogs={props.workoutLogs}
-          xunjiSyncPending={props.xunjiSyncPending}
           onSelectDate={props.onDateChange}
-          onSyncFromXunji={props.onSyncFromXunji}
-          onUpdateDailyLog={props.onUpdateDailyLog}
         />
       </div>
 
-      <Suspense fallback={null}>
-        <MeasurementPanel
-          className="lg:hidden"
-          records={props.selectedBodyRecords}
-          onChange={props.onUpdateBodyRecord}
-          onSync={props.onSyncBodyToXunji}
-        />
-      </Suspense>
-
-      <DisclosurePanel className="lg:hidden" title="最近 6 周日历" contentClassName="grid gap-3">
+      <DisclosurePanel className="xl:hidden" title="最近 6 周日历" contentClassName="grid gap-3">
         <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">查看历史记录或切换到其他日期。</p>
         <DailyCalendarPanel
           selectedDate={props.selectedDate}

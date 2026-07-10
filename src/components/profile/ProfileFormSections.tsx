@@ -51,7 +51,7 @@ export function LatestBodyMetricsSection({ records }: { records: BodyRecord[] })
               <p className="mt-1 text-lg font-semibold tabular-nums text-slate-950 dark:text-slate-50">
                 {record ? `${record.value}${record.unit}` : '未记录'}
               </p>
-              <p className="mt-1 font-mono text-[10px] text-slate-400">{record?.datestr ?? type}</p>
+              <p className="mt-1 text-[10px] text-slate-400">{record?.datestr ?? '暂无日期'}</p>
             </div>
           )
         })}
@@ -139,7 +139,7 @@ export function PersonalizationSection({
         </div>
       </FormSection>
 
-      <FormSection title="训练日配置" description="选择每周默认训练日，Today 和训练入口会按这里判断当天任务。" actions={<span className="text-xs font-medium text-slate-500 dark:text-slate-400">{trainingDayCount} 个训练日</span>}>
+      <FormSection title="训练日配置" description="选择每周默认训练日，记录页和训练入口会按这里判断当天任务。" actions={<span className="text-xs font-medium text-slate-500 dark:text-slate-400">{trainingDayCount} 个训练日</span>}>
         <div className="flex flex-wrap gap-2">
           {profileDays.map((day) => {
             const active = (profile.trainingDays ?? []).includes(day)

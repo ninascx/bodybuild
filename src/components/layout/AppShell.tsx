@@ -92,17 +92,17 @@ export function AppShell<T extends string>({
         {/* Main Content Area */}
         <div className={`flex-1 flex min-w-0 ${immersiveMode ? '' : 'lg:ml-0'}`}>
           <div className={`flex-1 flex flex-col min-w-0`}>
-            <div className={`mx-auto w-full flex flex-col px-3 pt-2 sm:px-6 sm:pt-4 lg:px-8 ${immersiveMode ? 'pb-4' : 'pb-56 md:pb-4'} ${activeTab === 'analytics' ? 'max-w-[1600px]' : activeTab === 'settings' ? 'max-w-5xl' : 'max-w-7xl'}`}>
+            <div className={`mx-auto w-full flex flex-col px-3 pt-2 sm:px-6 sm:pt-4 lg:px-8 ${immersiveMode ? 'pb-4' : 'pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-4'} ${activeTab === 'analytics' ? 'max-w-[1600px]' : activeTab === 'settings' ? 'max-w-5xl' : 'max-w-7xl'}`}>
             {!immersiveMode ? (
               <>
                 {/* Mobile/Tablet Header */}
-                <header className="mb-2 border-b border-[var(--surface-border)] pb-1.5 shadow-sm dark:border-slate-800 sm:pb-2 lg:hidden">
+                <header className="mb-2 border-b border-[var(--surface-border)] pb-1.5 dark:border-slate-800 sm:pb-2 lg:hidden">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                       <img
                         src="/favicon.png"
                         alt="LiftLog"
-                        className="h-7 w-7 shrink-0 rounded-md shadow-md transition-transform duration-300 hover:scale-110 hover:rotate-3 sm:h-8 sm:w-8"
+                        className="h-7 w-7 shrink-0 rounded-md sm:h-8 sm:w-8"
                         width={32}
                         height={32}
                       />
@@ -151,7 +151,7 @@ export function AppShell<T extends string>({
                 {/* Desktop Header (Simplified) */}
                 <header className="mb-4 hidden lg:block">
                   <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-50">
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-slate-50">
                       {activeLabel}
                     </h1>
                     <DropdownMenu

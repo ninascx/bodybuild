@@ -76,17 +76,17 @@ export function DesktopSidebar<T extends string>({
   return (
     <aside
       className={cn(
-        'hidden lg:flex lg:flex-col border-r border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/60 backdrop-blur-xl transition-all duration-300',
+        'hidden lg:flex lg:flex-col border-r border-slate-200 bg-[var(--surface-panel)] dark:border-slate-800 dark:bg-slate-950 transition-[width] duration-200',
         collapsed ? 'lg:w-16' : 'lg:w-60'
       )}
     >
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 p-4">
         {collapsed ? (
-          <img src="/favicon.png" alt="LiftLog" className="h-8 w-8 rounded-md shadow-md" />
+          <img src="/favicon.png" alt="LiftLog" className="h-8 w-8 rounded-md" />
         ) : (
           <>
-            <img src="/favicon.png" alt="LiftLog" className="h-8 w-8 rounded-md shadow-md" />
+            <img src="/favicon.png" alt="LiftLog" className="h-8 w-8 rounded-md" />
             <h1 className="flex-1 truncate text-lg font-bold tracking-tight text-slate-950 dark:text-slate-50">
               LiftLog
             </h1>
@@ -110,7 +110,7 @@ export function DesktopSidebar<T extends string>({
       ) : null}
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-2">
+      <nav className="flex-1 p-2">
         <div className="space-y-1">
           {tabs.map((tab) => {
             const active = activeTab === tab.key
@@ -124,7 +124,7 @@ export function DesktopSidebar<T extends string>({
                   'w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all',
                   collapsed ? 'justify-center px-2' : '',
                   active
-                    ? 'bg-[var(--color-primary-700)] text-white shadow-md hover:bg-[var(--color-primary-600)] dark:bg-cyan-600'
+                    ? 'bg-[var(--color-primary-700)] text-white hover:bg-[var(--color-primary-600)] dark:bg-cyan-600'
                     : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800/80'
                 )}
               >
@@ -159,7 +159,7 @@ export function DesktopSidebar<T extends string>({
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="mt-2 w-full rounded-md py-1.5 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+          className="mt-2 min-h-11 w-full rounded-md py-1.5 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)] dark:hover:bg-slate-800 dark:hover:text-slate-300"
           title={collapsed ? '展开侧边栏' : '折叠侧边栏'}
         >
           {collapsed ? '»' : '«'}

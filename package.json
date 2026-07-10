@@ -15,6 +15,8 @@
     "prod:check": "node scripts/check-prod-start.mjs",
     "health:check": "tsx scripts/check-app-health.ts",
     "body:check": "tsx scripts/check-body-records.ts",
+    "daily:ux-check": "tsx scripts/check-daily-record-ux.ts",
+    "workout:ux-check": "tsx scripts/check-workout-ux.ts",
     "xunji:ux-check": "tsx scripts/check-xunji-ux.ts",
     "preview": "vite preview",
     "start": "node dist-server/index.js",

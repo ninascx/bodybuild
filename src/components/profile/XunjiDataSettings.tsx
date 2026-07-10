@@ -22,24 +22,28 @@ const CONNECTIONS: Array<{
   label: string
   description: string
   placeholder: string
+  direction: string
 }> = [
   {
     kind: 'training',
     label: '训练数据 Key',
     description: '从训记读取当天训练记录。',
     placeholder: '粘贴训练 Open API Key',
+    direction: '从训记导入',
   },
   {
     kind: 'food',
     label: '饮食数据 Key',
     description: '只读取当天热量和三大营养素汇总。',
     placeholder: 'xjfood_…',
+    direction: '从训记导入',
   },
   {
     kind: 'body',
     label: '身体数据 Key',
-    description: '读取身体数据，并在确认后写入本地待同步记录。',
+    description: '可从训记读取；本地记录在预检和确认后可同步到训记。',
     placeholder: 'xjbody_…',
+    direction: '双向（写入需确认）',
   },
 ]
 
@@ -72,6 +76,7 @@ export function XunjiDataSettings({
   const [feedback, setFeedback] = useState<Feedback>({})
   const [loading, setLoading] = useState(true)
   const [savingKind, setSavingKind] = useState<XunjiConnectionKind | null>(null)
+  const [expandedKind, setExpandedKind] = useState<XunjiConnectionKind | null>(null)
 
   const pendingDates = useMemo(() => {
     const counts = new Map<string, number>()
@@ -120,6 +125,7 @@ export function XunjiDataSettings({
       const next = await validateAndSaveXunjiConnection(kind, value)
       setConnections(next)
       setDrafts((current) => ({ ...current, [kind]: '' }))
+      setExpandedKind(null)
       setFeedback((current) => ({
         ...current,
         [kind]: { tone: 'positive', message: `${label}已验证并保存。` },
@@ -175,7 +181,7 @@ export function XunjiDataSettings({
         description="三类 Key 相互独立。饮食只读取汇总；身体数据只在预检并确认后写入。"
       >
         <div className="divide-y divide-[var(--surface-border)] dark:divide-slate-700">
-          {CONNECTIONS.map(({ kind, label, description, placeholder }) => {
+          {CONNECTIONS.map(({ kind, label, description, placeholder, direction }) => {
             const status = connections?.[kind]
             const rowFeedback = feedback[kind]
             return (
@@ -188,6 +194,7 @@ export function XunjiDataSettings({
                         {status?.configured ? '已配置' : '未配置'}
                       </Badge>
                       {status?.source === 'environment' ? <Badge tone="neutral">服务器环境</Badge> : null}
+                      <Badge tone="neutral">{direction}</Badge>
                     </div>
                     <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{description}</p>
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -195,9 +202,28 @@ export function XunjiDataSettings({
                       {formatValidatedAt(status?.validatedAt)}
                     </p>
                   </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setExpandedKind((current) => current === kind ? null : kind)}
+                      aria-expanded={expandedKind === kind}
+                    >
+                      {expandedKind === kind ? '收起' : status?.configured ? '替换 Key' : '配置 Key'}
+                    </Button>
+                    {status?.source === 'account' ? (
+                      <Button
+                        variant="secondary"
+                        onClick={() => void remove(kind, label)}
+                        disabled={loading || savingKind !== null}
+                      >
+                        移除 Key
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
 
-                <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                {expandedKind === kind ? (
+                <div className="grid gap-3 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end dark:border-slate-700 dark:bg-slate-800/60">
                   <Field label={`替换或配置${label}`}>
                     <TextInput
                       type="password"
@@ -218,17 +244,9 @@ export function XunjiDataSettings({
                     >
                       验证并保存{label}
                     </Button>
-                    {status?.source === 'account' ? (
-                      <Button
-                        variant="secondary"
-                        onClick={() => void remove(kind, label)}
-                        disabled={loading || savingKind !== null}
-                      >
-                        移除{label}
-                      </Button>
-                    ) : null}
                   </div>
                 </div>
+                ) : null}
                 {rowFeedback ? (
                   <StatusMessage tone={rowFeedback.tone} announce>{rowFeedback.message}</StatusMessage>
                 ) : null}

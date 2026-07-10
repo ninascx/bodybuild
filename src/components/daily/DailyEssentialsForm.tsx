@@ -1,16 +1,19 @@
-import type { CSSProperties } from 'react'
-import { useEffect } from 'react'
-import type { DailyLog, DailyTarget } from '../../types'
+import type { CSSProperties, ReactNode } from 'react'
+import { useEffect, useState } from 'react'
+import type { BodyMetricType, BodyRecord, DailyLog, DailyTarget } from '../../types'
 import type { SyncState } from '../../lib/storage'
 import type { DailyFocusKey } from '../../lib/productFlow'
-import { Button } from '../ui'
-import { NumberField, type NumberRange } from '../NumberField'
+import { bodyMetricDefinition } from '../../lib/bodyMetrics'
+import { Badge, Button, DisclosurePanel } from '../ui'
+import { QuickAdjustNumberField, type NumberRange } from '../NumberField'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
-import { findDailyFocusTarget } from './dailyFocus'
 import { getDailySaveLabel } from './dailyRecordStatus'
+import { getBodyRecordStatus } from './bodyRecordStatus'
+import { keyRecordCompletion } from './dailyRecordActions'
 
 export type DailyEssentialsFormProps = {
   selectedLog: Partial<DailyLog> & { date: string }
+  selectedBodyRecords: BodyRecord[]
   selectedTarget: DailyTarget
   yesterdayLog: DailyLog | undefined
   calorieTarget: number | undefined
@@ -20,221 +23,232 @@ export type DailyEssentialsFormProps = {
   lastSyncedLabel: string
   showSaveStatus?: boolean
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
-  onQuickAction: (patch: Partial<DailyLog>) => void
+  onUpdateBodyRecord: (type: BodyMetricType, value: number | undefined) => void
+  onQuickAction: (patch: Partial<DailyLog>, feedback?: string) => void
   onCopyYesterday: () => void
   onFillTarget: () => void
+  hasCopyableYesterdayFields: boolean
   hasFillableTargetFields: boolean
   focusKey?: DailyFocusKey
-  priorityKeys?: DailyFocusKey[]
 }
 
-const quickFieldClass = 'h-11 text-base'
+const quickFieldClass = 'h-11 min-w-[7.5rem] text-base tabular-nums'
+const supplementaryKeys: DailyFocusKey[] = ['steps', 'sleep', 'fatigue']
 
-type EssentialField = {
+type RecordField = {
   key: DailyFocusKey
   label: string
   value?: number
-  step: string
+  inputStep: string
   kind: 'decimal' | 'integer'
   range: NumberRange
   quickStep: number
   quickStepLabel: string
-  patch: (value: number | undefined) => Partial<DailyLog>
+  onChange: (value: number | undefined) => void
+  footerLeading?: ReactNode
+  className?: string
 }
 
-function clampValue(value: number, range: NumberRange): number {
-  if (range.min !== undefined && value < range.min) return range.min
-  if (range.max !== undefined && value > range.max) return range.max
-  return value
-}
-
-function normalizeAdjustedValue(value: number, field: EssentialField): number {
-  const adjusted = field.kind === 'integer' ? Math.round(value) : Math.round(value * 10) / 10
-  return clampValue(adjusted, field.range)
-}
-
-function QuickAdjustButtons({
-  label,
-  stepLabel,
-  disabled,
-  onDecrease,
-  onIncrease,
-}: {
-  label: string
-  stepLabel: string
-  disabled: boolean
-  onDecrease: () => void
-  onIncrease: () => void
-}) {
-  const buttonClass =
-    'h-11 min-w-11 border-l border-[var(--surface-border)] px-2 text-sm font-semibold leading-none text-slate-600 transition-colors first:border-l-0 hover:bg-white hover:text-[var(--color-primary-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-cyan-100 dark:focus-visible:ring-cyan-500/40 dark:disabled:text-slate-600'
-
-  return (
-    <div className="inline-flex shrink-0 overflow-hidden rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] dark:border-slate-700 dark:bg-slate-900" aria-label={`${label} 快速微调`}>
-      <button
-        type="button"
-        className={buttonClass}
-        disabled={disabled}
-        title={disabled ? '先输入数值后可微调' : `减少 ${stepLabel}`}
-        aria-label={`${label} 减少 ${stepLabel}`}
-        onClick={onDecrease}
-      >
-        -{stepLabel}
-      </button>
-      <button
-        type="button"
-        className={buttonClass}
-        disabled={disabled}
-        title={disabled ? '先输入数值后可微调' : `增加 ${stepLabel}`}
-        aria-label={`${label} 增加 ${stepLabel}`}
-        onClick={onIncrease}
-      >
-        +
-      </button>
-    </div>
-  )
+function fieldFocusClass(focused: boolean): string {
+  return focused
+    ? 'rounded-lg border border-[var(--color-primary-100)] bg-[var(--surface-selected)] p-1 dark:border-cyan-700/40 dark:bg-cyan-950/20'
+    : ''
 }
 
 export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
-  const allFields: EssentialField[] = [
-    { key: 'calories', label: '热量 kcal', value: props.selectedLog.calories, step: '1', kind: 'integer', range: { min: 0, max: 10000, allowZero: true }, quickStep: 100, quickStepLabel: '100', patch: (value: number | undefined) => ({ calories: value }) },
-    { key: 'protein', label: '蛋白质 g', value: props.selectedLog.protein, step: '1', kind: 'integer', range: { min: 0, max: 500, allowZero: true }, quickStep: 10, quickStepLabel: '10', patch: (value: number | undefined) => ({ protein: value }) },
-    { key: 'steps', label: '步数', value: props.selectedLog.steps, step: '1', kind: 'integer', range: { min: 0, max: 100000, allowZero: true }, quickStep: 1000, quickStepLabel: '1k', patch: (value: number | undefined) => ({ steps: value }) },
-    { key: 'sleep', label: '睡眠 h', value: props.selectedLog.sleepHours, step: '0.1', kind: 'decimal', range: { min: 0, max: 24, allowZero: true }, quickStep: 0.5, quickStepLabel: '0.5', patch: (value: number | undefined) => ({ sleepHours: value }) },
-    { key: 'fatigue', label: `疲劳 ≤${props.fatigueThreshold}`, value: props.selectedLog.fatigueScore, step: '1', kind: 'integer', range: { min: 0, max: 10, allowZero: true }, quickStep: 1, quickStepLabel: '1', patch: (value: number | undefined) => ({ fatigueScore: value }) },
-  ]
-
-  const priorityFieldKeys = props.priorityKeys || ['calories', 'protein']
-  const essentialFields = priorityFieldKeys.map(key => allFields.find(f => f.key === key)).filter(Boolean) as EssentialField[]
-  const supplementaryFields = allFields.filter(f => !priorityFieldKeys.includes(f.key))
+  const weightRecord = props.selectedBodyRecords.find((record) => record.type === 'weight')
+  const weightDefinition = bodyMetricDefinition('weight')
+  const weightStatus = weightRecord ? getBodyRecordStatus(weightRecord) : undefined
+  const completion = keyRecordCompletion({
+    weight: weightRecord?.value,
+    calories: props.selectedLog.calories,
+    protein: props.selectedLog.protein,
+  })
+  const [supplementaryOpen, setSupplementaryOpen] = useState(
+    () => Boolean(props.focusKey && supplementaryKeys.includes(props.focusKey)),
+  )
   const showSaveStatus = props.showSaveStatus ?? true
 
-  // Keyboard shortcuts for quick actions
+  useEffect(() => {
+    if (!props.focusKey || !supplementaryKeys.includes(props.focusKey)) return
+    const timer = window.setTimeout(() => setSupplementaryOpen(true), 0)
+    return () => window.clearTimeout(timer)
+  }, [props.focusKey])
+
   useKeyboardShortcuts([
     {
       key: 'y',
       ctrl: true,
       handler: () => {
-        if (props.yesterdayLog) {
-          props.onCopyYesterday()
-        }
-      }
+        if (props.hasCopyableYesterdayFields) props.onCopyYesterday()
+      },
     },
     {
       key: 't',
       ctrl: true,
       handler: () => {
-        if (props.hasFillableTargetFields) {
-          props.onFillTarget()
-        }
-      }
-    }
+        if (props.hasFillableTargetFields) props.onFillTarget()
+      },
+    },
   ])
 
-  useEffect(() => {
-    // Auto-focus on priority field if focusKey is set
-    if (props.focusKey) {
-      const element = findDailyFocusTarget(props.focusKey)?.querySelector('input')
-      if (element instanceof HTMLInputElement) {
-        element.focus()
-      }
-    }
-  }, [props.focusKey])
+  const coreFields: RecordField[] = [
+    {
+      key: 'weight',
+      label: `体重 ${weightDefinition.unit}`,
+      value: weightRecord?.value,
+      inputStep: '0.1',
+      kind: 'decimal',
+      range: { min: weightDefinition.min, max: weightDefinition.max },
+      quickStep: 0.1,
+      quickStepLabel: '0.1',
+      onChange: (value) => props.onUpdateBodyRecord('weight', value),
+      footerLeading: weightStatus ? <Badge tone={weightStatus.tone}>{weightStatus.label}</Badge> : undefined,
+      className: 'col-span-2 sm:col-span-1',
+    },
+    {
+      key: 'calories',
+      label: '热量 kcal',
+      value: props.selectedLog.calories,
+      inputStep: '1',
+      kind: 'integer',
+      range: { min: 0, max: 10000, allowZero: true },
+      quickStep: 100,
+      quickStepLabel: '100',
+      onChange: (value) => props.onUpdateDailyLog({ calories: value }),
+    },
+    {
+      key: 'protein',
+      label: '蛋白质 g',
+      value: props.selectedLog.protein,
+      inputStep: '1',
+      kind: 'integer',
+      range: { min: 0, max: 500, allowZero: true },
+      quickStep: 10,
+      quickStepLabel: '10',
+      onChange: (value) => props.onUpdateDailyLog({ protein: value }),
+    },
+  ]
 
-  const renderField = (field: EssentialField, index: number) => {
-    const focused = props.focusKey === field.key
-    return (
-      <div
-        key={field.key}
-        data-daily-focus={field.key}
-        style={{ '--motion-index': Math.min(index, 3) } as CSSProperties}
-        className={focused ? 'rounded-lg border border-[var(--color-primary-100)] bg-[var(--surface-selected)] p-1 dark:border-cyan-700/40 dark:bg-cyan-950/20' : undefined}
-      >
-        <NumberField
-          className={quickFieldClass}
-          label={field.label}
-          value={field.value}
-          step={field.step}
-          kind={field.kind}
-          range={field.range}
-          labelAction={
-            <QuickAdjustButtons
-              label={field.label}
-              stepLabel={field.quickStepLabel}
-              disabled={field.value === undefined}
-              onDecrease={() => {
-                if (field.value === undefined) return
-                props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value - field.quickStep, field)))
-              }}
-              onIncrease={() => {
-                if (field.value === undefined) return
-                props.onUpdateDailyLog(field.patch(normalizeAdjustedValue(field.value + field.quickStep, field)))
-              }}
-            />
-          }
-          onChange={(value) => props.onUpdateDailyLog(field.patch(value))}
-        />
-      </div>
-    )
-  }
+  const supplementaryFields: RecordField[] = [
+    {
+      key: 'steps',
+      label: '步数',
+      value: props.selectedLog.steps,
+      inputStep: '1',
+      kind: 'integer',
+      range: { min: 0, max: 100000, allowZero: true },
+      quickStep: 1000,
+      quickStepLabel: '1000',
+      onChange: (value) => props.onUpdateDailyLog({ steps: value }),
+    },
+    {
+      key: 'sleep',
+      label: '睡眠 h',
+      value: props.selectedLog.sleepHours,
+      inputStep: '0.1',
+      kind: 'decimal',
+      range: { min: 0, max: 24, allowZero: true },
+      quickStep: 0.5,
+      quickStepLabel: '0.5',
+      onChange: (value) => props.onUpdateDailyLog({ sleepHours: value }),
+    },
+    {
+      key: 'fatigue',
+      label: `疲劳 ≤${props.fatigueThreshold}`,
+      value: props.selectedLog.fatigueScore,
+      inputStep: '1',
+      kind: 'integer',
+      range: { min: 0, max: 10, allowZero: true },
+      quickStep: 1,
+      quickStepLabel: '1',
+      onChange: (value) => props.onUpdateDailyLog({ fatigueScore: value }),
+    },
+  ]
+
+  const renderField = (field: RecordField, index: number) => (
+    <div
+      key={field.key}
+      data-daily-focus={field.key}
+      style={{ '--motion-index': Math.min(index, 3) } as CSSProperties}
+      className={`${field.className ?? ''} ${fieldFocusClass(props.focusKey === field.key)}`}
+    >
+      <QuickAdjustNumberField
+        className={quickFieldClass}
+        label={field.label}
+        value={field.value}
+        inputStep={field.inputStep}
+        kind={field.kind}
+        range={field.range}
+        quickStep={field.quickStep}
+        quickStepLabel={field.quickStepLabel}
+        footerLeading={field.footerLeading}
+        onChange={field.onChange}
+      />
+    </div>
+  )
 
   return (
     <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] px-3 py-3 dark:border-slate-800 dark:bg-slate-900 sm:p-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-base font-semibold text-slate-950 dark:text-slate-50">每日记录</h3>
-          <p className="mt-0.5 hidden text-xs text-slate-500 dark:text-slate-400 sm:block">先填关键数据</p>
+          <h3 className="text-base font-semibold text-slate-950 dark:text-slate-50">关键记录</h3>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">体重、热量和蛋白质</p>
         </div>
-        {showSaveStatus ? <div className="shrink-0 text-right">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            {getDailySaveLabel(props.syncState, props.savePending, props.lastSyncedLabel)}
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span role="status" aria-live="polite" aria-atomic="true">
+            <Badge tone={completion.completed === completion.total ? 'positive' : completion.completed > 0 ? 'warning' : 'neutral'}>
+              关键记录 {completion.completed}/{completion.total}
+            </Badge>
           </span>
-          {props.syncState === 'offline' ? (
-            <p className="mt-0.5 text-[10px] text-amber-600 dark:text-amber-400">
-              将在联网后自动同步
-            </p>
+          {showSaveStatus ? (
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400" role="status" aria-live="polite">
+              {getDailySaveLabel(props.syncState, props.savePending, props.lastSyncedLabel)}
+            </span>
           ) : null}
-        </div> : null}
+        </div>
       </div>
 
-      <div className="motion-list mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:hidden">
-        {essentialFields.map(renderField)}
+      <div className="motion-list mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {coreFields.map(renderField)}
       </div>
 
-      <div className="motion-list mt-3 hidden grid-cols-3 gap-3 lg:grid">
-        {allFields.map(renderField)}
-      </div>
+      <DisclosurePanel
+        className="mt-3 sm:hidden"
+        title="补充记录"
+        open={supplementaryOpen}
+        onOpenChange={setSupplementaryOpen}
+        contentClassName="motion-list grid gap-3 border-t border-[var(--surface-border)] p-3 dark:border-slate-700"
+      >
+        {supplementaryFields.map(renderField)}
+      </DisclosurePanel>
 
-      {supplementaryFields.length > 0 ? (
-        <details className="mt-3 rounded-md border border-[var(--surface-border)] dark:border-slate-700 lg:hidden">
-          <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200">
-            补充记录 ({supplementaryFields.length} 项)
-          </summary>
-          <div className="motion-list grid grid-cols-2 gap-2.5 border-t border-[var(--surface-border)] p-2.5 dark:border-slate-700 sm:grid-cols-3">
-            {supplementaryFields.map((field, index) => {
-              return renderField(field, index)
-            })}
-          </div>
-        </details>
-      ) : null}
+      <section className="mt-4 hidden border-t border-[var(--surface-border)] pt-4 dark:border-slate-700 sm:block" aria-labelledby="supplementary-record-heading">
+        <h4 id="supplementary-record-heading" className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          补充记录
+        </h4>
+        <div className="motion-list mt-3 grid grid-cols-3 gap-3">
+          {supplementaryFields.map(renderField)}
+        </div>
+      </section>
 
-      {(props.yesterdayLog || props.hasFillableTargetFields) ? (
+      {(props.hasCopyableYesterdayFields || props.hasFillableTargetFields) ? (
         <div className="mt-3 grid grid-cols-2 gap-2">
           <Button
             variant="secondary"
             className="w-full px-2 text-xs shadow-none sm:text-sm"
-            disabled={!props.yesterdayLog}
+            disabled={!props.hasCopyableYesterdayFields}
             onClick={props.onCopyYesterday}
-            title={props.yesterdayLog ? "快捷键: Ctrl+Y" : undefined}
+            title={props.hasCopyableYesterdayFields ? '快捷键: Ctrl+Y' : undefined}
           >
-            复制昨天
+            补入昨天空值
           </Button>
           <Button
             variant="secondary"
             className="w-full px-2 text-xs shadow-none sm:text-sm"
             disabled={!props.hasFillableTargetFields}
             onClick={props.onFillTarget}
-            title={props.hasFillableTargetFields ? "快捷键: Ctrl+T" : undefined}
+            title={props.hasFillableTargetFields ? '快捷键: Ctrl+T' : undefined}
           >
             填入目标
           </Button>

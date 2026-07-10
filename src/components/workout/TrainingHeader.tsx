@@ -242,7 +242,7 @@ export function TrainingTimerFloat({
             <Button
               onClick={onFinishWorkout}
               disabled={!canFinishWorkout}
-              title={workoutReadyToConfirm ? '所有组已填完，确认后同步到今日记录' : '现在结束本次训练，已记录的组会保留，今日记录会标记训练完成'}
+              title={workoutReadyToConfirm ? '所有组已填完，确认后更新当日记录' : '现在结束本次训练，已记录的组会保留，当日记录会标记训练完成'}
               className="w-full px-3 text-xs font-semibold"
             >
               {workoutReadyToConfirm ? '确认完成' : '结束训练'}

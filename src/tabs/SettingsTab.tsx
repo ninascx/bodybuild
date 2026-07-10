@@ -1,9 +1,15 @@
-import { useState } from 'react'
-import { SegmentedControl } from '../components/ui'
+import { lazy, Suspense, useState } from 'react'
+import { FormPanel } from '../components/FormPanel'
+import { useConfirm } from '../components/ConfirmDialog'
+import { LoadingBlock, SegmentedControl } from '../components/ui'
 import { ProfileTab } from './ProfileTab'
 import { PlanTab } from './PlanTab'
 import type { CurrentUser } from '../lib/storage'
 import type { BodyRecord, UserPlanData, UserPreference } from '../types'
+
+const XunjiDataSettings = lazy(() =>
+  import('../components/profile/XunjiDataSettings').then((module) => ({ default: module.XunjiDataSettings })),
+)
 
 type SettingsTabProps = {
   currentUser: CurrentUser
@@ -16,18 +22,38 @@ type SettingsTabProps = {
 }
 
 export function SettingsTab(props: SettingsTabProps) {
-  const [view, setView] = useState<'profile' | 'plan'>('profile')
+  const [view, setView] = useState<'profile' | 'plan' | 'xunji'>('profile')
+  const [profileDirty, setProfileDirty] = useState(false)
+  const [planDirty, setPlanDirty] = useState(false)
+  const { confirm, dialog } = useConfirm()
+
+  async function changeView(nextView: 'profile' | 'plan' | 'xunji') {
+    if (nextView === view) return
+    const hasUnsavedChanges = (view === 'profile' && profileDirty) || (view === 'plan' && planDirty)
+    if (hasUnsavedChanges) {
+      const accepted = await confirm({
+        title: '放弃未保存修改？',
+        message: '当前设置还有未保存修改。切换分类会放弃这些修改。',
+        confirmLabel: '放弃并切换',
+        tone: 'danger',
+      })
+      if (!accepted) return
+    }
+    setView(nextView)
+  }
 
   return (
     <div className="grid gap-4">
       <div className="flex justify-center">
         <SegmentedControl
+          ariaLabel="设置分类"
           value={view}
           options={[
-            { value: 'profile', label: '个人' },
-            { value: 'plan', label: '计划' },
+            { value: 'profile', label: '资料与目标' },
+            { value: 'plan', label: '训练计划' },
+            { value: 'xunji', label: '训记连接' },
           ]}
-          onChange={(value) => setView(value as 'profile' | 'plan')}
+          onChange={(value) => void changeView(value as 'profile' | 'plan' | 'xunji')}
         />
       </div>
 
@@ -39,11 +65,25 @@ export function SettingsTab(props: SettingsTabProps) {
           bodyRecords={props.bodyRecords}
           onSavePreference={props.onSavePreference}
           onSavePlan={props.onSavePlan}
-          onOpenBodyDate={props.onOpenBodyDate}
+          onDirtyChange={setProfileDirty}
         />
+      ) : view === 'plan' ? (
+        <PlanTab planData={props.planData} onSave={props.onSavePlan} onDirtyChange={setPlanDirty} />
       ) : (
-        <PlanTab planData={props.planData} onSave={props.onSavePlan} />
+        <FormPanel
+          title="训记连接"
+          description="分别管理训练、饮食和身体数据连接；Key 只会发送到本项目服务端进行验证。"
+        >
+          <Suspense fallback={<LoadingBlock title="正在加载训记连接…" lines={2} />}>
+            <XunjiDataSettings
+              userId={props.currentUser.id}
+              bodyRecords={props.bodyRecords}
+              onOpenBodyDate={props.onOpenBodyDate}
+            />
+          </Suspense>
+        </FormPanel>
       )}
+      {dialog}
     </div>
   )
 }

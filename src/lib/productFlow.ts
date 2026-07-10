@@ -60,13 +60,17 @@ function isFilled(value: unknown): boolean {
   return value !== undefined && value !== null && value !== ''
 }
 
-function buildChecklist(log: Partial<DailyLog> | undefined, target: DailyTarget): TodayTaskItem[] {
+export function buildTodayChecklist(
+  log: Partial<DailyLog> | undefined,
+  target: DailyTarget,
+  weight?: number,
+): TodayTaskItem[] {
   return ([
     {
       key: 'weight',
       label: '体重',
-      done: isFilled(log?.morningWeightKg),
-      helper: isFilled(log?.morningWeightKg) ? `${log?.morningWeightKg} kg` : '晨起体重未填',
+      done: isFilled(weight),
+      helper: isFilled(weight) ? `${weight} kg` : '晨起体重未填',
       priority: 10,
     },
     {
@@ -139,29 +143,29 @@ function getWorkoutState(target: DailyTarget, workout: WorkoutLog | undefined, l
 function getWorkoutCopy(state: WorkoutEntryState, target: DailyTarget, workout: WorkoutLog | undefined): Pick<TodayTaskPlan, 'workoutTitle' | 'workoutMessage' | 'workoutActionLabel'> {
   if (state === 'rest-day') {
     return {
-      workoutTitle: '今天是休息日',
-      workoutMessage: '训练入口会保留，但今天优先恢复、蛋白和步数。',
+      workoutTitle: '当日是休息日',
+      workoutMessage: '训练入口会保留，但当日优先恢复、蛋白和步数。',
       workoutActionLabel: '查看训练',
     }
   }
   if (state === 'needs-plan') {
     return {
       workoutTitle: target.workoutName,
-      workoutMessage: '还没有生成今日训练。先选择推荐计划，进入训练现场。',
+      workoutMessage: '还没有生成当日训练。先选择推荐计划，进入训练现场。',
       workoutActionLabel: '选择计划开始',
     }
   }
   if (state === 'ready-to-confirm') {
     return {
       workoutTitle: workout?.workoutName ?? target.workoutName,
-      workoutMessage: '所有组已填完，确认后同步到今日记录。',
+      workoutMessage: '所有组已填完，确认后更新当日记录。',
       workoutActionLabel: '确认完成训练',
     }
   }
   if (state === 'complete') {
     return {
       workoutTitle: workout?.workoutName ?? target.workoutName,
-      workoutMessage: '今日训练已同步。现在可以补备注或查看复盘。',
+      workoutMessage: '当日训练已完成并保存。现在可以补备注或查看复盘。',
       workoutActionLabel: '查看记录',
     }
   }
@@ -174,7 +178,7 @@ function getWorkoutCopy(state: WorkoutEntryState, target: DailyTarget, workout: 
   }
   return {
     workoutTitle: workout?.workoutName ?? target.workoutName,
-    workoutMessage: '今日训练已准备好，进入后只保留当前动作和当前组。',
+    workoutMessage: '当日训练已准备好，进入后只保留当前动作和当前组。',
     workoutActionLabel: '开始训练',
   }
 }
@@ -230,6 +234,7 @@ function buildReviewSummary(checklist: TodayTaskItem[], workoutState: WorkoutEnt
 
 export function buildTodayTaskPlan({
   log,
+  weight,
   target,
   workout,
   todaySnapshot,
@@ -237,6 +242,7 @@ export function buildTodayTaskPlan({
   preference,
 }: {
   log: Partial<DailyLog> | undefined
+  weight?: number
   target: DailyTarget
   workout: WorkoutLog | undefined
   todaySnapshot: TodaySnapshot
@@ -244,7 +250,7 @@ export function buildTodayTaskPlan({
   preference?: UserPreference
 }): TodayTaskPlan {
   const settings = mergeUserPreference(preference)
-  const checklist = buildChecklist(log, target)
+  const checklist = buildTodayChecklist(log, target, weight)
   const missingItems = checklist.filter((item) => !item.done).sort((a, b) => a.priority - b.priority)
   const workoutState = getWorkoutState(target, workout, log)
   const workoutCopy = getWorkoutCopy(workoutState, target, workout)

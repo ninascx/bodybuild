@@ -10,6 +10,7 @@ import { useMobileExerciseSession } from './useMobileExerciseSession'
 import { formatSetSummary } from './workoutRecordFormat'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { useToast } from '../ToastContainer'
+import { useConfirm } from '../ConfirmDialog'
 
 type MobileCurrentExerciseViewProps = {
   workout: WorkoutLog
@@ -122,6 +123,7 @@ export function MobileCurrentExerciseView({
   } = session
   const totalSets = exercise?.sets.length ?? 0
   const { showToast } = useToast()
+  const { confirm, dialog } = useConfirm()
 
   // Undo buffer for last completed set
   const [lastCompletedSet, setLastCompletedSet] = useState<{
@@ -211,13 +213,16 @@ export function MobileCurrentExerciseView({
     setCurrentSetIndex(exercise.sets.length)
   }
 
-  function handleDeleteCurrentExerciseLastSet() {
+  async function handleDeleteCurrentExerciseLastSet() {
     if (!exercise || exercise.sets.length <= 1) return
 
-    // Confirm before deleting
-    if (!window.confirm('确定要删除最后一组吗？此操作无法撤销。')) {
-      return
-    }
+    const accepted = await confirm({
+      title: '删除最后一组？',
+      message: '这会删除当前动作的最后一组，且无法撤销。',
+      confirmLabel: '删除这组',
+      tone: 'danger',
+    })
+    if (!accepted) return
 
     setCurrentSetIndex(Math.min(safeCurrentSetIndex, exercise.sets.length - 2))
     onDeleteLastSet(currentExerciseIndex)
@@ -225,14 +230,20 @@ export function MobileCurrentExerciseView({
     showToast('已删除最后一组', 'neutral', 2000)
   }
 
-  function handleExitTrainingMode() {
+  async function handleExitTrainingMode() {
     // Check if there are any incomplete sets
     const hasIncompleteSets = workout.exercises.some(ex =>
       ex.sets.some(set => !set.weight || !set.reps)
     )
 
-    if (hasIncompleteSets && !window.confirm('训练中有未填写的组，确定要退出吗？')) {
-      return
+    if (hasIncompleteSets) {
+      const accepted = await confirm({
+        title: '退出训练模式？',
+        message: '训练中还有未填写的组。已录入内容会保留，你可以之后继续。',
+        confirmLabel: '退出训练',
+        tone: 'danger',
+      })
+      if (!accepted) return
     }
 
     onExitTrainingMode()
@@ -322,7 +333,7 @@ export function MobileCurrentExerciseView({
           {canFinishWorkout && !workoutMarkedComplete ? (
             <div className="mt-2 rounded-lg border border-emerald-200 bg-white p-2.5 dark:border-emerald-700/40 dark:bg-slate-900">
               <p className="text-xs font-medium text-slate-900 dark:text-slate-100">所有组已填完</p>
-              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">确认后会同步到今日记录，并把训练完成度记为 100%。</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">确认后会更新当日记录，并把训练完成度记为 100%。</p>
             </div>
           ) : shouldSuggestNextExercise ? (
             <div className="mt-2 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] p-2.5 dark:border-slate-700 dark:bg-slate-800">
@@ -354,6 +365,7 @@ export function MobileCurrentExerciseView({
         onAdjustRestDuration={onAdjustRestDuration}
         onSkipRest={onSkipRest}
       />
+      {dialog}
     </div>
   )
 }

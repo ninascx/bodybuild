@@ -53,11 +53,12 @@ export function WorkoutRecordToolbar({
         ) : null}
         {showSyncAction ? (
           <Button variant="secondary" className="px-3" loading={xunjiSyncPending} onClick={onSyncFromXunji}>
-            同步训记
+            从训记导入训练
           </Button>
         ) : null}
         {hasWorkout ? (
           <SegmentedControl
+            ariaLabel="动作筛选"
             value={showOnlyUnfinished ? 'unfinished' : 'all'}
             options={[
               { value: 'all', label: '全部动作' },

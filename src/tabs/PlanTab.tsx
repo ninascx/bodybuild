@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Badge, Button, Card, EmptyState, InsightCard, MetricGrid } from '../components/ui'
+import { useEffect, useMemo, useState } from 'react'
+import { Badge, Button, Card, EmptyState } from '../components/ui'
 import { FormPanel, FormSection } from '../components/FormPanel'
 import { PlanAssociationList } from '../components/plan/PlanAssociationList'
 import type { DailyTarget, DayKey, UserPlanData, WorkoutPlan } from '../types'
@@ -57,9 +57,10 @@ function buildPlanCatalog(data: UserPlanData): WorkoutPlan[] {
 type PlanTabProps = {
   planData: UserPlanData
   onSave: (planData: UserPlanData) => Promise<UserPlanData>
+  onDirtyChange?: (dirty: boolean) => void
 }
 
-export function PlanTab({ planData, onSave }: PlanTabProps) {
+export function PlanTab({ planData, onSave, onDirtyChange }: PlanTabProps) {
   const sourceDraft = useMemo(() => clonePlanData(planData), [planData])
   const [draftOverride, setDraftOverride] = useState<UserPlanData | null>(null)
   const [saving, setSaving] = useState(false)
@@ -69,6 +70,12 @@ export function PlanTab({ planData, onSave }: PlanTabProps) {
   const planCatalog = useMemo(() => buildPlanCatalog(draft), [draft])
   const dirty = draftOverride !== null
   const saveLabel = saving ? '保存中...' : dirty ? '保存修改' : '保存关联'
+
+  useEffect(() => {
+    onDirtyChange?.(dirty)
+  }, [dirty, onDirtyChange])
+
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange])
 
   const trainingDayCount = useMemo(
     () => Object.values(draft.dailyTargets).filter((item) => item.isTrainingDay).length,
@@ -161,11 +168,11 @@ export function PlanTab({ planData, onSave }: PlanTabProps) {
         error={error}
         warning={dirty ? '训练计划关联有未保存修改。' : undefined}
       >
-        <MetricGrid className="lg:grid-cols-3">
-          <InsightCard title="训练日" value={`${trainingDayCount} 天`} message="每周安排" tone={trainingDayCount > 0 ? 'positive' : 'neutral'} />
-          <InsightCard title="动作总数" value={totalExerciseCount} message="来自已关联计划" tone="neutral" />
-          <InsightCard title="有氧项" value={totalCardioCount} message="来自已关联计划" tone={totalCardioCount > 0 ? 'positive' : 'neutral'} />
-        </MetricGrid>
+        <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600 dark:text-slate-300">
+          <span><strong className="tabular-nums text-slate-950 dark:text-slate-50">{trainingDayCount}</strong> 个训练日</span>
+          <span><strong className="tabular-nums text-slate-950 dark:text-slate-50">{totalExerciseCount}</strong> 个动作</span>
+          <span><strong className="tabular-nums text-slate-950 dark:text-slate-50">{totalCardioCount}</strong> 个有氧项</span>
+        </div>
       </FormPanel>
 
       <Card>
@@ -183,6 +190,14 @@ export function PlanTab({ planData, onSave }: PlanTabProps) {
           )}
         </FormSection>
       </Card>
+      {dirty ? (
+        <div className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 rounded-lg border border-[var(--surface-border-strong)] bg-[var(--surface-panel)] p-3 dark:border-slate-700 dark:bg-slate-900 sm:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">计划关联尚未保存</p>
+            <Button onClick={() => void handleSave()} disabled={saving}>{saveLabel}</Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

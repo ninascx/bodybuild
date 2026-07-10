@@ -66,7 +66,7 @@ export function KeyboardShortcutsHelp() {
     return (
       <Button
         variant="ghost"
-        className="fixed bottom-4 right-4 z-40 h-10 w-10 rounded-full p-0 text-slate-500 shadow-lg hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+        className="fixed bottom-4 right-4 z-40 h-11 w-11 rounded-full p-0 text-slate-500 shadow-lg hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
         onClick={() => setIsOpen(true)}
         title="键盘快捷键 (?)"
         aria-label="显示键盘快捷键"

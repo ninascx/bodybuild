@@ -294,6 +294,10 @@ function App() {
     () => dailyLogs.find((log) => log.date === selectedDate) ?? { date: selectedDate },
     [dailyLogs, selectedDate],
   )
+  const selectedAnalysisLog = useMemo(
+    () => dailyLogsForAnalysis.find((log) => log.date === selectedDate),
+    [dailyLogsForAnalysis, selectedDate],
+  )
   const selectedBodyRecords = useMemo(
     () => bodyRecordsForDate(bodyRecords, selectedDate),
     [bodyRecords, selectedDate],
@@ -360,6 +364,7 @@ function App() {
       contentTab === 'daily' || contentTab === 'workout' || contentTab === 'analytics'
         ? buildTodayTaskPlan({
             log: todayLog,
+            weight: bodyValue(bodyRecords, today, 'weight'),
             target,
             workout: todayWorkout,
             todaySnapshot,
@@ -367,12 +372,41 @@ function App() {
             preference: userPreference,
           })
         : ({} as TodayTaskPlan),
-    [contentTab, todayLog, target, todayWorkout, todaySnapshot, dashboardStats, userPreference],
+    [contentTab, todayLog, bodyRecords, today, target, todayWorkout, todaySnapshot, dashboardStats, userPreference],
   )
-  const dailyPriorityKeys = useMemo(
-    () => todayTaskPlan.missingItems?.map((item) => item.key).filter((key) => key !== 'training') ?? [],
-    [todayTaskPlan],
-  )
+  const selectedWorkoutTaskPlan = useMemo(() => {
+    if (contentTab !== 'workout') return {} as TodayTaskPlan
+    const selectedSnapshot = buildTodaySnapshot({
+      today: selectedDate,
+      log: selectedAnalysisLog,
+      workout: selectedWorkout,
+      target: selectedTarget,
+      logs: dailyLogsForAnalysis,
+      dashboardStats,
+      targets: dailyTargetsByDay,
+      preference: userPreference,
+    })
+    return buildTodayTaskPlan({
+      log: selectedAnalysisLog,
+      weight: bodyValue(bodyRecords, selectedDate, 'weight'),
+      target: selectedTarget,
+      workout: selectedWorkout,
+      todaySnapshot: selectedSnapshot,
+      dashboardStats,
+      preference: userPreference,
+    })
+  }, [
+    bodyRecords,
+    contentTab,
+    dailyLogsForAnalysis,
+    dailyTargetsByDay,
+    dashboardStats,
+    selectedAnalysisLog,
+    selectedDate,
+    selectedTarget,
+    selectedWorkout,
+    userPreference,
+  ])
   const trendAlerts = useMemo(
     () => (contentTab === 'analytics' ? buildTrendAlerts(dailyLogsForAnalysis, today, dailyTargetsByDay, userPreference) : ([] as AdjustmentRecommendation[])),
     [contentTab, dailyLogsForAnalysis, today, dailyTargetsByDay, userPreference],
@@ -517,7 +551,7 @@ function App() {
           setSyncState('synced')
           setLastSyncedAt(new Date().toISOString())
           setAutoRetryEnabled(false)
-          setSyncMessage('已同步')
+          setSyncMessage('已保存')
           setSaveFeedback(null)
         }
       } catch (error) {
@@ -739,7 +773,7 @@ function App() {
         setLastSyncedAt(new Date().toISOString())
         setSavePending(false)
         setAutoRetryEnabled(false)
-        setSyncMessage('已同步')
+        setSyncMessage('已加载')
       } else {
         setSyncState('offline')
         setSavePending(false)
@@ -795,7 +829,7 @@ function App() {
     if (!currentUser) return
     setSyncState('saving')
     setSavePending(false)
-    setSyncMessage('同步中...')
+    setSyncMessage('正在重试保存...')
     flushPending()
     try {
       const saved = await saveAppData(currentUser.id, { dailyLogs, bodyRecords, workoutLogs, workoutTemplates })
@@ -804,7 +838,7 @@ function App() {
       setLastSyncedAt(new Date().toISOString())
       setSavePending(false)
       setAutoRetryEnabled(false)
-      setSyncMessage('已同步')
+      setSyncMessage('已保存')
     } catch (error) {
       setSyncState('offline')
       setSavePending(false)
@@ -836,15 +870,11 @@ function App() {
 
   function handleDateChange(nextDate: string) {
     setDailyFocusKey(undefined)
-    if (nextDate === '') {
-      setSelectedDate(today)
-      return
+    const resolvedDate = nextDate !== '' && isValidDateInput(nextDate) ? nextDate : today
+    setSelectedDate(resolvedDate)
+    if (!workoutLogs.some((workout) => workout.date === resolvedDate)) {
+      setSelectedTemplateId(`builtin-${getDayKey(resolvedDate)}`)
     }
-    if (!isValidDateInput(nextDate)) {
-      setSelectedDate(today)
-      return
-    }
-    setSelectedDate(nextDate)
   }
 
   const handleToggleShowUnfinished = useCallback(
@@ -896,13 +926,14 @@ function App() {
     applyData(nextData)
     setLastSyncedAt(new Date().toISOString())
     setSyncState('synced')
-    setSyncMessage('已同步')
+    setSyncMessage('已同步到训记')
     setSaveFeedback({ tone: 'positive', message: `已同步 ${records.length} 项身体数据到训记。` })
   }
 
-  function quickDailyAction(patch: Partial<DailyLog>) {
+  function quickDailyAction(patch: Partial<DailyLog>, feedback?: string) {
     const nextLogs = upsertByDate(dailyLogs, selectedDate, patch)
     schedulePersist({ dailyLogs: nextLogs, bodyRecords, workoutLogs, workoutTemplates }, true)
+    if (feedback) setSaveFeedback({ tone: 'positive', message: feedback })
   }
 
   function finishSelectedWorkout() {
@@ -923,8 +954,8 @@ function App() {
     if (shouldReplace && !skipConfirm) {
       const ok = await confirm({
         title: '覆盖当天训练？',
-        message: '同步训记会用训记当天训练替换当前项目里的当天训练记录，已有动作、组数和有氧记录会被覆盖。',
-        confirmLabel: '同步并覆盖',
+        message: '从训记导入会用训记当天训练替换当前项目里的当天训练记录，已有动作、组数和有氧记录会被覆盖。',
+        confirmLabel: '导入并覆盖',
         tone: 'danger',
       })
       if (!ok) return
@@ -932,17 +963,17 @@ function App() {
 
     setXunjiSyncPending(true)
     setSyncState('saving')
-    setSyncMessage('正在同步训记...')
-    setSaveFeedback({ tone: 'neutral', message: '正在从训记同步训练数据...' })
+    setSyncMessage('正在从训记导入训练...')
+    setSaveFeedback({ tone: 'neutral', message: '正在从训记导入训练数据...' })
 
     try {
       flushPending()
       await saveQueueRef.current
       const result = await syncXunjiTrainingDate(selectedDate, { replaceExisting: shouldReplace })
       if (!result.workoutLog) {
-        setSaveFeedback({ tone: 'warning', message: '训记当天没有训练记录可同步。' })
+        setSaveFeedback({ tone: 'warning', message: '训记当天没有训练记录可导入。' })
         setSyncState('synced')
-        setSyncMessage('已同步')
+        setSyncMessage('训记当天无训练')
         return result
       }
       const nextWorkoutLogs = upsertByDate(workoutLogs, selectedDate, result.workoutLog)
@@ -950,18 +981,18 @@ function App() {
       const nextData = { dailyLogs: nextDailyLogs, bodyRecords, workoutLogs: nextWorkoutLogs, workoutTemplates }
       applyData(nextData)
       setSyncState('synced')
-      setSyncMessage('已同步')
+      setSyncMessage('已从训记导入训练')
       setLastSyncedAt(new Date().toISOString())
       setSavePending(false)
       setAutoRetryEnabled(false)
       setSaveFeedback({
         tone: 'positive',
-        message: `已从训记同步 ${result.trainCount} 条训练、${result.movementCount} 个动作。`,
+        message: `已从训记导入 ${result.trainCount} 条训练、${result.movementCount} 个动作。`,
       })
       return result
     } catch (error) {
       setSyncState('offline')
-      const message = error instanceof Error && error.message ? error.message : '同步训记训练数据失败'
+      const message = error instanceof Error && error.message ? error.message : '从训记导入训练数据失败'
       setSyncMessage(message)
       setSaveFeedback({ tone: 'warning', message })
       throw error
@@ -986,7 +1017,7 @@ function App() {
     applyData(nextData)
     setLastSyncedAt(new Date().toISOString())
     setSyncState('synced')
-    setSyncMessage('已同步')
+    setSyncMessage('已从训记导入')
     const parts = [
       result.results.food.count > 0 ? `${result.results.food.count} 项饮食` : '',
       result.results.body.count > 0 ? `${result.results.body.count} 项身体数据` : '',
@@ -1750,7 +1781,6 @@ function App() {
               onSyncFromXunji={() => setShowXunjiDailySync(true)}
               onSyncBodyToXunji={() => setShowXunjiBodySync(true)}
               focusKey={dailyFocusKey}
-              priorityKeys={dailyPriorityKeys}
               onFocusConsumed={() => setDailyFocusKey(undefined)}
             />
           </Suspense>
@@ -1774,7 +1804,7 @@ function App() {
               builtinTemplates={builtinTemplates}
               workoutTemplates={workoutTemplates}
               syncState={syncState}
-              taskPlan={todayTaskPlan}
+              taskPlan={selectedWorkoutTaskPlan}
               workoutMarkedComplete={(selectedLog.workoutCompletion ?? 0) >= 100}
               xunjiSyncPending={xunjiSyncPending}
               onDateChange={handleDateChange}
