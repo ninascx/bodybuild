@@ -1,6 +1,8 @@
-import type { BackupPayload, DailyLog, ServerData, UserPlanData, UserPreference, UserProfile, WorkoutLog, WorkoutTemplate } from '../types'
+import type { BackupPayload, BodyRecord, DailyLog, ServerData, UserPlanData, UserPreference, UserProfile, WorkoutLog, WorkoutTemplate } from '../types'
+import { bodyMetricDefinition, upsertBodyRecords } from './bodyMetrics'
 
 const DAILY_LOGS_KEY = (userId: string) => `bodybuild:v2:${userId}:dailyLogs`
+const BODY_RECORDS_KEY = (userId: string) => `bodybuild:v2:${userId}:bodyRecords`
 const WORKOUT_LOGS_KEY = (userId: string) => `bodybuild:v2:${userId}:workoutLogs`
 const WORKOUT_TEMPLATES_KEY = (userId: string) => `bodybuild:v2:${userId}:workoutTemplates`
 
@@ -15,6 +17,7 @@ export interface CurrentUser {
 
 export interface AppData {
   dailyLogs: DailyLog[]
+  bodyRecords: BodyRecord[]
   workoutLogs: WorkoutLog[]
   workoutTemplates: WorkoutTemplate[]
 }
@@ -88,14 +91,68 @@ function writeJson<T>(key: string, value: T): void {
 }
 
 function hasData(data: AppData): boolean {
-  return data.dailyLogs.length > 0 || data.workoutLogs.length > 0 || data.workoutTemplates.length > 0
+  return data.dailyLogs.length > 0 || data.bodyRecords.length > 0 || data.workoutLogs.length > 0 || data.workoutTemplates.length > 0
 }
 
-function fromServerData(data: ServerData | AppData): AppData {
+type LegacyDailyLog = DailyLog & {
+  morningWeightKg?: number
+  waistCm?: number
+  chestCm?: number
+  upperArmCm?: number
+  thighCm?: number
+}
+
+function migrateLegacyDailyLogs(logs: LegacyDailyLog[], currentBodyRecords: BodyRecord[]): {
+  dailyLogs: DailyLog[]
+  bodyRecords: BodyRecord[]
+} {
+  const migrated: BodyRecord[] = []
+  const dailyLogs = logs.map((log) => {
+    const legacyValues = [
+      ['weight', log.morningWeightKg],
+      ['weist', log.waistCm],
+      ['chest', log.chestCm],
+      ['arm_left', log.upperArmCm],
+      ['arm_right', log.upperArmCm],
+      ['leg_left', log.thighCm],
+      ['leg_right', log.thighCm],
+    ] as const
+    legacyValues.forEach(([type, value]) => {
+      if (value === undefined || !Number.isFinite(value)) return
+      const definition = bodyMetricDefinition(type)
+      migrated.push({
+        datestr: log.date,
+        type,
+        value,
+        unit: definition.unit,
+        label: definition.label,
+        label_en: definition.label_en,
+        origin: 'legacy_daily',
+      })
+    })
+    const daily = { ...log } as LegacyDailyLog
+    delete daily.morningWeightKg
+    delete daily.waistCm
+    delete daily.chestCm
+    delete daily.upperArmCm
+    delete daily.thighCm
+    return daily
+  })
+  return { dailyLogs, bodyRecords: upsertBodyRecords(migrated, currentBodyRecords) }
+}
+
+function fromServerData(data: ServerData | AppData | Record<string, unknown>): AppData {
+  const raw = data as Partial<AppData>
+  const bodyRecords = Array.isArray(raw.bodyRecords) ? raw.bodyRecords : []
+  const migrated = migrateLegacyDailyLogs(
+    Array.isArray(raw.dailyLogs) ? raw.dailyLogs as LegacyDailyLog[] : [],
+    bodyRecords,
+  )
   return {
-    dailyLogs: Array.isArray(data.dailyLogs) ? data.dailyLogs : [],
-    workoutLogs: Array.isArray(data.workoutLogs) ? data.workoutLogs : [],
-    workoutTemplates: Array.isArray(data.workoutTemplates) ? data.workoutTemplates : [],
+    dailyLogs: migrated.dailyLogs,
+    bodyRecords: migrated.bodyRecords,
+    workoutLogs: Array.isArray(raw.workoutLogs) ? raw.workoutLogs : [],
+    workoutTemplates: Array.isArray(raw.workoutTemplates) ? raw.workoutTemplates : [],
   }
 }
 
@@ -351,7 +408,7 @@ export async function syncXunjiTrainingDate(
       includeFullData: options.includeFullData === true,
     }),
   })
-  return readApiJson<XunjiSyncResult>(response, '同步训记训练数据失败')
+  return readApiJson<XunjiSyncResult>(response, '从训记导入训练数据失败')
 }
 
 export async function exportWorkoutTemplateToken(
@@ -390,17 +447,19 @@ export async function importWorkoutTemplateToken(
 export function emptyAppData(): AppData {
   return {
     dailyLogs: [],
+    bodyRecords: [],
     workoutLogs: [],
     workoutTemplates: [],
   }
 }
 
 export function loadCachedData(userId: string): AppData {
-  return {
-    dailyLogs: readJson<DailyLog[]>(DAILY_LOGS_KEY(userId), []),
+  return fromServerData({
+    dailyLogs: readJson<LegacyDailyLog[]>(DAILY_LOGS_KEY(userId), []),
+    bodyRecords: readJson<BodyRecord[]>(BODY_RECORDS_KEY(userId), []),
     workoutLogs: readJson<WorkoutLog[]>(WORKOUT_LOGS_KEY(userId), []),
     workoutTemplates: readJson<WorkoutTemplate[]>(WORKOUT_TEMPLATES_KEY(userId), []),
-  }
+  })
 }
 
 export function loadAllCachedData(): AppData {
@@ -409,12 +468,13 @@ export function loadAllCachedData(): AppData {
     const userIds = new Set<string>()
     for (let index = 0; index < window.localStorage.length; index += 1) {
       const key = window.localStorage.key(index)
-      const match = key?.match(/^bodybuild:v2:(.+):(dailyLogs|workoutLogs|workoutTemplates)$/)
+      const match = key?.match(/^bodybuild:v2:(.+):(dailyLogs|bodyRecords|workoutLogs|workoutTemplates)$/)
       if (match?.[1]) userIds.add(match[1])
     }
     for (const userId of userIds) {
       const cached = loadCachedData(userId)
       merged.dailyLogs.push(...cached.dailyLogs)
+      merged.bodyRecords = upsertBodyRecords(merged.bodyRecords, cached.bodyRecords)
       merged.workoutLogs.push(...cached.workoutLogs)
       merged.workoutTemplates.push(...cached.workoutTemplates)
     }
@@ -426,6 +486,7 @@ export function loadAllCachedData(): AppData {
 
 export function cacheData(userId: string, data: AppData): void {
   writeJson(DAILY_LOGS_KEY(userId), data.dailyLogs)
+  writeJson(BODY_RECORDS_KEY(userId), data.bodyRecords)
   writeJson(WORKOUT_LOGS_KEY(userId), data.workoutLogs)
   writeJson(WORKOUT_TEMPLATES_KEY(userId), data.workoutTemplates)
 }
@@ -469,13 +530,15 @@ export async function saveAppData(userId: string, data: AppData): Promise<AppDat
 
 export function createBackup(
   dailyLogs: DailyLog[],
+  bodyRecords: BodyRecord[],
   workoutLogs: WorkoutLog[],
   workoutTemplates: WorkoutTemplate[],
 ): BackupPayload {
   return {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     dailyLogs,
+    bodyRecords,
     workoutLogs,
     workoutTemplates,
   }

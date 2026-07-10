@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react-refresh/only-export-components */
 import { lazy, Suspense, type ComponentType } from 'react'
 
 /**

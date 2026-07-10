@@ -25,6 +25,7 @@ model User {
 
   profile          UserProfile?
   dailyLogs        DailyLog[]
+  bodyRecords      BodyRecord[]
   workoutLogs      WorkoutLog[]
   workoutTemplates WorkoutTemplate[]
   templateShares    WorkoutTemplateShare[]
@@ -160,6 +161,27 @@ model DailyLog {
   @@index([userId, date])
 }
 
+model BodyRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  datestr   String
+  type      String
+  value     Float
+  unit      String
+  label     String
+  labelEn   String   @map("label_en")
+  origin    String   @default("local")
+  syncedAt  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, datestr, type])
+  @@index([userId, datestr])
+  @@index([userId, type, datestr])
+}
+
 model WorkoutLog {
   id            String   @id @default(cuid())
   userId        String
@@ -190,6 +212,11 @@ model UserPreference {
   fatigueThreshold         Int?
   weekendCalorieUpperKcal  Int?
   xunjiOpenApiKey          String?
+  xunjiFoodApiKey          String?
+  xunjiBodyApiKey          String?
+  xunjiOpenValidatedAt     DateTime?
+  xunjiFoodValidatedAt     DateTime?
+  xunjiBodyValidatedAt     DateTime?
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 

@@ -42,7 +42,7 @@ export function getWorkoutStatusView({
   if (workoutMarkedComplete) {
     return {
       title: '训练已完成',
-      message: '本次训练已同步到今日记录，可以补充备注或保存为模板。',
+      message: '本次训练已更新当日记录，可以补充备注或保存为模板。',
       tone: 'positive',
     }
   }
@@ -50,7 +50,7 @@ export function getWorkoutStatusView({
   if (workoutSummary.completionPercent === 100) {
     return {
       title: '动作已填满',
-      message: '动作记录已经完整，点确认完成后会同步到今日记录。',
+      message: '动作记录已经完整，点确认完成后会更新当日记录。',
       tone: 'positive',
     }
   }
@@ -95,8 +95,8 @@ export function getWorkoutCompletionHint({
   workoutReadyToConfirm: boolean
   remainingSetCount: number
 }): string {
-  if (workoutMarkedComplete) return '本次训练已同步到今日记录。'
-  if (workoutReadyToConfirm) return '所有组已填完，点确认完成即可同步到今日记录。'
+  if (workoutMarkedComplete) return '本次训练已更新当日记录。'
+  if (workoutReadyToConfirm) return '所有组已填完，点确认完成即可更新当日记录。'
   if (remainingSetCount > 0) return `还剩 ${remainingSetCount} 组需填重量和次数。`
   return '先记录一组训练。'
 }

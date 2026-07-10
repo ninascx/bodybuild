@@ -122,6 +122,24 @@ const statements = [
   )`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "DailyLog_userId_date_key" ON "DailyLog"("userId", "date")`,
   `CREATE INDEX IF NOT EXISTS "DailyLog_userId_date_idx" ON "DailyLog"("userId", "date")`,
+  `CREATE TABLE IF NOT EXISTS "BodyRecord" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "userId" TEXT NOT NULL,
+    "datestr" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "value" REAL NOT NULL,
+    "unit" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+    "label_en" TEXT NOT NULL,
+    "origin" TEXT NOT NULL DEFAULT 'local',
+    "syncedAt" DATETIME,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "BodyRecord_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "BodyRecord_userId_datestr_type_key" ON "BodyRecord"("userId", "datestr", "type")`,
+  `CREATE INDEX IF NOT EXISTS "BodyRecord_userId_datestr_idx" ON "BodyRecord"("userId", "datestr")`,
+  `CREATE INDEX IF NOT EXISTS "BodyRecord_userId_type_datestr_idx" ON "BodyRecord"("userId", "type", "datestr")`,
   `CREATE TABLE IF NOT EXISTS "WorkoutLog" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "userId" TEXT NOT NULL,
@@ -149,6 +167,11 @@ const statements = [
     "fatigueThreshold" INTEGER,
     "weekendCalorieUpperKcal" INTEGER,
     "xunjiOpenApiKey" TEXT,
+    "xunjiFoodApiKey" TEXT,
+    "xunjiBodyApiKey" TEXT,
+    "xunjiOpenValidatedAt" DATETIME,
+    "xunjiFoodValidatedAt" DATETIME,
+    "xunjiBodyValidatedAt" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
     CONSTRAINT "UserPreference_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -211,12 +234,104 @@ async function ensureUserPreferenceRuleColumns(): Promise<void> {
     ['fatigueThreshold', 'INTEGER'],
     ['weekendCalorieUpperKcal', 'INTEGER'],
     ['xunjiOpenApiKey', 'TEXT'],
+    ['xunjiFoodApiKey', 'TEXT'],
+    ['xunjiBodyApiKey', 'TEXT'],
+    ['xunjiOpenValidatedAt', 'DATETIME'],
+    ['xunjiFoodValidatedAt', 'DATETIME'],
+    ['xunjiBodyValidatedAt', 'DATETIME'],
   ]
 
   for (const [column, type] of columnsToAdd) {
     if (!columnNames.has(column)) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "UserPreference" ADD COLUMN "${column}" ${type}`)
     }
+  }
+}
+
+const legacyBodyMeta = {
+  weight: { unit: 'kg', label: '体重', labelEn: 'Weight' },
+  bodyfat: { unit: '%', label: '体脂率', labelEn: 'Body fat' },
+  chest: { unit: 'cm', label: '胸围', labelEn: 'Chest' },
+  weist: { unit: 'cm', label: '腰围', labelEn: 'Waist' },
+  arm_left: { unit: 'cm', label: '左臂围', labelEn: 'Left arm' },
+  arm_right: { unit: 'cm', label: '右臂围', labelEn: 'Right arm' },
+  leg_left: { unit: 'cm', label: '左腿围', labelEn: 'Left leg' },
+  leg_right: { unit: 'cm', label: '右腿围', labelEn: 'Right leg' },
+} as const
+
+async function migrateLegacyBodyRecords(): Promise<void> {
+  const [dailyLogs, profiles] = await Promise.all([
+    prisma.dailyLog.findMany({
+      select: {
+        userId: true,
+        date: true,
+        morningWeightKg: true,
+        waistCm: true,
+        chestCm: true,
+        upperArmCm: true,
+        thighCm: true,
+      },
+    }),
+    prisma.userProfile.findMany({
+      select: {
+        userId: true,
+        updatedAt: true,
+        currentWeightKg: true,
+        estimatedBodyFatPercent: true,
+        waistCm: true,
+        chestCm: true,
+        upperArmCm: true,
+        thighCm: true,
+      },
+    }),
+  ])
+
+  type LegacyType = keyof typeof legacyBodyMeta
+  const insertIfMissing = async (
+    userId: string,
+    datestr: string,
+    type: LegacyType,
+    value: number | null,
+    origin: 'legacy_daily' | 'legacy_profile',
+  ) => {
+    if (value === null || !Number.isFinite(value)) return
+    const meta = legacyBodyMeta[type]
+    await prisma.bodyRecord.upsert({
+      where: { userId_datestr_type: { userId, datestr, type } },
+      create: {
+        userId,
+        datestr,
+        type,
+        value,
+        unit: meta.unit,
+        label: meta.label,
+        labelEn: meta.labelEn,
+        origin,
+      },
+      update: {},
+    })
+  }
+
+  for (const log of dailyLogs) {
+    await insertIfMissing(log.userId, log.date, 'weight', log.morningWeightKg, 'legacy_daily')
+    await insertIfMissing(log.userId, log.date, 'weist', log.waistCm, 'legacy_daily')
+    await insertIfMissing(log.userId, log.date, 'chest', log.chestCm, 'legacy_daily')
+    await insertIfMissing(log.userId, log.date, 'arm_left', log.upperArmCm, 'legacy_daily')
+    await insertIfMissing(log.userId, log.date, 'arm_right', log.upperArmCm, 'legacy_daily')
+    await insertIfMissing(log.userId, log.date, 'leg_left', log.thighCm, 'legacy_daily')
+    await insertIfMissing(log.userId, log.date, 'leg_right', log.thighCm, 'legacy_daily')
+  }
+
+  for (const profile of profiles) {
+    const datestr = profile.updatedAt.toISOString().slice(0, 10)
+    await insertIfMissing(profile.userId, datestr, 'weight', profile.currentWeightKg, 'legacy_profile')
+    await insertIfMissing(profile.userId, datestr, 'bodyfat', profile.estimatedBodyFatPercent, 'legacy_profile')
+    await insertIfMissing(profile.userId, datestr, 'weist', profile.waistCm, 'legacy_profile')
+    await insertIfMissing(profile.userId, datestr, 'chest', profile.chestCm, 'legacy_profile')
+    await insertIfMissing(profile.userId, datestr, 'arm_left', profile.upperArmCm, 'legacy_profile')
+    await insertIfMissing(profile.userId, datestr, 'arm_right', profile.upperArmCm, 'legacy_profile')
+    await insertIfMissing(profile.userId, datestr, 'leg_left', profile.thighCm, 'legacy_profile')
+    await insertIfMissing(profile.userId, datestr, 'leg_right', profile.thighCm, 'legacy_profile')
   }
 }
 
@@ -253,4 +368,5 @@ export async function ensureDatabaseSchema(): Promise<void> {
       await ensureJsonColumns('WorkoutLog', ['cardioJson'])
     }
   }
+  await migrateLegacyBodyRecords()
 }

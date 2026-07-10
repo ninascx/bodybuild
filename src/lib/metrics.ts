@@ -38,9 +38,11 @@ export interface TrendPoint {
   weight?: number
   weightAverage7?: number
   waist?: number
+  bodyfat?: number
   calories?: number
   proteinMet?: number
   protein?: number
+  steps?: number
 }
 
 export interface WeeklyCalorieBudget {
@@ -212,6 +214,7 @@ export function buildTrendData(logs: DailyLog[], today: string, days = 30, targe
       waist: log.waistCm,
       calories: log.calories,
       protein: log.protein,
+      steps: log.steps,
       proteinMet: log.protein !== undefined && log.protein >= target.protein ? 1 : 0,
     })
   }

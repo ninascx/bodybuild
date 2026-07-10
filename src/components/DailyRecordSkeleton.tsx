@@ -42,7 +42,7 @@ export function DailyRecordSkeleton() {
           <SkeletonBlock className="h-3 w-20 bg-slate-100 dark:bg-slate-800" />
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((item) => (
+          {[1, 2, 3].map((item) => (
             <div key={item} className="space-y-2">
               <SkeletonBlock className="h-4 w-20 bg-slate-100 dark:bg-slate-800" />
               <SkeletonBlock className="h-12 w-full bg-slate-100 dark:bg-slate-800" />

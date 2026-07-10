@@ -16,15 +16,15 @@ export function UserAvatar({ displayName, role = 'user', size = 'md', className 
     lg: 'h-12 w-12 text-base',
   }
 
-  const gradientClasses = role === 'admin'
-    ? 'bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500'
-    : 'bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500'
+  const toneClasses = role === 'admin'
+    ? 'border-amber-500 bg-amber-500'
+    : 'border-[var(--color-primary-600)] bg-[var(--color-primary-600)]'
 
   return (
     <div
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-full p-0.5 shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg',
-        gradientClasses,
+        'inline-flex shrink-0 items-center justify-center rounded-full border p-0.5',
+        toneClasses,
         className
       )}
       title={displayName}

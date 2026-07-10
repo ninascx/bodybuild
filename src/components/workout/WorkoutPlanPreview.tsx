@@ -16,7 +16,7 @@ export function WorkoutPlanPreview({
       ? 'warning'
       : 'neutral'
   const badgeLabel = template.id === recommendedId
-    ? '今日推荐'
+    ? '当日推荐'
     : template.source === 'custom'
       ? '自定义模板'
       : '内置计划'

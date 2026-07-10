@@ -29,7 +29,7 @@ export function WorkoutPlanPicker({
   return (
     <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto] lg:items-end">
       <label className="grid min-w-0 gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
-        <span>训练计划（今日推荐：{recommendedPlanName}）</span>
+        <span>训练计划（当日推荐：{recommendedPlanName}）</span>
         <Select
           value={selectedTemplateId}
           onChange={(event) => onTemplateChange(event.target.value)}
@@ -39,7 +39,7 @@ export function WorkoutPlanPicker({
               .filter((template) => template.source === 'builtin')
               .map((template) => (
                 <option key={template.id} value={template.id}>
-                  {template.id === recommendedId ? '今日推荐 · ' : ''}{template.name} · {template.focus}
+                  {template.id === recommendedId ? '当日推荐 · ' : ''}{template.name} · {template.focus}
                 </option>
               ))}
           </optgroup>
@@ -57,7 +57,7 @@ export function WorkoutPlanPicker({
           <Button variant="secondary" onClick={() => selectedTemplate && onApplyTemplate(selectedTemplate)} disabled={!selectedHasContent}>
             填入所选
           </Button>
-          <Button variant="secondary" onClick={onApplyRecommended}>今日推荐</Button>
+          <Button variant="secondary" onClick={onApplyRecommended}>当日推荐</Button>
         </>
       ) : null}
     </div>

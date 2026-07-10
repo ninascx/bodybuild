@@ -8,18 +8,18 @@ export interface GradientCardProps {
 }
 
 export function GradientCard({ children, className = '', variant = 'primary' }: GradientCardProps) {
-  const gradients = {
-    primary: 'bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-blue-500/10 dark:from-teal-500/20 dark:via-cyan-500/10 dark:to-blue-500/20',
-    success: 'bg-gradient-to-br from-emerald-500/10 via-green-500/5 to-teal-500/10 dark:from-emerald-500/20 dark:via-green-500/10 dark:to-teal-500/20',
-    warning: 'bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-red-500/10 dark:from-amber-500/20 dark:via-orange-500/10 dark:to-red-500/20',
-    neutral: 'bg-gradient-to-br from-slate-500/5 via-gray-500/3 to-slate-500/5 dark:from-slate-500/10 dark:via-gray-500/5 dark:to-slate-500/10',
+  const surfaces = {
+    primary: 'bg-[var(--surface-selected)] dark:bg-cyan-950/20',
+    success: 'bg-emerald-50 dark:bg-emerald-950/20',
+    warning: 'bg-amber-50 dark:bg-amber-950/20',
+    neutral: 'bg-[var(--surface-muted)] dark:bg-slate-800',
   }
 
   return (
     <section
       className={cn(
-        'min-w-0 rounded-xl border border-[var(--surface-border)] p-4 shadow-lg backdrop-blur-sm transition-all duration-300 hover:shadow-xl dark:border-slate-700',
-        gradients[variant],
+        'min-w-0 rounded-xl border border-[var(--surface-border)] p-4 dark:border-slate-700',
+        surfaces[variant],
         className,
       )}
     >

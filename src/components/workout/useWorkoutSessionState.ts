@@ -88,7 +88,7 @@ export function useWorkoutSessionState({
     stopRestTimer()
     onFinishWorkout()
     setTrainingMode(false)
-    setCompletionToast('训练已同步到今日记录')
+    setCompletionToast('训练已更新当日记录')
   }, [onFinishWorkout, stopRestTimer])
 
   const handleAdjustRestDuration = useCallback((delta: number) => {

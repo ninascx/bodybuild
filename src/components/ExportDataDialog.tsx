@@ -21,11 +21,6 @@ const exportFormats: Array<{ value: ExportFormat; label: string }> = [
 ]
 
 const dailyFieldLabels: Partial<Record<keyof DailyLog, string>> = {
-  morningWeightKg: '体重',
-  waistCm: '腰围',
-  chestCm: '胸围',
-  upperArmCm: '上臂',
-  thighCm: '大腿',
   calories: '热量',
   protein: '蛋白',
   carbs: '碳水',
@@ -208,7 +203,7 @@ export function ExportDataDialog({
     options.includePreference ? '规则配置' : null,
   ].filter((label): label is string => label !== null)
   const estimatedPayload: ScopedExportPayload = {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     exportScope: {
       rangePreset: options.rangePreset,
@@ -216,6 +211,7 @@ export function ExportDataDialog({
       endDate: range.endDate,
       sections: selectedContentLabels,
       dailyLogCount: dailyCount,
+      bodyRecordCount: 0,
       workoutLogCount: workoutCount,
       workoutTemplateCount: resolvedTemplateCount,
       slimMode: options.slimMode,
@@ -350,7 +346,7 @@ export function ExportDataDialog({
               </p>
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
-              <SegmentedControl value={options.rangePreset} options={presets} onChange={setPreset} />
+              <SegmentedControl ariaLabel="导出日期范围" value={options.rangePreset} options={presets} onChange={setPreset} />
             </div>
             {options.rangePreset === 'custom' ? (
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -440,6 +436,7 @@ export function ExportDataDialog({
             <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">输出</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <SegmentedControl
+                ariaLabel="导出格式"
                 value={activeOutputFormat}
                 options={exportFormats.map((format) => ({
                   ...format,

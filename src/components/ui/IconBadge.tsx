@@ -25,11 +25,11 @@ const iconPaths: Record<IconBadgeIcon, string> = {
 }
 
 const variantClasses: Record<IconBadgeVariant, string> = {
-  primary: 'bg-gradient-to-br from-teal-500 to-cyan-600 text-white shadow-lg shadow-teal-500/30 dark:from-teal-400 dark:to-cyan-500 dark:shadow-teal-400/20',
-  success: 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-500/30 dark:from-emerald-400 dark:to-green-500 dark:shadow-emerald-400/20',
-  warning: 'bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/30 dark:from-amber-400 dark:to-orange-500 dark:shadow-amber-400/20',
-  danger: 'bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/30 dark:from-rose-400 dark:to-red-500 dark:shadow-rose-400/20',
-  neutral: 'bg-gradient-to-br from-slate-500 to-slate-600 text-white shadow-lg shadow-slate-500/20 dark:from-slate-400 dark:to-slate-500 dark:shadow-slate-400/15',
+  primary: 'bg-[var(--color-primary-600)] text-white dark:bg-cyan-600',
+  success: 'bg-emerald-600 text-white dark:bg-emerald-500',
+  warning: 'bg-amber-600 text-white dark:bg-amber-500',
+  danger: 'bg-rose-600 text-white dark:bg-rose-500',
+  neutral: 'bg-slate-600 text-white dark:bg-slate-500',
 }
 
 const sizeClasses: Record<IconBadgeSize, { container: string; icon: string }> = {
@@ -54,7 +54,7 @@ export function IconBadge({ icon, variant = 'primary', size = 'md', className = 
   return (
     <div
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-xl transition-all duration-300 hover:scale-105',
+        'inline-flex shrink-0 items-center justify-center rounded-xl',
         variantClasses[variant],
         sizes.container,
         className,

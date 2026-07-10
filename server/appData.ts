@@ -1,4 +1,5 @@
 import type {
+  BodyRecord as DbBodyRecord,
   DailyLog as DbDailyLog,
   NutritionTarget as DbNutritionTarget,
   UserPreference as DbUserPreference,
@@ -11,11 +12,13 @@ import crypto from 'node:crypto'
 
 import { dailyTargets, userProfile, workoutPlans } from '../src/data/plans'
 import { defaultUserPreference, mergeUserPreference } from '../src/lib/userPreferences'
-import type { CardioLog, CardioPlan, DailyLog, DailyTarget, DayKey, ExerciseLog, ExercisePlan, UserPlanData, UserPreference, UserProfile, WorkoutLog, WorkoutPlan, WorkoutTemplate } from '../src/types'
+import { bodyMetricDefinition } from '../src/lib/bodyMetrics'
+import type { BodyRecord, BodyRecordOrigin, CardioLog, CardioPlan, DailyLog, DailyTarget, DayKey, ExerciseLog, ExercisePlan, UserPlanData, UserPreference, UserProfile, WorkoutLog, WorkoutPlan, WorkoutTemplate } from '../src/types'
 import { prisma } from './db'
 
 interface AppData {
   dailyLogs: DailyLog[]
+  bodyRecords: BodyRecord[]
   workoutLogs: WorkoutLog[]
   workoutTemplates: WorkoutTemplate[]
 }
@@ -56,11 +59,6 @@ function normalizeToken(value: string): string {
 export function toClientDailyLog(row: DbDailyLog): DailyLog {
   return {
     date: row.date,
-    morningWeightKg: row.morningWeightKg ?? undefined,
-    waistCm: row.waistCm ?? undefined,
-    chestCm: row.chestCm ?? undefined,
-    upperArmCm: row.upperArmCm ?? undefined,
-    thighCm: row.thighCm ?? undefined,
     calories: row.calories ?? undefined,
     protein: row.protein ?? undefined,
     carbs: row.carbs ?? undefined,
@@ -84,6 +82,19 @@ export function toClientWorkoutLog(row: DbWorkoutLog): WorkoutLog {
   }
 }
 
+export function toClientBodyRecord(row: DbBodyRecord): BodyRecord {
+  return {
+    datestr: row.datestr,
+    type: row.type as BodyRecord['type'],
+    value: row.value,
+    unit: row.unit as BodyRecord['unit'],
+    label: row.label,
+    label_en: row.labelEn,
+    origin: row.origin as BodyRecordOrigin,
+    synced_at: row.syncedAt?.toISOString(),
+  }
+}
+
 export function toClientWorkoutTemplate(row: DbWorkoutTemplate): WorkoutTemplate {
   return {
     id: row.id,
@@ -104,12 +115,6 @@ export function toClientUserProfile(row: DbUserProfile): UserProfile {
     birthDate: row.birthDate ?? undefined,
     heightCm: row.heightCm ?? undefined,
     initialWeightKg: row.initialWeightKg ?? undefined,
-    currentWeightKg: row.currentWeightKg ?? undefined,
-    estimatedBodyFatPercent: row.estimatedBodyFatPercent ?? undefined,
-    waistCm: row.waistCm ?? undefined,
-    chestCm: row.chestCm ?? undefined,
-    upperArmCm: row.upperArmCm ?? undefined,
-    thighCm: row.thighCm ?? undefined,
     targetWeeks: row.targetWeeks ?? undefined,
     goal: row.goal ?? undefined,
     sleepHours: row.sleepHours ?? undefined,
@@ -140,11 +145,6 @@ function dailyLogWriteData(userId: string, log: DailyLog) {
   return {
     userId,
     date: log.date,
-    morningWeightKg: log.morningWeightKg ?? null,
-    waistCm: log.waistCm ?? null,
-    chestCm: log.chestCm ?? null,
-    upperArmCm: log.upperArmCm ?? null,
-    thighCm: log.thighCm ?? null,
     calories: log.calories ?? null,
     protein: log.protein ?? null,
     carbs: log.carbs ?? null,
@@ -169,6 +169,57 @@ function workoutLogWriteData(userId: string, log: WorkoutLog) {
   }
 }
 
+function bodyRecordWriteData(userId: string, record: BodyRecord) {
+  return {
+    userId,
+    datestr: record.datestr,
+    type: record.type,
+    value: record.value,
+    unit: record.unit,
+    label: record.label,
+    labelEn: record.label_en,
+    origin: record.origin ?? 'local',
+    syncedAt: record.synced_at ? new Date(record.synced_at) : null,
+  }
+}
+
+function mergeLegacyBodyRecords(dailyLogs: DailyLog[], bodyRecords: BodyRecord[]): BodyRecord[] {
+  const merged = new Map<string, BodyRecord>()
+  for (const log of dailyLogs) {
+    const legacy = log as DailyLog & {
+      morningWeightKg?: number
+      waistCm?: number
+      chestCm?: number
+      upperArmCm?: number
+      thighCm?: number
+    }
+    const values = [
+      ['weight', legacy.morningWeightKg],
+      ['weist', legacy.waistCm],
+      ['chest', legacy.chestCm],
+      ['arm_left', legacy.upperArmCm],
+      ['arm_right', legacy.upperArmCm],
+      ['leg_left', legacy.thighCm],
+      ['leg_right', legacy.thighCm],
+    ] as const
+    values.forEach(([type, value]) => {
+      if (value === undefined || !Number.isFinite(value)) return
+      const definition = bodyMetricDefinition(type)
+      merged.set(`${log.date}:${type}`, {
+        datestr: log.date,
+        type,
+        value,
+        unit: definition.unit,
+        label: definition.label,
+        label_en: definition.label_en,
+        origin: 'legacy_daily',
+      })
+    })
+  }
+  bodyRecords.forEach((record) => merged.set(`${record.datestr}:${record.type}`, record))
+  return Array.from(merged.values())
+}
+
 function workoutTemplateWriteData(userId: string, template: WorkoutTemplate) {
   return {
     id: template.id,
@@ -189,12 +240,6 @@ function userProfileWriteData(userId: string, profile: UserProfile) {
     birthDate: profile.birthDate?.trim() || null,
     heightCm: profile.heightCm ?? null,
     initialWeightKg: profile.initialWeightKg ?? null,
-    currentWeightKg: profile.currentWeightKg ?? null,
-    estimatedBodyFatPercent: profile.estimatedBodyFatPercent ?? null,
-    waistCm: profile.waistCm ?? null,
-    chestCm: profile.chestCm ?? null,
-    upperArmCm: profile.upperArmCm ?? null,
-    thighCm: profile.thighCm ?? null,
     targetWeeks: profile.targetWeeks?.trim() || null,
     goal: profile.goal?.trim() || null,
     sleepHours: profile.sleepHours ?? null,
@@ -295,8 +340,9 @@ function cloneImportedTemplate(template: WorkoutTemplate): WorkoutTemplate {
 }
 
 export async function getUserAppData(userId: string): Promise<AppData> {
-  const [dailyLogs, workoutLogs, userTemplates] = await Promise.all([
+  const [dailyLogs, bodyRecords, workoutLogs, userTemplates] = await Promise.all([
     prisma.dailyLog.findMany({ where: { userId }, orderBy: { date: 'asc' } }),
+    prisma.bodyRecord.findMany({ where: { userId }, orderBy: [{ datestr: 'asc' }, { type: 'asc' }] }),
     prisma.workoutLog.findMany({ where: { userId }, orderBy: { date: 'asc' } }),
     prisma.workoutTemplate.findMany({
       where: { userId, isBuiltin: false },
@@ -306,6 +352,7 @@ export async function getUserAppData(userId: string): Promise<AppData> {
 
   return {
     dailyLogs: dailyLogs.map(toClientDailyLog),
+    bodyRecords: bodyRecords.map(toClientBodyRecord),
     workoutLogs: workoutLogs.map(toClientWorkoutLog),
     workoutTemplates: userTemplates.map(toClientWorkoutTemplate),
   }
@@ -386,14 +433,21 @@ export async function replaceUserPlanData(userId: string, data: UserPlanData): P
 }
 
 export async function replaceUserAppData(userId: string, data: AppData): Promise<AppData> {
+  const normalizedBodyRecords = mergeLegacyBodyRecords(data.dailyLogs, data.bodyRecords)
   await prisma.$transaction(async (tx) => {
     await tx.dailyLog.deleteMany({ where: { userId } })
+    await tx.bodyRecord.deleteMany({ where: { userId } })
     await tx.workoutLog.deleteMany({ where: { userId } })
     await tx.workoutTemplate.deleteMany({ where: { userId, isBuiltin: false } })
 
     if (data.dailyLogs.length > 0) {
       await tx.dailyLog.createMany({
         data: data.dailyLogs.map((log) => dailyLogWriteData(userId, log)),
+      })
+    }
+    if (normalizedBodyRecords.length > 0) {
+      await tx.bodyRecord.createMany({
+        data: normalizedBodyRecords.map((record) => bodyRecordWriteData(userId, record)),
       })
     }
     if (data.workoutLogs.length > 0) {
@@ -415,6 +469,7 @@ export async function replaceUserAppData(userId: string, data: AppData): Promise
 export async function deleteUserData(userId: string): Promise<void> {
   await prisma.$transaction([
     prisma.dailyLog.deleteMany({ where: { userId } }),
+    prisma.bodyRecord.deleteMany({ where: { userId } }),
     prisma.workoutLog.deleteMany({ where: { userId } }),
     prisma.workoutTemplate.deleteMany({ where: { userId, isBuiltin: false } }),
     prisma.workoutTemplateShare.deleteMany({ where: { userId } }),
@@ -433,7 +488,7 @@ export async function getUserExportData(userId: string) {
     getUserPreference(userId),
   ])
   return {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     profile,
     planData,
@@ -570,6 +625,25 @@ function workoutPlanData(userId: string, plan: WorkoutPlan) {
   }
 }
 
+export async function upsertBodyRecords(userId: string, records: BodyRecord[]): Promise<BodyRecord[]> {
+  await prisma.$transaction(
+    records.map((record) => {
+      const data = bodyRecordWriteData(userId, record)
+      return prisma.bodyRecord.upsert({
+        where: { userId_datestr_type: { userId, datestr: record.datestr, type: record.type } },
+        create: data,
+        update: data,
+      })
+    }),
+  )
+  return prisma.bodyRecord
+    .findMany({
+      where: { userId, datestr: { in: Array.from(new Set(records.map((record) => record.datestr))) } },
+      orderBy: [{ datestr: 'asc' }, { type: 'asc' }],
+    })
+    .then((rows) => rows.map(toClientBodyRecord))
+}
+
 export function toClientNutritionTarget(row: DbNutritionTarget): DailyTarget {
   return {
     day: row.dayOfWeek as DayKey,
@@ -606,12 +680,6 @@ export async function cloneDefaultPlanToUser(userId: string): Promise<void> {
         birthDate: userProfile.birthDate,
         heightCm: userProfile.heightCm,
         initialWeightKg: userProfile.initialWeightKg,
-        currentWeightKg: userProfile.currentWeightKg ?? userProfile.initialWeightKg,
-        estimatedBodyFatPercent: userProfile.estimatedBodyFatPercent,
-        waistCm: userProfile.waistCm ?? null,
-        chestCm: userProfile.chestCm ?? null,
-        upperArmCm: userProfile.upperArmCm ?? null,
-        thighCm: userProfile.thighCm ?? null,
         targetWeeks: userProfile.targetWeeks,
         goal: userProfile.goal,
         sleepHours: userProfile.sleepHours,
@@ -623,12 +691,6 @@ export async function cloneDefaultPlanToUser(userId: string): Promise<void> {
         birthDate: userProfile.birthDate,
         heightCm: userProfile.heightCm,
         initialWeightKg: userProfile.initialWeightKg,
-        currentWeightKg: userProfile.currentWeightKg ?? userProfile.initialWeightKg,
-        estimatedBodyFatPercent: userProfile.estimatedBodyFatPercent,
-        waistCm: userProfile.waistCm ?? null,
-        chestCm: userProfile.chestCm ?? null,
-        upperArmCm: userProfile.upperArmCm ?? null,
-        thighCm: userProfile.thighCm ?? null,
         targetWeeks: userProfile.targetWeeks,
         goal: userProfile.goal,
         sleepHours: userProfile.sleepHours,

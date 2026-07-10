@@ -98,16 +98,16 @@ export function WorkoutDesktopSessionRail({
   }
 
   return (
-    <aside className="hidden lg:block lg:self-stretch">
+    <aside className="hidden 2xl:block 2xl:self-stretch">
       <div data-workout-session-rail className="sticky top-20">
-        <Card className="grid max-h-[calc(100vh-6rem)] gap-4 overflow-y-auto p-4 shadow-none">
+        <Card className="grid gap-4 p-4 shadow-none">
         <div className="min-w-0">
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">训练会话</p>
           <h3 className="mt-1 truncate text-base font-semibold text-slate-950 dark:text-slate-50">
             {restDay ? '今天休息' : selectedWorkout?.workoutName ?? '准备开始训练'}
           </h3>
           <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-            {restDay ? '休息日不需要开始训练；可以同步训记或回看历史。' : completionHint}
+            {restDay ? '休息日不需要开始训练；可以从训记导入或回看历史。' : completionHint}
           </p>
         </div>
 
@@ -181,13 +181,13 @@ export function WorkoutDesktopSessionRail({
           <div className="grid gap-2 rounded-lg border border-[var(--surface-border)] p-3 dark:border-slate-700">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">训记同步</p>
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">训记训练</p>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">从外部记录拉取今天训练。</p>
               </div>
               <Badge tone={currentSyncBadge.tone}>{currentSyncBadge.text}</Badge>
             </div>
             <Button variant="secondary" className="w-full justify-center shadow-none" loading={xunjiSyncPending} onClick={onSyncFromXunji}>
-              同步训记
+              从训记导入训练
             </Button>
           </div>
         ) : null}

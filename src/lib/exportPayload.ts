@@ -1,6 +1,7 @@
 import type { UserExportPayload } from './storage'
 import { addDays, endOfWeekSaturday, isDateInRange, startOfWeekSunday } from './dates'
-import type { CardioLog, DailyLog, ExerciseLog, ExerciseSetLog, WorkoutLog } from '../types'
+import type { BodyRecord, CardioLog, DailyLog, ExerciseLog, ExerciseSetLog, WorkoutLog } from '../types'
+import { BODY_METRIC_TYPES } from './bodyMetrics'
 import { isCardioLogMeaningful } from './workout'
 
 export type ExportRangePreset = 'today' | 'thisWeek' | 'last7' | 'last30' | 'thisMonth' | 'all' | 'custom'
@@ -20,7 +21,7 @@ export type ExportOptions = {
 }
 
 export type ScopedExportPayload = {
-  version: 1
+  version: 1 | 2
   exportedAt: string
   exportScope: {
     rangePreset: ExportRangePreset
@@ -28,11 +29,13 @@ export type ScopedExportPayload = {
     endDate?: string
     sections: string[]
     dailyLogCount: number
+    bodyRecordCount?: number
     workoutLogCount: number
     workoutTemplateCount: number
     slimMode: boolean
   }
   dailyLogs?: UserExportPayload['dailyLogs']
+  bodyRecords?: UserExportPayload['bodyRecords']
   workoutLogs?: UserExportPayload['workoutLogs']
   workoutTemplates?: NonNullable<UserExportPayload['workoutTemplates']>
   profile?: UserExportPayload['profile']
@@ -47,6 +50,7 @@ function formatNumber(value: number | undefined, suffix = ''): string | null {
 function formatSectionLabel(section: string): string {
   const labels: Record<string, string> = {
     dailyLogs: '每日记录',
+    bodyRecords: '身体数据',
     workoutLogs: '训练记录',
     workoutTemplates: '训练模板',
     profile: '个人资料',
@@ -58,11 +62,6 @@ function formatSectionLabel(section: string): string {
 
 function buildDailySummaryFields(log: DailyLog): string[] {
   return [
-    formatNumber(log.morningWeightKg, 'kg'),
-    log.waistCm !== undefined ? `腰围${log.waistCm}cm` : null,
-    log.chestCm !== undefined ? `胸围${log.chestCm}cm` : null,
-    log.upperArmCm !== undefined ? `上臂${log.upperArmCm}cm` : null,
-    log.thighCm !== undefined ? `大腿${log.thighCm}cm` : null,
     formatNumber(log.calories, 'kcal'),
     log.protein !== undefined ? `蛋白${log.protein}g` : null,
     log.carbs !== undefined ? `碳水${log.carbs}g` : null,
@@ -168,6 +167,9 @@ export function buildScopedExportPayload(
 ): ScopedExportPayload {
   const range = resolveExportDateRange(options, today)
   const rangedDailyLogs = filterDatedItems(payload.dailyLogs, range)
+  const rangedBodyRecords = (payload.bodyRecords ?? []).filter((record) =>
+    !range.startDate || !range.endDate || isDateInRange(record.datestr, range.startDate, range.endDate),
+  )
   const rangedWorkoutLogs = filterDatedItems(payload.workoutLogs, range)
   const dailyLogs = options.includeDailyLogs
     ? options.slimMode
@@ -185,6 +187,7 @@ export function buildScopedExportPayload(
   const sections: string[] = []
 
   if (options.includeDailyLogs) sections.push('dailyLogs')
+  if (options.includeDailyLogs && rangedBodyRecords.length > 0) sections.push('bodyRecords')
   if (options.includeWorkoutLogs) sections.push('workoutLogs')
   if (options.includeWorkoutTemplates) sections.push('workoutTemplates')
   if (options.includeProfile) sections.push('profile')
@@ -192,7 +195,7 @@ export function buildScopedExportPayload(
   if (options.includePreference) sections.push('preference')
 
   return {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     exportScope: {
       rangePreset: options.rangePreset,
@@ -200,11 +203,13 @@ export function buildScopedExportPayload(
       endDate: range.endDate,
       sections,
       dailyLogCount: dailyLogs.length,
+      bodyRecordCount: options.includeDailyLogs ? rangedBodyRecords.length : 0,
       workoutLogCount: workoutLogs.length,
       workoutTemplateCount: workoutTemplates.length,
       slimMode: options.slimMode,
     },
     ...(options.includeDailyLogs ? { dailyLogs } : {}),
+    ...(options.includeDailyLogs ? { bodyRecords: rangedBodyRecords } : {}),
     ...(options.includeWorkoutLogs ? { workoutLogs } : {}),
     ...(options.includeWorkoutTemplates ? { workoutTemplates } : {}),
     ...(options.includeProfile ? { profile: payload.profile } : {}),
@@ -231,6 +236,13 @@ export function buildExportSummaryText(payload: ScopedExportPayload): string {
     lines.push('', '每日记录')
     for (const { log, fields } of summaryDailyLogs) {
       lines.push(`- ${log.date}${fields.length ? `：${fields.join('，')}` : ''}`)
+    }
+  }
+
+  if (payload.bodyRecords?.length) {
+    lines.push('', '身体数据')
+    for (const record of payload.bodyRecords) {
+      lines.push(`- ${record.datestr}：${record.label} ${record.value}${record.unit}（${record.type}）`)
     }
   }
 
@@ -324,6 +336,7 @@ type WorkoutCardioCsvRow = {
 
 export type ExportContentStats = {
   csvDailyRows: number
+  csvBodyRows: number
   csvWorkoutSets: number
   csvWorkoutCardioRows: number
   summaryDailyLogs: number
@@ -335,11 +348,6 @@ export type ExportContentStats = {
 }
 
 const dailyCsvFields: DailyCsvField[] = [
-  'morningWeightKg',
-  'waistCm',
-  'chestCm',
-  'upperArmCm',
-  'thighCm',
   'calories',
   'protein',
   'carbs',
@@ -414,6 +422,7 @@ export function buildExportContentStats(
   nonRecordSectionCount = countNonRecordSections(payload),
 ): ExportContentStats {
   const csvDailyRows = getCsvDailyRows(payload.dailyLogs).length
+  const csvBodyRows = new Set(payload.bodyRecords?.map((record) => record.datestr) ?? []).size
   const csvWorkoutSets = getCsvWorkoutSetRows(payload.workoutLogs).length
   const csvWorkoutCardioRows = getCsvWorkoutCardioRows(payload.workoutLogs).length
   const workoutTemplates = payload.exportScope.workoutTemplateCount
@@ -421,14 +430,15 @@ export function buildExportContentStats(
   const summaryWorkoutLogs = getSummaryWorkoutCount(payload.workoutLogs)
   return {
     csvDailyRows,
+    csvBodyRows,
     csvWorkoutSets,
     csvWorkoutCardioRows,
     summaryDailyLogs,
     summaryWorkoutLogs,
     workoutTemplates,
     nonRecordSections: nonRecordSectionCount,
-    csvAvailable: csvDailyRows > 0 || csvWorkoutSets > 0 || csvWorkoutCardioRows > 0 || workoutTemplates > 0,
-    summaryAvailable: summaryDailyLogs > 0 || summaryWorkoutLogs > 0 || workoutTemplates > 0 || nonRecordSectionCount > 0,
+    csvAvailable: csvDailyRows > 0 || csvBodyRows > 0 || csvWorkoutSets > 0 || csvWorkoutCardioRows > 0 || workoutTemplates > 0,
+    summaryAvailable: summaryDailyLogs > 0 || csvBodyRows > 0 || summaryWorkoutLogs > 0 || workoutTemplates > 0 || nonRecordSectionCount > 0,
   }
 }
 
@@ -436,7 +446,8 @@ export function buildExportResultSummary(payload: ScopedExportPayload, format: E
   const stats = buildExportContentStats(payload)
   const extra = stats.nonRecordSections > 0 ? `，其他 ${stats.nonRecordSections} 项` : ''
   if (format === 'csv') {
-    return `每日行 ${stats.csvDailyRows} 条，训练组 ${stats.csvWorkoutSets} 条，有氧 ${stats.csvWorkoutCardioRows} 条，模板 ${stats.workoutTemplates} 个`
+    const body = stats.csvBodyRows > 0 ? `，身体 ${stats.csvBodyRows} 天` : ''
+    return `每日行 ${stats.csvDailyRows} 条${body}，训练组 ${stats.csvWorkoutSets} 条，有氧 ${stats.csvWorkoutCardioRows} 条，模板 ${stats.workoutTemplates} 个`
   }
   if (format === 'summary' || format === 'copySummary') {
     return `每日 ${stats.summaryDailyLogs} 条，训练 ${stats.summaryWorkoutLogs} 条，模板 ${stats.workoutTemplates} 个${extra}`
@@ -473,6 +484,26 @@ export function buildExportCsvText(payload: ScopedExportPayload): string {
           row.workout.workoutName,
           ...activeCardioFields.map((field) => row.cardio[field]),
         ]))
+      }
+    }
+  }
+
+  if (payload.bodyRecords?.length) {
+    const byDate = new Map<string, Map<BodyRecord['type'], number>>()
+    payload.bodyRecords.forEach((record) => {
+      const values = byDate.get(record.datestr) ?? new Map<BodyRecord['type'], number>()
+      values.set(record.type, record.value)
+      byDate.set(record.datestr, values)
+    })
+    const activeTypes = BODY_METRIC_TYPES.filter((type) =>
+      payload.bodyRecords?.some((record) => record.type === type),
+    )
+    if (activeTypes.length > 0) {
+      if (lines.length) lines.push('')
+      lines.push('body_records')
+      lines.push(csvRow(['datestr', ...activeTypes]))
+      for (const [datestr, values] of Array.from(byDate.entries()).sort(([a], [b]) => a.localeCompare(b))) {
+        lines.push(csvRow([datestr, ...activeTypes.map((type) => values.get(type))]))
       }
     }
   }

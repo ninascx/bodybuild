@@ -7,7 +7,6 @@ export const userProfile: UserProfile = {
   birthDate: '2002-11-10',
   heightCm: 174,
   initialWeightKg: 80,
-  estimatedBodyFatPercent: 18,
   targetWeeks: '8-12 周',
   goal: '减脂过程中尽量增肌，重点提升胸肌视觉效果，同时保护肩部',
   sleepHours: 7,

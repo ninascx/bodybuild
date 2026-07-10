@@ -5,7 +5,7 @@ import { copyFile, mkdir, readFile, readdir, rename, stat, unlink, writeFile } f
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import type { DailyLog, ServerData, UserPlanData, UserPreference, UserProfile, WorkoutLog, WorkoutTemplate } from '../src/types'
+import type { BodyRecord, DailyLog, ServerData, UserPlanData, UserPreference, UserProfile, WorkoutLog, WorkoutTemplate } from '../src/types'
 import {
   cloneDefaultPlanToUser,
   createWorkoutTemplateShareToken,
@@ -27,6 +27,23 @@ import {
 import { createSession, currentSessionTokenHash, destroySession, getCurrentUser, hashPassword, requireAdmin, requireUser, toPublicUser, verifyPassword } from './auth'
 import { configureDatabaseRuntime, prisma } from './db'
 import { ensureDatabaseSchema } from './ensureDatabase'
+import {
+  clearXunjiConnection,
+  commitXunjiBodyMutation,
+  commitXunjiDailySync,
+  deleteLocalBodyRecord,
+  getXunjiConnections,
+  getXunjiDataIntegrationConfig,
+  previewXunjiBodyMutation,
+  previewXunjiDailySync,
+  queryXunjiBody,
+  queryXunjiFood,
+  saveLocalBodyRecords,
+  saveXunjiDataIntegrationConfig,
+  validateAndSaveXunjiConnection,
+  type XunjiConnectionKind,
+  XunjiDataError,
+} from './xunjiData'
 import { syncXunjiTrainingDay } from './xunjiSync'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -51,9 +68,10 @@ interface LoginAttempt {
 const loginAttempts = new Map<string, LoginAttempt>()
 
 const emptyData = (): ServerData => ({
-  version: 1,
+  version: 2,
   updatedAt: new Date().toISOString(),
   dailyLogs: [],
+  bodyRecords: [],
   workoutLogs: [],
   workoutTemplates: [],
 })
@@ -63,9 +81,9 @@ function validateData(value: unknown): ServerData {
     throw new Error('Invalid data payload')
   }
 
-  const payload = value as Partial<ServerData>
+  const payload = value as Partial<ServerData> & { version?: number }
   if (
-    payload.version !== 1 ||
+    (Number(payload.version) !== 1 && Number(payload.version) !== 2) ||
     !Array.isArray(payload.dailyLogs) ||
     !Array.isArray(payload.workoutLogs) ||
     (payload.workoutTemplates !== undefined && !Array.isArray(payload.workoutTemplates))
@@ -74,9 +92,10 @@ function validateData(value: unknown): ServerData {
   }
 
   return {
-    version: 1,
+    version: 2,
     updatedAt: typeof payload.updatedAt === 'string' ? payload.updatedAt : new Date().toISOString(),
     dailyLogs: payload.dailyLogs,
+    bodyRecords: Array.isArray(payload.bodyRecords) ? payload.bodyRecords : [],
     workoutLogs: payload.workoutLogs,
     workoutTemplates: payload.workoutTemplates ?? [],
   }
@@ -84,6 +103,7 @@ function validateData(value: unknown): ServerData {
 
 function validateAppData(value: unknown): {
   dailyLogs: DailyLog[]
+  bodyRecords: BodyRecord[]
   workoutLogs: WorkoutLog[]
   workoutTemplates: WorkoutTemplate[]
 } {
@@ -100,6 +120,7 @@ function validateAppData(value: unknown): {
   }
   return {
     dailyLogs: payload.dailyLogs,
+    bodyRecords: Array.isArray(payload.bodyRecords) ? payload.bodyRecords : [],
     workoutLogs: payload.workoutLogs,
     workoutTemplates: payload.workoutTemplates ?? [],
   }
@@ -128,6 +149,25 @@ function validateXunjiApiKey(value: string): string {
   if (/\s/.test(token)) throw new Error('训记 Open API Key 不能包含空格或换行')
   if (token.length < 16) throw new Error('训记 Open API Key 长度过短')
   return token
+}
+
+function xunjiConnectionKind(value: string): XunjiConnectionKind {
+  if (value === 'training' || value === 'food' || value === 'body') return value
+  throw new XunjiDataError('不支持的训记连接类型。')
+}
+
+function sendXunjiDataError(response: express.Response, error: unknown, fallback: string): void {
+  if (error instanceof XunjiDataError) {
+    if (error.retryAfterMs !== undefined) {
+      response.setHeader('Retry-After', Math.max(1, Math.ceil(error.retryAfterMs / 1000)))
+    }
+    response.status(error.status).json({
+      error: error.message,
+      ...(error.retryAfterMs === undefined ? {} : { retryAfterMs: error.retryAfterMs }),
+    })
+    return
+  }
+  response.status(500).json({ error: error instanceof Error ? error.message : fallback })
 }
 
 function trustProxySetting(): boolean | string {
@@ -504,6 +544,40 @@ app.get('/api/integrations/xunji', async (request, response) => {
   }
 })
 
+app.get('/api/integrations/xunji/connections', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    response.json(await getXunjiConnections(user.id))
+  } catch (error) {
+    sendXunjiDataError(response, error, '读取训记连接状态失败。')
+  }
+})
+
+app.post('/api/integrations/xunji/connections/:kind/validate', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    response.json(await validateAndSaveXunjiConnection(
+      user.id,
+      xunjiConnectionKind(request.params.kind),
+      request.body,
+    ))
+  } catch (error) {
+    sendXunjiDataError(response, error, '验证训记连接失败。')
+  }
+})
+
+app.delete('/api/integrations/xunji/connections/:kind', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    response.json(await clearXunjiConnection(user.id, xunjiConnectionKind(request.params.kind)))
+  } catch (error) {
+    sendXunjiDataError(response, error, '移除训记连接失败。')
+  }
+})
+
 app.put('/api/integrations/xunji', async (request, response) => {
   try {
     const user = await requireUser(request, response)
@@ -515,9 +589,11 @@ app.put('/api/integrations/xunji', async (request, response) => {
       create: {
         userId: user.id,
         xunjiOpenApiKey: nextToken,
+        xunjiOpenValidatedAt: null,
       },
       update: {
         xunjiOpenApiKey: nextToken,
+        xunjiOpenValidatedAt: null,
       },
       select: { xunjiOpenApiKey: true },
     })
@@ -528,6 +604,107 @@ app.put('/api/integrations/xunji', async (request, response) => {
     })
   } catch (error) {
     response.status(400).json({ error: error instanceof Error ? error.message : '保存训记配置失败' })
+  }
+})
+
+app.get('/api/integrations/xunji-data', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    response.json(await getXunjiDataIntegrationConfig(user.id))
+  } catch (error) {
+    sendXunjiDataError(response, error, '读取训记饮食与身体数据配置失败')
+  }
+})
+
+app.put('/api/integrations/xunji-data', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    response.json(await saveXunjiDataIntegrationConfig(user.id, request.body))
+  } catch (error) {
+    sendXunjiDataError(response, error, '保存训记饮食与身体数据配置失败')
+  }
+})
+
+app.post('/api/xunji/food/records/query', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    response.json(await queryXunjiFood(user.id, request.body))
+  } catch (error) {
+    sendXunjiDataError(response, error, '读取训记饮食数据失败')
+  }
+})
+
+app.post('/api/xunji/body/records/query', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    response.json(await queryXunjiBody(user.id, request.body))
+  } catch (error) {
+    sendXunjiDataError(response, error, '读取训记身体数据失败')
+  }
+})
+
+app.post('/api/xunji/body/records/preview', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    response.json(await previewXunjiBodyMutation(user.id, request.body))
+  } catch (error) {
+    sendXunjiDataError(response, error, '预检训记身体数据失败')
+  }
+})
+
+app.post('/api/xunji/body/records/commit', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    response.json(await commitXunjiBodyMutation(user.id, request.body))
+  } catch (error) {
+    sendXunjiDataError(response, error, '写入训记身体数据失败')
+  }
+})
+
+app.post('/api/xunji/daily-sync/:date/preview', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    response.json(await previewXunjiDailySync(user.id, request.params.date, request.body))
+  } catch (error) {
+    sendXunjiDataError(response, error, '预检训记每日数据失败')
+  }
+})
+
+app.post('/api/xunji/daily-sync/commit', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    response.json(await commitXunjiDailySync(user.id, request.body))
+  } catch (error) {
+    sendXunjiDataError(response, error, '同步训记每日数据失败')
+  }
+})
+
+app.post('/api/body-records', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    response.json({ bodyRecords: await saveLocalBodyRecords(user.id, request.body) })
+  } catch (error) {
+    sendXunjiDataError(response, error, '保存身体数据失败')
+  }
+})
+
+app.delete('/api/body-records/:date/:type', async (request, response) => {
+  try {
+    const user = await requireUser(request, response)
+    if (!user) return
+    await deleteLocalBodyRecord(user.id, request.params.date, request.params.type)
+    response.json({ ok: true })
+  } catch (error) {
+    sendXunjiDataError(response, error, '删除身体数据失败')
   }
 })
 
@@ -594,8 +771,24 @@ app.post('/api/xunji/sync/:date', async (request, response) => {
       response.status(409).json({ error: error.message })
       return
     }
-    const message = error instanceof Error ? error.message : '同步训记训练数据失败'
-    const status = message.includes('过于频繁') ? 429 : message.includes('Open API Key') ? 503 : 400
+    const rawMessage = error instanceof Error ? error.message : '同步训记训练数据失败'
+    const normalized = rawMessage.toLowerCase()
+    const message = normalized.includes('apikey missing') || rawMessage.includes('Open API Key')
+      ? '训练数据 Key 未配置，请前往“设置 > 训记连接”配置。'
+      : normalized.includes('apikey invalid')
+        ? '训练数据 Key 已失效，请重新复制并验证。'
+        : rawMessage.includes('仅VIP可用') || normalized.includes('vip')
+          ? '训练数据接口仅限训记 VIP 使用。'
+          : normalized.includes('too frequent')
+            ? '训记训练数据请求过于频繁，请稍后重试。'
+            : rawMessage
+    const status = normalized.includes('too frequent') || rawMessage.includes('过于频繁')
+      ? 429
+      : normalized.includes('apikey') || rawMessage.includes('Open API Key')
+        ? 503
+        : normalized.includes('vip')
+          ? 403
+          : 400
     response.status(status).json({ error: message })
   }
 })

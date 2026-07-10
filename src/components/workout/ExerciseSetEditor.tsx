@@ -43,14 +43,14 @@ export function ExerciseSetEditor({
     <div
       data-workout-set-row
       data-set-index={setIndex}
-      className="grid min-w-0 gap-2 rounded-md bg-slate-50 p-2 dark:bg-slate-800 lg:grid-cols-[3.25rem_minmax(8rem,1fr)_7rem_minmax(11rem,auto)_minmax(10rem,1fr)_auto] lg:items-start lg:gap-3"
+      className="grid min-w-0 gap-2 rounded-md bg-slate-50 p-2 dark:bg-slate-800 sm:grid-cols-2 sm:items-start"
     >
-      <div className="hidden h-11 items-center rounded-md border border-[var(--surface-border)] bg-white px-2 text-xs font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 lg:flex">
+      <div className="flex h-11 items-center rounded-md border border-[var(--surface-border)] bg-white px-2 text-xs font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 sm:col-span-2">
         第 {setIndex + 1} 组
       </div>
 
       {previousHintSummary ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-emerald-100 bg-white px-2.5 py-1.5 text-xs text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200 lg:hidden">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-emerald-100 bg-white px-2.5 py-1.5 text-xs text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200 sm:col-span-2">
           <span>
             {previousHintLabel}：<span className="font-semibold">{previousHintSummary}</span>
           </span>
@@ -65,7 +65,7 @@ export function ExerciseSetEditor({
         </div>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-2 sm:contents lg:contents">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:col-span-2">
         <div className="space-y-1">
           <NumberField
             label={`${setIndex + 1}组 kg`}
@@ -114,29 +114,10 @@ export function ExerciseSetEditor({
         onChange={(rir) => onUpdateSet({ rir })}
       />
 
-      <div className="hidden min-h-11 rounded-md border border-emerald-100 bg-white px-2.5 py-2 text-xs text-emerald-800 dark:border-emerald-700/40 dark:bg-slate-900 dark:text-emerald-200 lg:block">
-        {previousHintSummary ? (
-          <>
-            <span className="text-slate-500 dark:text-slate-400">{previousHintLabel}</span>
-            <p className="mt-0.5 font-semibold">{previousHintSummary}</p>
-            <button
-              type="button"
-              className="mt-1 text-xs font-semibold underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={onApplyPreviousPatch}
-              disabled={!previousPatch}
-            >
-              {isSetEmpty(set) ? '套用' : '覆盖'}
-            </button>
-          </>
-        ) : (
-          <span className="text-slate-400 dark:text-slate-500">无上次记录</span>
-        )}
-      </div>
-
       {setIndex > 0 ? (
         <Button
           variant="secondary"
-          className="self-start px-2 text-xs lg:min-h-11 lg:whitespace-nowrap"
+          className="self-start px-2 text-xs sm:justify-self-start"
           onClick={onCopyPrevious}
           disabled={!canCopyPrevious}
         >

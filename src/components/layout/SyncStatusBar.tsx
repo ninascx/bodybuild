@@ -15,7 +15,7 @@ type SyncStatusBarProps = {
 }
 
 const statusLabel: Record<SyncState, string> = {
-  synced: '已同步',
+  synced: '已保存',
   saving: '保存中',
   loading: '连接中',
   offline: '离线',
@@ -46,7 +46,7 @@ export function SyncStatusBar({
   copyMessage,
   onRetry,
 }: SyncStatusBarProps) {
-  const label = syncState === 'synced' && lastSyncedLabel ? `已同步 ${lastSyncedLabel}` : statusLabel[syncState]
+  const label = syncState === 'synced' && lastSyncedLabel ? `已保存 ${lastSyncedLabel}` : statusLabel[syncState]
   const compactMessage = syncState === 'synced' ? label : syncMessage
   const hasTransientMessage = Boolean(saveFeedback || slowSave || noticeMessage || copyMessage)
   const quietSynced = syncState === 'synced' && !autoRetryEnabled && !hasTransientMessage
@@ -55,13 +55,13 @@ export function SyncStatusBar({
     <div className="mt-1">
       <div className={quietSynced ? 'flex justify-end' : 'flex flex-wrap items-center justify-between gap-x-3 gap-y-1'}>
         <p className="hidden min-w-0 truncate text-xs leading-5 text-slate-500 dark:text-slate-400 sm:block">
-          <span className="font-medium text-slate-700 dark:text-slate-200">同步</span>
+          <span className="font-medium text-slate-700 dark:text-slate-200">保存</span>
           <span className="mx-1.5 text-slate-300 dark:text-slate-700">/</span>
           <span>{compactMessage}</span>
         </p>
         <div className="flex shrink-0 items-center gap-2">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold shadow-sm ${statusPillClass[syncState]}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusPillClass[syncState]}`}
             role={syncState === 'offline' ? 'alert' : 'status'}
             aria-live={syncState === 'offline' ? 'assertive' : 'polite'}
             aria-atomic="true"

@@ -86,14 +86,16 @@ export function WorkoutControlPanel({
           <Badge tone={syncBadge.tone} className="min-w-16 justify-center">
             {syncBadge.text}
           </Badge>
-          <Button
-            variant="secondary"
-            className="hidden px-3 shadow-none sm:inline-flex"
-            loading={xunjiSyncPending}
-            onClick={onSyncFromXunji}
-          >
-            同步训记
-          </Button>
+          <div className="hidden sm:block">
+            <Button
+              variant="secondary"
+              className="px-3 shadow-none"
+              loading={xunjiSyncPending}
+              onClick={onSyncFromXunji}
+            >
+              从训记导入训练
+            </Button>
+          </div>
         </div>
       </div>
       <div className="mt-3 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] px-3 py-2 dark:border-slate-700 dark:bg-slate-800/70 lg:hidden">
@@ -129,7 +131,7 @@ export function WorkoutControlPanel({
           loading={xunjiSyncPending}
           onClick={onSyncFromXunji}
         >
-          同步训记
+          从训记导入训练
         </Button>
       </div>
 
