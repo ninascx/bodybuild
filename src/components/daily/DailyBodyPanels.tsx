@@ -49,6 +49,7 @@ function MetricFields({
               range={{ min: definition.min, max: definition.max }}
               quickStep={0.1}
               quickStepLabel="0.1"
+              controlPlacement="inline"
               footerLeading={status ? <Badge tone={status.tone}>{status.label}</Badge> : undefined}
               onChange={(value) => onChange(definition.type, value)}
             />
@@ -82,14 +83,6 @@ function BodyMetricFields({
       <DisclosurePanel title="下肢围度" contentClassName="pt-3">
         <MetricFields records={records} definitions={lower} onChange={onChange} />
       </DisclosurePanel>
-      <DisclosurePanel title="接口字段说明" contentClassName="grid gap-2 text-xs text-slate-600 dark:text-slate-300">
-        {BODY_METRIC_DEFINITIONS.map((definition) => (
-          <div key={definition.type} className="flex items-center justify-between gap-4">
-            <span>{definition.label}</span>
-            <code>{definition.type}</code>
-          </div>
-        ))}
-      </DisclosurePanel>
     </div>
   )
 }
@@ -106,20 +99,29 @@ export function DailyMeasurementCard({
   className?: string
 }) {
   const pendingCount = records.filter((record) => record.origin !== 'xunji').length
+  const summary = bodySummary(records)
   return (
-    <section className={`rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-4 dark:border-slate-800 dark:bg-slate-900 ${className}`}>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold text-slate-950 dark:text-slate-50">身体数据</h3>
-          <p className="mt-1 text-sm leading-5 text-slate-600 dark:text-slate-300">
-            {bodySummary(records) || '先保存在本项目，需要时再批量同步到训记。'}
-          </p>
+    <DisclosurePanel
+      className={className}
+      title={(
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-3 pr-2">
+          <div className="min-w-0">
+            <span className="block text-base font-semibold text-slate-950 dark:text-slate-50">身体数据</span>
+            <span className="mt-0.5 block truncate text-xs font-normal text-slate-500 dark:text-slate-400">
+              {summary || '体脂率、腰围及其他围度'}
+            </span>
+          </div>
+          {pendingCount > 0 ? <Badge tone="warning">待同步 {pendingCount}</Badge> : null}
         </div>
-        {pendingCount > 0 ? (
-          <Button variant="secondary" onClick={onSync}>同步 {pendingCount} 项到训记</Button>
-        ) : null}
-      </div>
+      )}
+      contentClassName="grid gap-4 p-4"
+    >
       <BodyMetricFields records={records} onChange={onChange} />
-    </section>
+      {pendingCount > 0 ? (
+        <div className="flex justify-end border-t border-[var(--surface-border)] pt-4 dark:border-slate-700">
+          <Button variant="secondary" onClick={onSync}>同步 {pendingCount} 项到训记</Button>
+        </div>
+      ) : null}
+    </DisclosurePanel>
   )
 }

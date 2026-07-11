@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { addDays, parseDateInput } from '../lib/dates'
 import { isCardioLogMeaningful } from '../lib/workout'
 import type { DailyLog, WorkoutLog } from '../types'
@@ -55,6 +55,8 @@ export function MiniCalendar({
   onSelectDate: (date: string) => void
   density?: 'default' | 'compact'
 }) {
+  const [focusedDate, setFocusedDate] = useState(selectedDate)
+  const buttonRefs = useRef(new Map<string, HTMLButtonElement>())
   const dailyByDate = useMemo(() => {
     const map = new Map<string, DailyLog>()
     for (const log of dailyLogs) map.set(log.date, log)
@@ -88,7 +90,32 @@ export function MiniCalendar({
     return result
   }, [today])
 
+  const moveFocus = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let nextIndex: number | undefined
+    if (event.key === 'ArrowLeft') nextIndex = index - 1
+    if (event.key === 'ArrowRight') nextIndex = index + 1
+    if (event.key === 'ArrowUp') nextIndex = index - 7
+    if (event.key === 'ArrowDown') nextIndex = index + 7
+    if (event.key === 'Home') nextIndex = index - (index % 7)
+    if (event.key === 'End') nextIndex = index + (6 - (index % 7))
+    if (nextIndex === undefined) return
+    event.preventDefault()
+    nextIndex = Math.max(0, Math.min(cells.length - 1, nextIndex))
+    if (cells[nextIndex]?.isFuture) {
+      while (nextIndex > 0 && cells[nextIndex]?.isFuture) nextIndex -= 1
+    }
+    const nextCell = cells[nextIndex]
+    if (!nextCell || nextCell.isFuture) return
+    setFocusedDate(nextCell.date)
+    window.requestAnimationFrame(() => buttonRefs.current.get(nextCell.date)?.focus())
+  }
+
   if (cells.length === 0) return null
+  const tabStopDate = cells.some((cell) => cell.date === focusedDate && !cell.isFuture)
+    ? focusedDate
+    : cells.find((cell) => cell.date === selectedDate && !cell.isFuture)?.date
+      ?? cells.find((cell) => cell.date === today && !cell.isFuture)?.date
+      ?? [...cells].reverse().find((cell) => !cell.isFuture)?.date
   const compact = density === 'compact'
   const containerClass = compact
     ? 'rounded-lg border border-slate-200 bg-white p-2.5 dark:border-slate-700 dark:bg-slate-900'
@@ -153,12 +180,21 @@ export function MiniCalendar({
           return (
             <Button
               key={cell.date}
+              ref={(element) => {
+                if (element) buttonRefs.current.set(cell.date, element)
+                else buttonRefs.current.delete(cell.date)
+              }}
               variant="secondary"
               onClick={() => {
                 if (cell.isFuture) return
+                setFocusedDate(cell.date)
                 onSelectDate(cell.date)
               }}
+              onFocus={() => setFocusedDate(cell.date)}
+              onKeyDown={(event) => moveFocus(event, cells.indexOf(cell))}
               disabled={cell.isFuture}
+              tabIndex={!cell.isFuture && cell.date === tabStopDate ? 0 : -1}
+              data-calendar-date={cell.date}
               aria-label={ariaLabel}
               aria-current={isToday ? 'date' : undefined}
               aria-pressed={isSelected}

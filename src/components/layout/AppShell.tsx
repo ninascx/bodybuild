@@ -107,7 +107,7 @@ export function AppShell<T extends string>({
                         height={32}
                       />
                       <span className="hidden text-[var(--surface-border-strong)] dark:text-slate-700 sm:inline">/</span>
-                      <h1 className="truncate text-xl font-bold tracking-tight text-slate-950 dark:text-slate-50 sm:text-2xl">{activeLabel}</h1>
+                      <h1 className="truncate font-sans text-xl font-semibold tracking-tight text-slate-950 dark:text-slate-50 sm:text-2xl">{activeLabel}</h1>
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2">
@@ -151,7 +151,7 @@ export function AppShell<T extends string>({
                 {/* Desktop Header (Simplified) */}
                 <header className="mb-4 hidden lg:block">
                   <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-slate-50">
+                    <h1 className="font-sans text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">
                       {activeLabel}
                     </h1>
                     <DropdownMenu

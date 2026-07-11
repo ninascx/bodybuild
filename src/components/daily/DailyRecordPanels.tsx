@@ -19,6 +19,7 @@ export function DailyCalendarPanel({
   return (
     <div className={className}>
       <MiniCalendar
+        key={selectedDate}
         selectedDate={selectedDate}
         today={today}
         dailyLogs={dailyLogs}

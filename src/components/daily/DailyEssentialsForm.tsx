@@ -1,15 +1,13 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import type { BodyMetricType, BodyRecord, DailyLog, DailyTarget } from '../../types'
-import type { SyncState } from '../../lib/storage'
 import type { DailyFocusKey } from '../../lib/productFlow'
 import { bodyMetricDefinition } from '../../lib/bodyMetrics'
 import { Badge, Button, DisclosurePanel } from '../ui'
 import { QuickAdjustNumberField, type NumberRange } from '../NumberField'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
-import { getDailySaveLabel } from './dailyRecordStatus'
 import { getBodyRecordStatus } from './bodyRecordStatus'
-import { keyRecordCompletion } from './dailyRecordActions'
+import { keyRecordState } from './dailyRecordActions'
 
 export type DailyEssentialsFormProps = {
   selectedLog: Partial<DailyLog> & { date: string }
@@ -18,10 +16,6 @@ export type DailyEssentialsFormProps = {
   yesterdayLog: DailyLog | undefined
   calorieTarget: number | undefined
   fatigueThreshold: number
-  syncState: SyncState
-  savePending: boolean
-  lastSyncedLabel: string
-  showSaveStatus?: boolean
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
   onUpdateBodyRecord: (type: BodyMetricType, value: number | undefined) => void
   onQuickAction: (patch: Partial<DailyLog>, feedback?: string) => void
@@ -59,7 +53,7 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
   const weightRecord = props.selectedBodyRecords.find((record) => record.type === 'weight')
   const weightDefinition = bodyMetricDefinition('weight')
   const weightStatus = weightRecord ? getBodyRecordStatus(weightRecord) : undefined
-  const completion = keyRecordCompletion({
+  const keyStatus = keyRecordState({
     weight: weightRecord?.value,
     calories: props.selectedLog.calories,
     protein: props.selectedLog.protein,
@@ -67,8 +61,6 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
   const [supplementaryOpen, setSupplementaryOpen] = useState(
     () => Boolean(props.focusKey && supplementaryKeys.includes(props.focusKey)),
   )
-  const showSaveStatus = props.showSaveStatus ?? true
-
   useEffect(() => {
     if (!props.focusKey || !supplementaryKeys.includes(props.focusKey)) return
     const timer = window.setTimeout(() => setSupplementaryOpen(true), 0)
@@ -171,7 +163,9 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
       key={field.key}
       data-daily-focus={field.key}
       style={{ '--motion-index': Math.min(index, 3) } as CSSProperties}
-      className={`${field.className ?? ''} ${fieldFocusClass(props.focusKey === field.key)}`}
+      className={`${field.className ?? ''} ${fieldFocusClass(
+        props.focusKey === field.key || (!props.focusKey && keyStatus.firstMissing?.key === field.key),
+      )}`}
     >
       <QuickAdjustNumberField
         className={quickFieldClass}
@@ -182,6 +176,7 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
         range={field.range}
         quickStep={field.quickStep}
         quickStepLabel={field.quickStepLabel}
+        controlPlacement="inline"
         footerLeading={field.footerLeading}
         onChange={field.onChange}
       />
@@ -189,69 +184,51 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
   )
 
   return (
-    <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] px-3 py-3 dark:border-slate-800 dark:bg-slate-900 sm:p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold text-slate-950 dark:text-slate-50">关键记录</h3>
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">体重、热量和蛋白质</p>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          <span role="status" aria-live="polite" aria-atomic="true">
-            <Badge tone={completion.completed === completion.total ? 'positive' : completion.completed > 0 ? 'warning' : 'neutral'}>
-              关键记录 {completion.completed}/{completion.total}
-            </Badge>
-          </span>
-          {showSaveStatus ? (
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400" role="status" aria-live="polite">
-              {getDailySaveLabel(props.syncState, props.savePending, props.lastSyncedLabel)}
-            </span>
-          ) : null}
-        </div>
+    <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] px-3 py-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+      <div role="status" aria-live="polite" aria-atomic="true">
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">关键记录 {keyStatus.completed}/{keyStatus.total}</p>
+        <h3 className="mt-1 text-lg font-semibold text-slate-950 dark:text-slate-50">{keyStatus.title}</h3>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">体重、热量和蛋白质</p>
       </div>
 
-      <div className="motion-list mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="motion-list mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {coreFields.map(renderField)}
       </div>
 
       <DisclosurePanel
-        className="mt-3 sm:hidden"
+        className="mt-4"
         title="补充记录"
         open={supplementaryOpen}
         onOpenChange={setSupplementaryOpen}
         contentClassName="motion-list grid gap-3 border-t border-[var(--surface-border)] p-3 dark:border-slate-700"
       >
-        {supplementaryFields.map(renderField)}
-      </DisclosurePanel>
-
-      <section className="mt-4 hidden border-t border-[var(--surface-border)] pt-4 dark:border-slate-700 sm:block" aria-labelledby="supplementary-record-heading">
-        <h4 id="supplementary-record-heading" className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-          补充记录
-        </h4>
-        <div className="motion-list mt-3 grid grid-cols-3 gap-3">
+        <div className="grid gap-3 sm:grid-cols-3">
           {supplementaryFields.map(renderField)}
         </div>
-      </section>
+      </DisclosurePanel>
 
       {(props.hasCopyableYesterdayFields || props.hasFillableTargetFields) ? (
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <Button
-            variant="secondary"
-            className="w-full px-2 text-xs shadow-none sm:text-sm"
-            disabled={!props.hasCopyableYesterdayFields}
-            onClick={props.onCopyYesterday}
-            title={props.hasCopyableYesterdayFields ? '快捷键: Ctrl+Y' : undefined}
-          >
-            补入昨天空值
-          </Button>
-          <Button
-            variant="secondary"
-            className="w-full px-2 text-xs shadow-none sm:text-sm"
-            disabled={!props.hasFillableTargetFields}
-            onClick={props.onFillTarget}
-            title={props.hasFillableTargetFields ? '快捷键: Ctrl+T' : undefined}
-          >
-            填入目标
-          </Button>
+        <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-[var(--surface-border)] pt-3 dark:border-slate-700">
+          {props.hasCopyableYesterdayFields ? (
+            <Button
+              variant="ghost"
+              className="px-3 text-xs shadow-none sm:text-sm"
+              onClick={props.onCopyYesterday}
+              title="快捷键: Ctrl+Y"
+            >
+              补入昨天空值
+            </Button>
+          ) : null}
+          {props.hasFillableTargetFields ? (
+            <Button
+              variant="ghost"
+              className="px-3 text-xs shadow-none sm:text-sm"
+              onClick={props.onFillTarget}
+              title="快捷键: Ctrl+T"
+            >
+              填入目标
+            </Button>
+          ) : null}
         </div>
       ) : null}
     </section>

@@ -825,6 +825,11 @@ function App() {
     changeTab('workout')
   }
 
+  function openSelectedWorkout() {
+    setDailyFocusKey(undefined)
+    changeTab('workout')
+  }
+
   const retrySync = useCallback(async () => {
     if (!currentUser) return
     setSyncState('saving')
@@ -1780,6 +1785,7 @@ function App() {
               onQuickAction={quickDailyAction}
               onSyncFromXunji={() => setShowXunjiDailySync(true)}
               onSyncBodyToXunji={() => setShowXunjiBodySync(true)}
+              onOpenWorkout={openSelectedWorkout}
               focusKey={dailyFocusKey}
               onFocusConsumed={() => setDailyFocusKey(undefined)}
             />

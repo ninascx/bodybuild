@@ -26,6 +26,7 @@ export function NumberField({
   inputRef,
   className,
   labelAction,
+  inputAction,
   showControls = true,
 }: {
   label: string
@@ -39,6 +40,7 @@ export function NumberField({
   inputRef?: (el: HTMLInputElement | null) => void
   className?: string
   labelAction?: ReactNode
+  inputAction?: ReactNode
   showControls?: boolean
 }) {
   const effectiveRange: NumberRange | undefined =
@@ -166,6 +168,7 @@ export function NumberField({
           onChange={(event) => handleChange(event.target.value)}
           onKeyDown={handleKeyDown}
         />
+        {inputAction}
         {showControls && (
           <button
             type="button"
@@ -205,6 +208,7 @@ export function QuickAdjustNumberField({
   quickStepLabel,
   className,
   footerLeading,
+  controlPlacement = 'footer',
 }: {
   label: string
   value?: number
@@ -216,6 +220,7 @@ export function QuickAdjustNumberField({
   quickStepLabel: string
   className?: string
   footerLeading?: ReactNode
+  controlPlacement?: 'footer' | 'inline'
 }) {
   const adjust = (direction: -1 | 1) => {
     if (value === undefined) return
@@ -225,9 +230,34 @@ export function QuickAdjustNumberField({
       : Math.round(nextValue * 10) / 10
     onChange(clampNumber(normalized, range))
   }
-  const disabled = value === undefined
   const buttonClass =
     'h-11 min-w-11 border-l border-[var(--surface-border)] px-2 text-sm font-semibold leading-none text-slate-600 transition-colors first:border-l-0 hover:bg-white hover:text-[var(--color-primary-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-cyan-100 dark:focus-visible:ring-cyan-500/40 dark:disabled:text-slate-600'
+  const controls = value === undefined ? null : (
+    <div
+      role="group"
+      className="inline-flex shrink-0 overflow-hidden rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] dark:border-slate-700 dark:bg-slate-900"
+      aria-label={`${label} 快捷微调`}
+    >
+      <button
+        type="button"
+        className={buttonClass}
+        title={`减少 ${quickStepLabel}`}
+        aria-label={`${label} 减少 ${quickStepLabel}`}
+        onClick={() => adjust(-1)}
+      >
+        −{quickStepLabel}
+      </button>
+      <button
+        type="button"
+        className={buttonClass}
+        title={`增加 ${quickStepLabel}`}
+        aria-label={`${label} 增加 ${quickStepLabel}`}
+        onClick={() => adjust(1)}
+      >
+        +{quickStepLabel}
+      </button>
+    </div>
+  )
 
   return (
     <NumberField
@@ -238,36 +268,22 @@ export function QuickAdjustNumberField({
       kind={kind}
       range={range}
       showControls={false}
-      labelAction={
-        <div className="flex w-full min-w-0 items-center justify-between gap-2">
-          <div className="min-w-0">{footerLeading}</div>
-          <div
-            className="inline-flex shrink-0 overflow-hidden rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] dark:border-slate-700 dark:bg-slate-900"
-            aria-label={`${label} 快捷微调`}
-          >
-            <button
-              type="button"
-              className={buttonClass}
-              disabled={disabled}
-              title={disabled ? '先输入数值后可微调' : `减少 ${quickStepLabel}`}
-              aria-label={`${label} 减少 ${quickStepLabel}`}
-              onClick={() => adjust(-1)}
-            >
-              −{quickStepLabel}
-            </button>
-            <button
-              type="button"
-              className={buttonClass}
-              disabled={disabled}
-              title={disabled ? '先输入数值后可微调' : `增加 ${quickStepLabel}`}
-              aria-label={`${label} 增加 ${quickStepLabel}`}
-              onClick={() => adjust(1)}
-            >
-              +{quickStepLabel}
-            </button>
-          </div>
-        </div>
-      }
+      inputAction={controlPlacement === 'inline' && controls ? <div className="hidden sm:block">{controls}</div> : undefined}
+      labelAction={controlPlacement === 'footer'
+        ? (
+            <div className="flex w-full min-w-0 items-center justify-between gap-2">
+              <div className="min-w-0">{footerLeading}</div>
+              {controls}
+            </div>
+          )
+        : footerLeading || controls
+          ? (
+              <div className="flex w-full min-w-0 items-center justify-between gap-2">
+                <div className="min-w-0">{footerLeading}</div>
+                {controls ? <div className="sm:hidden">{controls}</div> : null}
+              </div>
+            )
+          : undefined}
       onChange={onChange}
     />
   )

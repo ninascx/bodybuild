@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { Field, TextArea } from '../ui'
 import type { BodyMetricType, BodyRecord, DailyLog, DailyTarget } from '../../types'
-import type { SyncState } from '../../lib/storage'
 import type { DailyFocusKey } from '../../lib/productFlow'
 import { getMotionScrollBehavior } from '../../lib/motion'
 import { DailyEssentialsForm } from './DailyEssentialsForm'
@@ -14,10 +13,6 @@ export type DailyCheckInPanelProps = {
   yesterdayLog: DailyLog | undefined
   calorieTarget: number | undefined
   fatigueThreshold: number
-  syncState: SyncState
-  savePending: boolean
-  lastSyncedLabel: string
-  showSaveStatus?: boolean
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
   onUpdateBodyRecord: (type: BodyMetricType, value: number | undefined) => void
   onQuickAction: (patch: Partial<DailyLog>, feedback?: string) => void
