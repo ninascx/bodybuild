@@ -71,7 +71,7 @@ const recordTabSource = readFileSync(
   'utf8',
 )
 assert.match(recordTabSource, /max-w-\[73\.75rem\]/)
-assert.match(recordTabSource, /xl:grid-cols-\[minmax\(0,1fr\)_18rem\]/)
+assert.doesNotMatch(recordTabSource, /xl:grid-cols-\[minmax\(0,1fr\)_18rem\]/)
 assert.match(recordTabSource, /DailyHistoryDialog/)
 assert.doesNotMatch(recordTabSource, /DailyRecordDesktopDateRail/)
 assert.doesNotMatch(recordTabSource, /DailyRecordDesktopAside/)
@@ -98,6 +98,23 @@ const toolbarSource = readFileSync(
 )
 assert.match(toolbarSource, /density="toolbar"/)
 assert.match(toolbarSource, /getLiftLogSaveLabel/)
+assert.match(toolbarSource, /LiftLog/)
+assert.match(toolbarSource, /aria-label="日期与同步工具"/)
+
+const dateNavigatorSource = readFileSync(
+  join(process.cwd(), 'src', 'components', 'DateNavigator.tsx'),
+  'utf8',
+)
+assert.match(dateNavigatorSource, /aria-label="前一天"/)
+assert.match(dateNavigatorSource, /aria-label="后一天"/)
+
+const statusPanelSource = readFileSync(
+  join(process.cwd(), 'src', 'components', 'daily', 'DailyRecordStatusPanel.tsx'),
+  'utf8',
+)
+assert.match(statusPanelSource, /下一步：/)
+assert.match(statusPanelSource, /role="status"/)
+assert.doesNotMatch(statusPanelSource, /variant: 'compact' \| 'rail'/)
 
 const historyDialogSource = readFileSync(
   join(process.cwd(), 'src', 'components', 'daily', 'DailyHistoryDialog.tsx'),

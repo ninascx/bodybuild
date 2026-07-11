@@ -117,6 +117,7 @@ export function XunjiDailySyncDialog({
       .map(([kind]) => kind),
     [results],
   )
+  const previewChangeCount = (previewSources?.food.changes.length ?? 0) + (previewSources?.body.changes.length ?? 0)
 
   useEffect(() => {
     if (retrySeconds <= 0) return
@@ -263,6 +264,8 @@ export function XunjiDailySyncDialog({
     <dialog
       ref={dialogRef}
       aria-labelledby="xunji-daily-sync-title"
+      aria-describedby="xunji-daily-sync-description"
+      aria-busy={pending}
       className="m-auto max-h-[calc(100vh-2rem)] w-[min(760px,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-slate-200 bg-white p-0 text-slate-900 shadow-xl backdrop:bg-slate-950/45 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
       onCancel={(event) => {
         event.preventDefault()
@@ -276,12 +279,17 @@ export function XunjiDailySyncDialog({
         <h2 id="xunji-daily-sync-title" className="text-lg font-semibold">
           从训记导入 {date} 的数据
         </h2>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+        <p id="xunji-daily-sync-description" className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           各来源独立处理，失败的来源可以单独重试。
         </p>
       </div>
 
       <div className="grid gap-5 p-5">
+        {!connections && !error ? (
+          <StatusMessage tone="neutral" announce>
+            正在读取训记连接状态…
+          </StatusMessage>
+        ) : null}
         {!preview && !results ? (
           <>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -399,6 +407,12 @@ export function XunjiDailySyncDialog({
               </StatusMessage>
             ) : null}
           </>
+        ) : null}
+
+        {preview && !results ? (
+          <div className="rounded-lg bg-[var(--surface-muted)] px-4 py-3 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200" role="status" aria-live="polite">
+            已读取 {previewChangeCount} 项变化，当前选择 {selectableCount} 项。请确认后再导入。
+          </div>
         ) : null}
 
         {results ? (

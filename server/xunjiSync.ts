@@ -79,7 +79,7 @@ export interface XunjiSyncResult {
 }
 
 const readCache = new Map<string, XunjiReadCacheEntry>()
-const lastReadAtByDate = new Map<string, number>()
+const lastReadAtByMode = new Map<string, number>()
 
 function cacheKey(userId: string, datestr: string, includeFullData: boolean): string {
   return `${userId}:${datestr}:${includeFullData ? 'full' : 'light'}`
@@ -293,8 +293,8 @@ async function fetchXunjiTrainingDay(userId: string, datestr: string, includeFul
   }
 
   const interval = includeFullData ? FULL_READ_INTERVAL_MS : LIGHT_READ_INTERVAL_MS
-  const rateLimitKey = `${userId}:${datestr}`
-  const lastReadAt = lastReadAtByDate.get(rateLimitKey)
+  const rateLimitKey = `${userId}:${datestr}:${includeFullData ? 'full' : 'light'}`
+  const lastReadAt = lastReadAtByMode.get(rateLimitKey)
   if (lastReadAt && Date.now() - lastReadAt < interval) {
     const retrySeconds = Math.ceil((interval - (Date.now() - lastReadAt)) / 1000)
     throw new Error(`训记读取过于频繁，请 ${retrySeconds} 秒后再试。`)
@@ -313,7 +313,7 @@ async function fetchXunjiTrainingDay(userId: string, datestr: string, includeFul
       include_full_data: includeFullData,
     }),
   })
-  lastReadAtByDate.set(rateLimitKey, Date.now())
+  lastReadAtByMode.set(rateLimitKey, Date.now())
 
   const payload = (await upstreamResponse.json().catch(() => null)) as unknown
   const root = asObject(payload)

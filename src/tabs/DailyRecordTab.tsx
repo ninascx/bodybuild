@@ -133,7 +133,7 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         onOpenHistory={() => setHistoryOpen(true)}
       />
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
+      <div className="grid items-start gap-4">
         <section className="grid min-w-0 gap-4" aria-label="当日记录表单">
           <QuickRecordSection
             key={props.selectedDate}
@@ -154,11 +154,10 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
             onFocusConsumed={consumeFocus}
           />
 
-          <div className="xl:hidden">
+          <div>
             <DailyRecordStatusPanel
               status={status}
               pendingBodyCount={pendingBodyCount}
-              variant="compact"
               onPrimaryAction={runPrimaryAction}
               onSyncBody={props.onSyncBodyToXunji}
             />
@@ -184,15 +183,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
           />
         </section>
 
-        <div className="hidden xl:block">
-          <DailyRecordStatusPanel
-            status={status}
-            pendingBodyCount={pendingBodyCount}
-            variant="rail"
-            onPrimaryAction={runPrimaryAction}
-            onSyncBody={props.onSyncBodyToXunji}
-          />
-        </div>
       </div>
 
       <DisclosurePanel className="md:hidden" title="最近六周日历" contentClassName="grid gap-3">

@@ -9,6 +9,7 @@ process.env.XUNJI_DATA_REQUEST_INTERVAL_MS = '0'
 
 let fetchCalls = 0
 let bodyQueryInvalid = true
+let trainingReadCalls = 0
 
 globalThis.fetch = async (input, init) => {
   fetchCalls += 1
@@ -46,7 +47,34 @@ globalThis.fetch = async (input, init) => {
     })
   }
   if (url.endsWith('/api_trains_for_llm_v2')) {
-    return Response.json({ res: { trains: [] } })
+    trainingReadCalls += 1
+    if (trainingReadCalls === 1) return Response.json({ res: { trains: [] } })
+    if (trainingReadCalls === 2) return Response.json({ res: { trains: [] } })
+    return Response.json({
+      res: {
+        trains: [{
+          datestr: '2026-06-30',
+          title: '胸部训练',
+          movements: [
+            {
+              name: '杠铃卧推',
+              sets: [
+                { done: true, weight: '60', unit: 'kg', reps: '10' },
+                { done: false, weight: '65', unit: 'kg', reps: '8' },
+              ],
+            },
+            {
+              name: '复合动作',
+              sets: [{ items: [{ name: '哑铃飞鸟', set: { done: true, weight: '12', unit: 'kg', reps: '12' } }] }],
+            },
+            {
+              name: '跑步',
+              sets: [{ metrics: { distance: 5000, kcal: 300, workoutTime: 1800 } }],
+            },
+          ],
+        }],
+      },
+    })
   }
   return Response.json({ success: false, message: `unexpected mock URL: ${url}` }, { status: 500 })
 }
@@ -63,6 +91,7 @@ const {
   saveLocalBodyRecords,
   validateAndSaveXunjiConnection,
 } = await import('../server/xunjiData')
+const { syncXunjiTrainingDay } = await import('../server/xunjiSync')
 
 try {
   assert.deepEqual(
@@ -137,6 +166,28 @@ try {
     apiKey: mockTrainingKey,
   })
   assert.equal(trainingConnections.training.validationStatus, 'valid')
+
+  const trainingSync = await syncXunjiTrainingDay({ userId: user.id, datestr: '2026-06-30' })
+  assert.equal(trainingSync.source, 'api')
+  assert.equal(trainingSync.trainCount, 1)
+  assert.equal(trainingSync.movementCount, 3)
+  assert.equal(trainingSync.setCount, 4)
+  assert.equal(trainingSync.workoutLog?.exercises.length, 2)
+  assert.equal(trainingSync.workoutLog?.cardio?.length, 1)
+  assert.equal(trainingSync.workoutLog?.exercises[0]?.sets[1]?.reps, 8)
+
+  await assert.rejects(
+    syncXunjiTrainingDay({ userId: user.id, datestr: '2026-06-30' }),
+    (error: unknown) => error instanceof Error && error.name === 'XunjiExistingWorkoutError',
+  )
+
+  const trainingSyncFromCache = await syncXunjiTrainingDay({
+    userId: user.id,
+    datestr: '2026-06-30',
+    replaceExisting: true,
+  })
+  assert.equal(trainingSyncFromCache.source, 'cache')
+  assert.equal(trainingReadCalls, 3, 'light read, full upgrade, then cache hit')
 
   const foodConnections = await validateAndSaveXunjiConnection(user.id, 'food', {
     apiKey: mockFoodKey,
@@ -216,6 +267,14 @@ try {
     'utf8',
   )
   assert.doesNotMatch(settingsSource, /window\.confirm/)
+
+  const dailySyncSource = readFileSync(
+    join(process.cwd(), 'src', 'components', 'XunjiDailySyncDialog.tsx'),
+    'utf8',
+  )
+  assert.match(dailySyncSource, /aria-busy=\{pending\}/)
+  assert.match(dailySyncSource, /previewChangeCount/)
+  assert.match(dailySyncSource, /仅重试失败来源/)
 
   console.log('Xunji UX checks passed')
 } finally {

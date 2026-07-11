@@ -30,53 +30,41 @@ export function DailyRecordToolbar({
   onSyncFromXunji?: () => void
   onOpenHistory?: () => void
 }) {
-  const renderActions = (includeHistory: boolean) => (
+  const actions = (
     <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
       <span role="status" aria-live="polite" aria-atomic="true">
-        <Badge tone={syncTone(syncState, savePending)} className="justify-center">
+        <Badge tone={syncTone(syncState, savePending)} className="min-h-8 justify-center px-3">
           {getLiftLogSaveLabel(syncState, savePending, lastSyncedLabel)}
         </Badge>
       </span>
       {onSyncFromXunji ? (
-        <Button
-          variant="secondary"
-          className="min-h-11 shadow-none"
-          loading={xunjiSyncPending}
-          onClick={onSyncFromXunji}
-        >
-          从训记导入
+        <Button variant="secondary" className="min-h-11 shadow-none" loading={xunjiSyncPending} onClick={onSyncFromXunji}>
+          从训记导入训练
         </Button>
       ) : null}
-      {includeHistory && onOpenHistory ? (
+      {onOpenHistory ? (
         <Button variant="secondary" className="min-h-11 shadow-none" onClick={onOpenHistory}>
-          历史记录
+          查看历史
         </Button>
       ) : null}
     </div>
   )
 
   return (
-    <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-3 dark:border-slate-800 dark:bg-slate-900 sm:p-4">
+    <section
+      aria-label="日期与同步工具"
+      className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-3 dark:border-slate-800 dark:bg-slate-900 sm:p-4"
+    >
       <div className="md:hidden">
-        <DateNavigator
-          density="compact"
-          selectedDate={selectedDate}
-          today={today}
-          onChange={onDateChange}
-          footer={renderActions(false)}
-        />
+        <DateNavigator density="compact" selectedDate={selectedDate} today={today} onChange={onDateChange} footer={actions} />
       </div>
       <div className="hidden md:block">
-        <DateNavigator
-          density="toolbar"
-          selectedDate={selectedDate}
-          today={today}
-          onChange={onDateChange}
-          footer={renderActions(true)}
-        />
+        <DateNavigator density="toolbar" selectedDate={selectedDate} today={today} onChange={onDateChange} footer={actions} />
       </div>
       {syncState === 'offline' ? (
-        <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300">将在联网后自动同步</p>
+        <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300" role="status" aria-live="polite">
+          本地数据已保留，恢复网络后会自动重试。
+        </p>
       ) : null}
     </section>
   )
