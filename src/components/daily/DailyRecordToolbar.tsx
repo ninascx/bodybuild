@@ -1,12 +1,18 @@
 import { DateNavigator } from '../DateNavigator'
 import type { SyncState } from '../../lib/storage'
-import { Badge, Button } from '../ui'
+import { Button, DropdownMenu } from '../ui'
 import { getLiftLogSaveLabel } from './dailyRecordStatus'
 
-function syncTone(syncState: SyncState, savePending: boolean): 'positive' | 'warning' | 'danger' {
-  if (savePending || syncState === 'saving' || syncState === 'loading') return 'warning'
-  if (syncState === 'offline') return 'danger'
-  return 'positive'
+function syncTextClass(syncState: SyncState, savePending: boolean): string {
+  if (savePending || syncState === 'saving' || syncState === 'loading') return 'text-amber-700 dark:text-amber-300'
+  if (syncState === 'offline') return 'text-rose-700 dark:text-rose-300'
+  return 'text-emerald-700 dark:text-emerald-300'
+}
+
+function syncDotClass(syncState: SyncState, savePending: boolean): string {
+  if (savePending || syncState === 'saving' || syncState === 'loading') return 'bg-amber-500'
+  if (syncState === 'offline') return 'bg-rose-500'
+  return 'bg-emerald-500'
 }
 
 export function DailyRecordToolbar({
@@ -31,21 +37,34 @@ export function DailyRecordToolbar({
   onOpenHistory?: () => void
 }) {
   const actions = (
-    <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-      <span role="status" aria-live="polite" aria-atomic="true">
-        <Badge tone={syncTone(syncState, savePending)} className="min-h-8 justify-center px-3">
-          {getLiftLogSaveLabel(syncState, savePending, lastSyncedLabel)}
-        </Badge>
+    <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
+      <span
+        className={`hidden min-h-8 items-center gap-2 text-xs font-semibold sm:inline-flex ${syncTextClass(syncState, savePending)}`}
+        role={syncState === 'offline' ? 'alert' : 'status'}
+        aria-live={syncState === 'offline' ? 'assertive' : 'polite'}
+        aria-atomic="true"
+      >
+        <span className={`h-2 w-2 rounded-full ${syncDotClass(syncState, savePending)}`} aria-hidden="true" />
+        <span>{getLiftLogSaveLabel(syncState, savePending, lastSyncedLabel)}</span>
       </span>
-      {onSyncFromXunji ? (
-        <Button variant="secondary" className="min-h-11 shadow-none" loading={xunjiSyncPending} onClick={onSyncFromXunji}>
-          从训记导入训练
-        </Button>
-      ) : null}
       {onOpenHistory ? (
         <Button variant="secondary" className="min-h-11 shadow-none" onClick={onOpenHistory}>
-          查看历史
+          历史
         </Button>
+      ) : null}
+      {onSyncFromXunji ? (
+        <DropdownMenu
+          label="更多"
+          triggerClassName="min-h-11 shadow-none"
+          items={[
+            {
+              label: xunjiSyncPending ? '正在从训记导入…' : '从训记导入当日训练',
+              description: '训记是外部训练数据源。',
+              onSelect: onSyncFromXunji,
+              disabled: xunjiSyncPending,
+            },
+          ]}
+        />
       ) : null}
     </div>
   )
@@ -53,7 +72,7 @@ export function DailyRecordToolbar({
   return (
     <section
       aria-label="日期与同步工具"
-      className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-3 dark:border-slate-800 dark:bg-slate-900 sm:p-4"
+      className="border-b border-[var(--surface-border)] pb-4 dark:border-slate-800"
     >
       <div className="md:hidden">
         <DateNavigator density="compact" selectedDate={selectedDate} today={today} onChange={onDateChange} footer={actions} />
@@ -62,7 +81,7 @@ export function DailyRecordToolbar({
         <DateNavigator density="toolbar" selectedDate={selectedDate} today={today} onChange={onDateChange} footer={actions} />
       </div>
       {syncState === 'offline' ? (
-        <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300" role="status" aria-live="polite">
+        <p className="mt-2 text-xs font-medium text-rose-700 dark:text-rose-300" role="status" aria-live="polite">
           本地数据已保留，恢复网络后会自动重试。
         </p>
       ) : null}

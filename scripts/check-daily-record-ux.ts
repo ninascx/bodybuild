@@ -73,6 +73,8 @@ const recordTabSource = readFileSync(
 assert.match(recordTabSource, /max-w-\[73\.75rem\]/)
 assert.doesNotMatch(recordTabSource, /xl:grid-cols-\[minmax\(0,1fr\)_18rem\]/)
 assert.match(recordTabSource, /DailyHistoryDialog/)
+assert.doesNotMatch(recordTabSource, /DailyRecordStatusPanel/)
+assert.match(recordTabSource, /xl:grid-cols-\[minmax\(0,1fr\)_23rem\]/)
 assert.doesNotMatch(recordTabSource, /DailyRecordDesktopDateRail/)
 assert.doesNotMatch(recordTabSource, /DailyRecordDesktopAside/)
 assert.doesNotMatch(recordTabSource, /2xl:grid-cols/)
@@ -108,14 +110,6 @@ const dateNavigatorSource = readFileSync(
 assert.match(dateNavigatorSource, /aria-label="前一天"/)
 assert.match(dateNavigatorSource, /aria-label="后一天"/)
 
-const statusPanelSource = readFileSync(
-  join(process.cwd(), 'src', 'components', 'daily', 'DailyRecordStatusPanel.tsx'),
-  'utf8',
-)
-assert.match(statusPanelSource, /下一步：/)
-assert.match(statusPanelSource, /role="status"/)
-assert.doesNotMatch(statusPanelSource, /variant: 'compact' \| 'rail'/)
-
 const historyDialogSource = readFileSync(
   join(process.cwd(), 'src', 'components', 'daily', 'DailyHistoryDialog.tsx'),
   'utf8',
@@ -131,5 +125,8 @@ const essentialsSource = readFileSync(
 assert.match(essentialsSource, /controlPlacement="inline"/)
 assert.match(essentialsSource, /props\.hasCopyableYesterdayFields \? \(/)
 assert.doesNotMatch(essentialsSource, /disabled=\{!props\.hasCopyableYesterdayFields\}/)
+assert.match(essentialsSource, /role="progressbar"/)
+assert.match(essentialsSource, />下一步</)
+assert.match(essentialsSource, /输入后自动保存/)
 
 console.log('Daily record UX checks passed')

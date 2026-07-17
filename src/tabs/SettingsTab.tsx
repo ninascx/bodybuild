@@ -1,15 +1,17 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { FormPanel } from '../components/FormPanel'
-import { useConfirm } from '../components/ConfirmDialog'
+import { useUnsavedChangesDialog } from '../components/UnsavedChangesDialog'
 import { LoadingBlock, SegmentedControl } from '../components/ui'
-import { ProfileTab } from './ProfileTab'
-import { PlanTab } from './PlanTab'
 import type { CurrentUser } from '../lib/storage'
 import type { BodyRecord, UserPlanData, UserPreference } from '../types'
+import type { SettingsLeaveGuard } from '../lib/settingsLeaveGuard'
+import type { PlanTemplateManagerProps } from './PlanTab'
 
 const XunjiDataSettings = lazy(() =>
   import('../components/profile/XunjiDataSettings').then((module) => ({ default: module.XunjiDataSettings })),
 )
+const ProfileTab = lazy(() => import('./ProfileTab').then((module) => ({ default: module.ProfileTab })))
+const PlanTab = lazy(() => import('./PlanTab').then((module) => ({ default: module.PlanTab })))
 
 type SettingsTabProps = {
   currentUser: CurrentUser
@@ -19,25 +21,29 @@ type SettingsTabProps = {
   onSavePreference: (preference: UserPreference) => Promise<UserPreference>
   onSavePlan: (planData: UserPlanData) => Promise<UserPlanData>
   onOpenBodyDate: (date: string) => void
+  onLeaveGuardChange?: (guard: SettingsLeaveGuard | null) => void
+  templateManagerProps: PlanTemplateManagerProps
 }
 
 export function SettingsTab(props: SettingsTabProps) {
+  const { onLeaveGuardChange } = props
   const [view, setView] = useState<'profile' | 'plan' | 'xunji'>('profile')
-  const [profileDirty, setProfileDirty] = useState(false)
-  const [planDirty, setPlanDirty] = useState(false)
-  const { confirm, dialog } = useConfirm()
+  const activeGuardRef = useRef<SettingsLeaveGuard | null>(null)
+  const { decide, dialog } = useUnsavedChangesDialog()
+  const handleLeaveGuardChange = useCallback((guard: SettingsLeaveGuard | null) => {
+    activeGuardRef.current = guard
+    onLeaveGuardChange?.(guard)
+  }, [onLeaveGuardChange])
+
+  useEffect(() => () => onLeaveGuardChange?.(null), [onLeaveGuardChange])
 
   async function changeView(nextView: 'profile' | 'plan' | 'xunji') {
     if (nextView === view) return
-    const hasUnsavedChanges = (view === 'profile' && profileDirty) || (view === 'plan' && planDirty)
-    if (hasUnsavedChanges) {
-      const accepted = await confirm({
-        title: '放弃未保存修改？',
-        message: '当前设置还有未保存修改。切换分类会放弃这些修改。',
-        confirmLabel: '放弃并切换',
-        tone: 'danger',
-      })
-      if (!accepted) return
+    const guard = activeGuardRef.current
+    if (guard) {
+      const decision = await decide(guard.sectionLabel)
+      if (decision === 'stay') return
+      if (decision === 'save' && !(await guard.save())) return
     }
     setView(nextView)
   }
@@ -58,17 +64,26 @@ export function SettingsTab(props: SettingsTabProps) {
       </div>
 
       {view === 'profile' ? (
-        <ProfileTab
-          currentUser={props.currentUser}
-          preference={props.preference}
-          planData={props.planData}
-          bodyRecords={props.bodyRecords}
-          onSavePreference={props.onSavePreference}
-          onSavePlan={props.onSavePlan}
-          onDirtyChange={setProfileDirty}
-        />
+        <Suspense fallback={<LoadingBlock title="正在加载资料与目标…" lines={3} />}>
+          <ProfileTab
+            currentUser={props.currentUser}
+            preference={props.preference}
+            planData={props.planData}
+            bodyRecords={props.bodyRecords}
+            onSavePreference={props.onSavePreference}
+            onSavePlan={props.onSavePlan}
+            onLeaveGuardChange={handleLeaveGuardChange}
+          />
+        </Suspense>
       ) : view === 'plan' ? (
-        <PlanTab planData={props.planData} onSave={props.onSavePlan} onDirtyChange={setPlanDirty} />
+        <Suspense fallback={<LoadingBlock title="正在加载训练计划…" lines={3} />}>
+          <PlanTab
+            planData={props.planData}
+            onSave={props.onSavePlan}
+            onLeaveGuardChange={handleLeaveGuardChange}
+            templateManagerProps={props.templateManagerProps}
+          />
+        </Suspense>
       ) : (
         <FormPanel
           title="训记连接"

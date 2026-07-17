@@ -153,22 +153,33 @@ select {
   font: inherit;
 }
 
-/* 焦点环 - 现代且易见 */
+/* 焦点环始终可见；减少动态效果只关闭过渡。 */
+input:focus,
+textarea:focus,
+select:focus,
+button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  box-shadow: 0 0 0 4px var(--color-focus-ring);
+  border-color: var(--color-primary-500);
+}
+
 @media (prefers-reduced-motion: no-preference) {
   input:focus,
   textarea:focus,
   select:focus,
   button:focus-visible {
-    outline: 2px solid var(--color-focus-ring);
-    outline-offset: 2px;
     transition: outline-offset var(--motion-fast) var(--ease-out-smooth);
   }
 
   input:focus,
   textarea:focus,
   select:focus {
-    box-shadow: 0 0 0 4px var(--color-focus-ring);
-    border-color: var(--color-primary-500);
     transition:
       box-shadow var(--motion-base) var(--ease-out-smooth),
       border-color var(--motion-base) var(--ease-out-smooth);

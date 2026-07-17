@@ -53,7 +53,7 @@ export function AnalyticsTab(props: AnalyticsTabProps) {
 
   return (
     <div className="grid gap-4">
-      <div className="flex flex-col gap-3 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-3 dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-[var(--surface-border)] pb-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
         <SegmentedControl
           ariaLabel="复盘视图"
           value={view}

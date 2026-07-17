@@ -15,7 +15,7 @@
 
 ## 功能概览
 
-- 昵称 + 密码登录，不开放自助注册。
+- 用户名 + 密码登录，不开放自助注册；显示名称可独立设置。
 - 管理员创建和停用用户、重置密码、查看用户数据概况。
 - 每个用户独立保存每日记录、训练记录、训练模板、个人资料、个人计划和规则配置。
 - 今日页显示记录缺口、训练节奏建议、本周热量/步数/训练完成度。
@@ -40,7 +40,7 @@ npm run db:init
 创建第一个管理员：
 
 ```bash
-npm run admin:create -- --username=你的昵称 --password=你的密码 --name=管理员
+npm run admin:create -- --username=你的用户名 --password=你的密码 --name=管理员
 ```
 
 启动后端：
@@ -67,7 +67,7 @@ npm ci --include=dev
 npm run prisma:generate
 npm run db:init
 npm run build
-npm run admin:create -- --username=你的昵称 --password=你的密码 --name=管理员
+npm run admin:create -- --username=你的用户名 --password=你的密码 --name=管理员
 PORT=8787 npm run start
 ```
 
@@ -194,7 +194,7 @@ curl http://127.0.0.1:8787/api/health
 
 1. 首次部署后用 `npm run admin:create` 创建管理员。
 2. 管理员登录后进入“用户管理”。
-3. 创建普通用户，设置昵称和初始密码。
+3. 创建普通用户，设置用户名、显示名称和初始密码。
 4. 新用户默认不需要自助注册；训练模板为空，可由用户自己创建或用 token 导入。
 5. 如需给用户恢复内置计划，可在用户管理里点“默认计划”。
 
@@ -229,7 +229,7 @@ curl http://127.0.0.1:8787/api/health
 - 周报页可直接“导出本周”，历史周也会按当前查看周导出。
 - 用户管理里的“导出用户”使用同样的范围和内容选择，默认锚到该用户最近记录日期，适合只交付需要的记录片段。
 - 用户管理里的“清空数据”会清空该用户记录、计划、资料、偏好和模板分享 token，但保留账户。
-- 登录接口有简单内存限流：同一 IP + 昵称 10 分钟内失败 5 次后会短暂拒绝继续尝试。
+- 登录接口有简单内存限流：同一 IP + 用户名 10 分钟内失败 5 次后会短暂拒绝继续尝试。
 
 建议在生产环境额外做系统级备份，例如每天复制 `bodybuild.db` 到另一块磁盘或对象存储。
 
@@ -240,7 +240,7 @@ npm run lint
 npm run typecheck
 npm run build
 npm run db:init
-npm run admin:create -- --username=你的昵称 --password=你的密码
+npm run admin:create -- --username=你的用户名 --password=你的密码
 ```
 
 ## 反向代理示例

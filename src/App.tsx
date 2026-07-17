@@ -51,6 +51,8 @@ import { LoadingBlock } from './components/ui'
 import { useColorScheme } from './hooks/useColorScheme'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useConfirm } from './components/ConfirmDialog'
+import { useUnsavedChangesDialog } from './components/UnsavedChangesDialog'
+import type { SettingsLeaveGuard } from './lib/settingsLeaveGuard'
 import { AppShell } from './components/layout/AppShell'
 import { LoginScreen } from './components/layout/LoginScreen'
 import { DailyRecordSkeleton } from './components/DailyRecordSkeleton'
@@ -168,6 +170,7 @@ async function clearLegacyApiCaches() {
 function App() {
   const { preference: colorPreference, resolved: resolvedColorScheme, cycle: cycleColorScheme } = useColorScheme()
   const { confirm, dialog: confirmDialog } = useConfirm()
+  const { decide: decideUnsavedChanges, dialog: unsavedChangesDialog } = useUnsavedChangesDialog()
   const [today, setToday] = useState<string>(() => formatDateInput())
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
   const [authState, setAuthState] = useState<'checking' | 'authenticated' | 'anonymous'>('checking')
@@ -222,6 +225,12 @@ function App() {
   const debounceTimerRef = useRef<number | null>(null)
   const planDebounceTimerRef = useRef<number | null>(null)
   const [initialLoaded, setInitialLoaded] = useState(false)
+  const settingsLeaveGuardRef = useRef<SettingsLeaveGuard | null>(null)
+  const [settingsDirty, setSettingsDirty] = useState(false)
+  const handleSettingsLeaveGuardChange = useCallback((guard: SettingsLeaveGuard | null) => {
+    settingsLeaveGuardRef.current = guard
+    setSettingsDirty(Boolean(guard))
+  }, [])
   const visibleTabs = currentUser?.role === 'admin' ? allTabs : baseTabs
   const contentTab: TabKey = currentUser?.role === 'admin' || activeTab !== 'admin' ? activeTab : 'daily'
   const lastSyncedLabel = formatSyncClock(lastSyncedAt)
@@ -472,7 +481,7 @@ function App() {
   }, [currentUser])
 
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (debounceTimerRef.current !== null && pendingDataRef.current) {
         const data = pendingDataRef.current
         try {
@@ -483,10 +492,14 @@ function App() {
           console.warn('页面关闭前刷新缓存失败：', error)
         }
       }
+      if (settingsDirty) {
+        event.preventDefault()
+        event.returnValue = ''
+      }
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [currentUser])
+  }, [currentUser, settingsDirty])
 
   useEffect(() => {
     if (!noticeMessage) return
@@ -637,7 +650,23 @@ function App() {
     }
   }, [currentUser])
 
-  function changeTab(tabKey: TabKey) {
+  async function resolveSettingsChanges(): Promise<boolean> {
+    const guard = settingsLeaveGuardRef.current
+    if (!guard) return true
+    const decision = await decideUnsavedChanges(guard.sectionLabel)
+    if (decision === 'stay') return false
+    if (decision === 'save') {
+      const saved = await guard.save()
+      if (!saved) return false
+    }
+    settingsLeaveGuardRef.current = null
+    setSettingsDirty(false)
+    return true
+  }
+
+  async function requestTabChange(tabKey: TabKey): Promise<boolean> {
+    if (tabKey === contentTab) return true
+    if (contentTab === 'settings' && tabKey !== 'settings' && !(await resolveSettingsChanges())) return false
     if (tabKey !== 'workout') {
       setWorkoutImmersiveMode(false)
     }
@@ -651,6 +680,11 @@ function App() {
     } catch (error) {
       console.warn('保存激活标签失败（sessionStorage 不可用），下次刷新会回到默认页：', error)
     }
+    return true
+  }
+
+  function changeTab(tabKey: TabKey) {
+    void requestTabChange(tabKey)
   }
 
   // Keyboard shortcuts
@@ -1503,6 +1537,7 @@ function App() {
   }
 
   async function handleLogout() {
+    if (contentTab === 'settings' && !(await resolveSettingsChanges())) return
     await logout().catch((error) => {
       console.warn('退出登录失败：', error)
     })
@@ -1608,6 +1643,22 @@ function App() {
                 setSelectedDate(date)
                 changeTab('daily')
               }}
+              onLeaveGuardChange={handleSettingsLeaveGuardChange}
+              templateManagerProps={{
+                builtinTemplates,
+                templates: workoutTemplates,
+                onCreateTemplate: createCustomTemplate,
+                onUpdateTemplate: updateTemplate,
+                onUpdateTemplateExercise: updateTemplateExercise,
+                onAddTemplateExercise: addTemplateExercise,
+                onDeleteTemplateExercise: deleteTemplateExercise,
+                onUpdateTemplateCardio: updateTemplateCardio,
+                onAddTemplateCardio: addTemplateCardio,
+                onDeleteTemplateCardio: deleteTemplateCardio,
+                onDeleteTemplate: deleteTemplate,
+                onExportToken: exportTemplateToken,
+                onImportToken: importTemplateToken,
+              }}
             />
           </Suspense>
         ) : null}
@@ -1657,8 +1708,6 @@ function App() {
               visibleWorkoutExercises={visibleWorkoutExercises}
               previousRecordsByExerciseKey={previousRecordsByExerciseKey}
               showOnlyUnfinishedExercises={showOnlyUnfinishedExercises}
-              builtinTemplates={builtinTemplates}
-              workoutTemplates={workoutTemplates}
               syncState={syncState}
               taskPlan={selectedWorkoutTaskPlan}
               workoutMarkedComplete={(selectedLog.workoutCompletion ?? 0) >= 100}
@@ -1681,17 +1730,6 @@ function App() {
               onAddExercise={addExerciseToWorkout}
               onFillEmptySets={fillEmptySetsFromLast}
               onSaveAsTemplate={saveCurrentWorkoutAsTemplate}
-              onCreateTemplate={createCustomTemplate}
-              onUpdateTemplate={updateTemplate}
-              onUpdateTemplateExercise={updateTemplateExercise}
-              onAddTemplateExercise={addTemplateExercise}
-              onDeleteTemplateExercise={deleteTemplateExercise}
-              onUpdateTemplateCardio={updateTemplateCardio}
-              onAddTemplateCardio={addTemplateCardio}
-              onDeleteTemplateCardio={deleteTemplateCardio}
-              onDeleteTemplate={deleteTemplate}
-              onExportTemplateToken={exportTemplateToken}
-              onImportTemplateToken={importTemplateToken}
               onExportSelectedWorkout={() =>
                 openExportDialog('today', selectedDate, {
                   includeDailyLogs: false,
@@ -1747,6 +1785,7 @@ function App() {
       </>
       )}
       {confirmDialog}
+      {unsavedChangesDialog}
       <XunjiDailySyncDialog
         open={showXunjiDailySync}
         date={selectedDate}

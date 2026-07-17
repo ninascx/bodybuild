@@ -8,6 +8,26 @@ function normalizeTemplateTokenInput(value: string): string {
   return value.replace(/[\s-]/g, '').toLowerCase()
 }
 
+export type WorkoutTemplateManagerProps = {
+  builtinTemplates: WorkoutTemplate[]
+  templates: WorkoutTemplate[]
+  selectedWorkout?: WorkoutLog
+  onCreateTemplate: () => void
+  onSaveCurrent?: () => void
+  onUpdateTemplate: (templateId: string, patch: Partial<WorkoutTemplate>) => void
+  onUpdateTemplateExercise: (templateId: string, exerciseIndex: number, patch: Partial<ExercisePlan>) => void
+  onAddTemplateExercise: (templateId: string) => void
+  onDeleteTemplateExercise: (templateId: string, exerciseIndex: number) => void
+  onUpdateTemplateCardio: (templateId: string, cardioIndex: number, patch: Partial<CardioPlan>) => void
+  onAddTemplateCardio: (templateId: string) => void
+  onDeleteTemplateCardio: (templateId: string, cardioIndex: number) => void
+  onApplyTemplate?: (template: WorkoutTemplate) => void
+  onDeleteTemplate: (templateId: string) => void
+  onExportToken: () => Promise<{ token: string; count: number }>
+  onImportToken: (token: string) => Promise<{ importedCount: number }>
+  mode?: 'workout' | 'settings'
+}
+
 export function WorkoutTemplateManager({
   builtinTemplates,
   templates,
@@ -25,24 +45,8 @@ export function WorkoutTemplateManager({
   onDeleteTemplate,
   onExportToken,
   onImportToken,
-}: {
-  builtinTemplates: WorkoutTemplate[]
-  templates: WorkoutTemplate[]
-  selectedWorkout: WorkoutLog | undefined
-  onCreateTemplate: () => void
-  onSaveCurrent: () => void
-  onUpdateTemplate: (templateId: string, patch: Partial<WorkoutTemplate>) => void
-  onUpdateTemplateExercise: (templateId: string, exerciseIndex: number, patch: Partial<ExercisePlan>) => void
-  onAddTemplateExercise: (templateId: string) => void
-  onDeleteTemplateExercise: (templateId: string, exerciseIndex: number) => void
-  onUpdateTemplateCardio: (templateId: string, cardioIndex: number, patch: Partial<CardioPlan>) => void
-  onAddTemplateCardio: (templateId: string) => void
-  onDeleteTemplateCardio: (templateId: string, cardioIndex: number) => void
-  onApplyTemplate: (template: WorkoutTemplate) => void
-  onDeleteTemplate: (templateId: string) => void
-  onExportToken: () => Promise<{ token: string; count: number }>
-  onImportToken: (token: string) => Promise<{ importedCount: number }>
-}) {
+  mode = 'workout',
+}: WorkoutTemplateManagerProps) {
   const editableBuiltinTemplates = builtinTemplates
   const customTemplates = templates.filter((t) => !t.isBuiltin)
   const [exportToken, setExportToken] = useState('')
@@ -109,18 +113,21 @@ export function WorkoutTemplateManager({
   return (
     <DisclosurePanel
       className="bg-white dark:bg-slate-900"
-      title={`模板管理 · ${editableBuiltinTemplates.length} 个内置 · ${customTemplates.length} 个自定义`}
+      title={`${mode === 'settings' ? '训练模板' : '模板管理'} · ${editableBuiltinTemplates.length} 个内置 · ${customTemplates.length} 个自定义`}
+      defaultOpen={mode === 'settings'}
       contentClassName="grid gap-4 p-4"
     >
-        <div className="grid gap-2 sm:grid-cols-[auto_auto] sm:justify-start">
+        <div className="flex flex-wrap gap-2">
           <Button onClick={onCreateTemplate}>新建模板</Button>
-          <Button
-            variant="secondary"
-            onClick={onSaveCurrent}
-            disabled={!selectedWorkout || (selectedWorkout.exercises.length === 0 && (selectedWorkout.cardio ?? []).length === 0)}
-          >
-            从当前训练保存为模板
-          </Button>
+          {onSaveCurrent ? (
+            <Button
+              variant="secondary"
+              onClick={onSaveCurrent}
+              disabled={!selectedWorkout || (selectedWorkout.exercises.length === 0 && (selectedWorkout.cardio ?? []).length === 0)}
+            >
+              从当前训练保存为模板
+            </Button>
+          ) : null}
         </div>
 
         <DisclosurePanel
@@ -200,7 +207,7 @@ export function WorkoutTemplateManager({
           <EmptyState
             compact
             title="还没有自定义模板"
-            message="可以从当前训练保存为模板，或先新建一个空模板。"
+            message={mode === 'settings' ? '新建一个模板，或使用 token 从其他设备导入。' : '可以从当前训练保存为模板，或先新建一个空模板。'}
             actions={<Button variant="secondary" onClick={onCreateTemplate}>新建模板</Button>}
           />
         ) : null}

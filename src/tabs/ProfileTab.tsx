@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CurrentUser } from '../lib/storage'
 import { fetchUserProfile, saveUserProfile } from '../lib/storage'
 import type { BodyRecord, UserPlanData, UserPreference } from '../types'
@@ -12,6 +12,7 @@ import {
   ProfileGoalsSection,
 } from '../components/profile/ProfileFormSections'
 import { useProfileDraft } from '../components/profile/useProfileDraft'
+import type { SettingsLeaveGuard } from '../lib/settingsLeaveGuard'
 
 type ProfileTabProps = {
   currentUser: CurrentUser
@@ -20,7 +21,7 @@ type ProfileTabProps = {
   bodyRecords: BodyRecord[]
   onSavePreference: (preference: UserPreference) => Promise<UserPreference>
   onSavePlan: (planData: UserPlanData) => Promise<UserPlanData>
-  onDirtyChange?: (dirty: boolean) => void
+  onLeaveGuardChange?: (guard: SettingsLeaveGuard | null) => void
 }
 
 export function ProfileTab({
@@ -30,12 +31,13 @@ export function ProfileTab({
   bodyRecords,
   onSavePreference,
   onSavePlan,
-  onDirtyChange,
+  onLeaveGuardChange,
 }: ProfileTabProps) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const saveForLeaveRef = useRef<() => Promise<boolean>>(async () => false)
   const clearFeedback = useCallback(() => {
     setMessage('')
     setError('')
@@ -62,12 +64,6 @@ export function ProfileTab({
   } = useProfileDraft({ preference, planData, onDraftChange: clearFeedback })
   const saveDisabled = saving || loading
   const saveLabel = saving ? '保存中...' : dirty ? '保存修改' : '保存资料'
-
-  useEffect(() => {
-    onDirtyChange?.(dirty)
-  }, [dirty, onDirtyChange])
-
-  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange])
 
   useEffect(() => {
     if (dirty) return
@@ -99,7 +95,7 @@ export function ProfileTab({
     }
   }, [currentUser.id, dirty, planData.dailyTargets, setProfile])
 
-  async function handleSave() {
+  async function handleSave(): Promise<boolean> {
     setSaving(true)
     setMessage('')
     setError('')
@@ -111,12 +107,31 @@ export function ProfileTab({
       ])
       resetAfterSave(savedProfile)
       setMessage('个人资料和配置已保存。')
+      return true
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存个人资料失败')
+      return false
     } finally {
       setSaving(false)
     }
   }
+
+  useEffect(() => {
+    saveForLeaveRef.current = handleSave
+  })
+
+  useEffect(() => {
+    if (!dirty) {
+      onLeaveGuardChange?.(null)
+      return
+    }
+    const guard: SettingsLeaveGuard = {
+      sectionLabel: '资料与目标',
+      save: () => saveForLeaveRef.current(),
+    }
+    onLeaveGuardChange?.(guard)
+    return () => onLeaveGuardChange?.(null)
+  }, [dirty, onLeaveGuardChange])
 
   return (
     <div className="grid gap-4">

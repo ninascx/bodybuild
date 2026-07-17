@@ -40,8 +40,13 @@ function SyncStatusIndicator({ syncState, message, lastSynced, onRetry }: { sync
     syncState === 'saving' || syncState === 'loading' ? '◐' : '○'
 
   return (
-    <div className="flex items-center gap-2 text-xs">
-      <span className={cn('text-base leading-none', statusColor)}>{statusDot}</span>
+    <div
+      className="flex items-center gap-2 text-xs"
+      role={syncState === 'offline' ? 'alert' : 'status'}
+      aria-live={syncState === 'offline' ? 'assertive' : 'polite'}
+      aria-atomic="true"
+    >
+      <span className={cn('text-base leading-none', statusColor)} aria-hidden="true">{statusDot}</span>
       <div className="flex-1 min-w-0">
         <p className="truncate text-slate-600 dark:text-slate-400">{message}</p>
         {lastSynced && syncState === 'synced' ? (
@@ -50,9 +55,11 @@ function SyncStatusIndicator({ syncState, message, lastSynced, onRetry }: { sync
       </div>
       {syncState === 'offline' ? (
         <button
+          type="button"
           onClick={onRetry}
-          className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+          className="flex h-11 w-11 items-center justify-center rounded-md text-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)] dark:hover:bg-slate-800 dark:hover:text-slate-300"
           title="重试同步"
+          aria-label="重试同步"
         >
           ↻
         </button>
@@ -120,6 +127,8 @@ export function DesktopSidebar<T extends string>({
                 variant={active ? 'primary' : 'ghost'}
                 onClick={() => onTabChange(tab.key)}
                 aria-current={active ? 'page' : undefined}
+                aria-label={collapsed ? tab.label : undefined}
+                title={collapsed ? tab.label : undefined}
                 className={cn(
                   'w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all',
                   collapsed ? 'justify-center px-2' : '',
@@ -147,20 +156,28 @@ export function DesktopSidebar<T extends string>({
           />
         ) : (
           <div className="flex justify-center">
-            <span className={cn(
+            <span
+              className={cn(
               'text-2xl',
               syncState === 'synced' ? 'text-emerald-600 dark:text-emerald-400' :
               syncState === 'saving' || syncState === 'loading' ? 'text-amber-600 dark:text-amber-400' :
               'text-red-600 dark:text-red-400'
-            )}>
+              )}
+              role={syncState === 'offline' ? 'alert' : 'status'}
+              aria-live={syncState === 'offline' ? 'assertive' : 'polite'}
+              aria-label={syncMessage}
+            >
               {syncState === 'synced' ? '●' : syncState === 'saving' || syncState === 'loading' ? '◐' : '○'}
             </span>
           </div>
         )}
         <button
+          type="button"
           onClick={() => setCollapsed(!collapsed)}
           className="mt-2 min-h-11 w-full rounded-md py-1.5 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)] dark:hover:bg-slate-800 dark:hover:text-slate-300"
           title={collapsed ? '展开侧边栏' : '折叠侧边栏'}
+          aria-label={collapsed ? '展开侧边栏' : '折叠侧边栏'}
+          aria-expanded={!collapsed}
         >
           {collapsed ? '»' : '«'}
         </button>

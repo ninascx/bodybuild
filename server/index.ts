@@ -397,7 +397,7 @@ app.post('/api/auth/login', async (request, response) => {
     const user = await prisma.user.findUnique({ where: { username } })
     if (!user || !user.isActive || !(await verifyPassword(password, user.passwordHash))) {
       recordLoginFailure(attemptKey)
-      response.status(401).json({ error: '昵称或密码不正确' })
+      response.status(401).json({ error: '用户名或密码不正确' })
       return
     }
     clearLoginFailures(attemptKey)
@@ -877,7 +877,7 @@ app.post('/api/admin/users', async (request, response) => {
       select: { id: true },
     })
     if (existingUser) {
-      throw new Error('昵称已被使用，请换一个昵称。')
+      throw new Error('用户名已被使用，请换一个用户名。')
     }
     const user = await prisma.user.create({
       data: {

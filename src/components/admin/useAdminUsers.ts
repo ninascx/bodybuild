@@ -135,7 +135,7 @@ export function useAdminUsers(currentUser: CurrentUser) {
       setNewDisplayName('')
       setNewPassword('')
       setNewRole('member')
-      setMessage(copied ? '用户已创建，登录信息已复制。' : '用户已创建；请手动发送昵称和初始密码。')
+      setMessage(copied ? '用户已创建，登录信息已复制。' : '用户已创建；请手动发送用户名和初始密码。')
       await loadUsers()
     } catch (err) {
       setError(err instanceof Error ? err.message : '创建用户失败')

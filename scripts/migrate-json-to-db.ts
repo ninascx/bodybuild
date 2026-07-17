@@ -34,8 +34,8 @@ const inputFile = path.resolve(
 )
 
 if (!adminUsername) {
-  console.error('Usage: ADMIN_USERNAME=你的昵称 npm run data:migrate')
-  console.error('Or: npm run data:migrate -- --username=你的昵称 --file=data/bodybuild-data.json')
+  console.error('Usage: ADMIN_USERNAME=你的用户名 npm run data:migrate')
+  console.error('Or: npm run data:migrate -- --username=你的用户名 --file=data/bodybuild-data.json')
   process.exit(1)
 }
 

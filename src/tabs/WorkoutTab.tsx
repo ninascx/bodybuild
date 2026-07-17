@@ -8,7 +8,6 @@ import { ExerciseQuickJumpStrip } from '../components/workout/ExerciseQuickJumpS
 import { MobileCurrentExerciseView } from '../components/workout/MobileCurrentExerciseView'
 import { WorkoutControlPanel } from '../components/workout/WorkoutControlPanel'
 import { WorkoutDesktopCommandRail } from '../components/workout/WorkoutDesktopCommandRail'
-import { WorkoutTemplateManager } from '../components/workout/WorkoutTemplateManager'
 import { TrainingHeader, TrainingTimerFloat } from '../components/workout/TrainingHeader'
 import { WorkoutDesktopSessionRail } from '../components/workout/WorkoutDesktopSessionRail'
 import { WorkoutSessionSummaryBar } from '../components/workout/WorkoutSessionSummaryBar'
@@ -25,22 +24,11 @@ import {
   getWorkoutStatusView,
 } from '../components/workout/workoutStatusModel'
 import { getDayKey } from '../lib/dates'
-import type { CardioPlan, ExerciseLog, ExercisePlan, WorkoutLog, WorkoutTemplate } from '../types'
+import type { ExerciseLog, WorkoutLog } from '../types'
 import type { PreviousExerciseRecord } from '../lib/metrics'
 import type { SyncState } from '../lib/storage'
 import type { WorkoutSummary, WorkoutTemplateOption } from '../lib/workout'
 import type { TodayTaskPlan } from '../lib/productFlow'
-
-function templateToOption(template: WorkoutTemplate): WorkoutTemplateOption {
-  return {
-    id: template.id,
-    name: template.name,
-    focus: template.focus,
-    source: template.isBuiltin ? 'builtin' : 'custom',
-    exercises: template.exercises,
-    cardio: template.cardio,
-  }
-}
 
 type WorkoutTabProps = {
   selectedDate: string
@@ -54,8 +42,6 @@ type WorkoutTabProps = {
   visibleWorkoutExercises: Array<{ exercise: ExerciseLog; exerciseIndex: number }>
   previousRecordsByExerciseKey: Map<string, PreviousExerciseRecord | undefined>
   showOnlyUnfinishedExercises: boolean
-  builtinTemplates: WorkoutTemplate[]
-  workoutTemplates: WorkoutTemplate[]
   syncState: SyncState
   taskPlan: TodayTaskPlan
   restDay: boolean
@@ -79,17 +65,6 @@ type WorkoutTabProps = {
   onAddExercise: () => void
   onFillEmptySets: (exerciseIndex: number) => void
   onSaveAsTemplate: () => void
-  onCreateTemplate: () => void
-  onUpdateTemplate: (id: string, patch: Partial<WorkoutTemplate>) => void
-  onUpdateTemplateExercise: (templateId: string, exerciseIndex: number, patch: Partial<ExercisePlan>) => void
-  onAddTemplateExercise: (templateId: string) => void
-  onDeleteTemplateExercise: (templateId: string, exerciseIndex: number) => void
-  onUpdateTemplateCardio: (templateId: string, cardioIndex: number, patch: Partial<CardioPlan>) => void
-  onAddTemplateCardio: (templateId: string) => void
-  onDeleteTemplateCardio: (templateId: string, cardioIndex: number) => void
-  onDeleteTemplate: (id: string) => void
-  onExportTemplateToken: () => Promise<{ token: string; count: number }>
-  onImportTemplateToken: (token: string) => Promise<{ importedCount: number }>
   onExportSelectedWorkout: () => void
   onFinishWorkout: () => void
   onImmersiveModeChange?: (enabled: boolean) => void
@@ -555,29 +530,6 @@ export function WorkoutTab(props: WorkoutTabProps) {
 
       </section>
       </>
-      )}
-
-      {effectiveTrainingMode || props.restDay ? null : (
-        <div>
-          <WorkoutTemplateManager
-            builtinTemplates={props.builtinTemplates}
-            templates={props.workoutTemplates}
-            selectedWorkout={props.selectedWorkout}
-            onCreateTemplate={props.onCreateTemplate}
-            onSaveCurrent={props.onSaveAsTemplate}
-            onUpdateTemplate={props.onUpdateTemplate}
-            onUpdateTemplateExercise={props.onUpdateTemplateExercise}
-            onAddTemplateExercise={props.onAddTemplateExercise}
-            onDeleteTemplateExercise={props.onDeleteTemplateExercise}
-            onUpdateTemplateCardio={props.onUpdateTemplateCardio}
-            onAddTemplateCardio={props.onAddTemplateCardio}
-            onDeleteTemplateCardio={props.onDeleteTemplateCardio}
-            onApplyTemplate={(template) => props.onApplyTemplate(templateToOption(template))}
-            onDeleteTemplate={props.onDeleteTemplate}
-            onExportToken={props.onExportTemplateToken}
-            onImportToken={props.onImportTemplateToken}
-          />
-        </div>
       )}
 
       {completionToast && (

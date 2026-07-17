@@ -35,7 +35,7 @@ export function CustomTemplateCard({
   onUpdateTemplateCardio: (templateId: string, cardioIndex: number, patch: Partial<CardioPlan>) => void
   onAddTemplateCardio: (templateId: string) => void
   onDeleteTemplateCardio: (templateId: string, cardioIndex: number) => void
-  onApplyTemplate: (template: WorkoutTemplate) => void
+  onApplyTemplate?: (template: WorkoutTemplate) => void
   onDeleteTemplate: (templateId: string) => void
 }) {
   const cardio = template.cardio ?? []
@@ -183,7 +183,9 @@ export function CustomTemplateCard({
 
         <div className="mt-3 flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => onAddTemplateExercise(template.id)}>添加动作</Button>
-          <Button variant="secondary" onClick={() => onApplyTemplate(template)} disabled={!templateHasContent}>填入当天</Button>
+          {onApplyTemplate ? (
+            <Button variant="secondary" onClick={() => onApplyTemplate(template)} disabled={!templateHasContent}>填入当天</Button>
+          ) : null}
           {canDelete ? <Button variant="ghost" onClick={() => onDeleteTemplate(template.id)}>删除模板</Button> : null}
         </div>
     </DisclosurePanel>

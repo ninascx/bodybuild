@@ -96,16 +96,16 @@ export function CreateAdminUserForm({
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
   return (
-    <FormSection title="创建账户" description="创建后会自动复制登录地址、昵称和初始密码，便于发给新用户。">
+    <FormSection title="创建账户" description="创建后会自动复制登录地址、用户名和初始密码，便于发给新用户。">
       <form
         className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60 lg:grid-cols-[1fr_1fr_1fr_auto_auto]"
         onSubmit={onSubmit}
       >
-        <Field label="昵称">
+        <Field label="用户名">
           <TextInput value={newUsername} onChange={(event) => onUsernameChange(event.target.value)} autoComplete="off" required />
         </Field>
         <Field label="显示名称">
-          <TextInput value={newDisplayName} onChange={(event) => onDisplayNameChange(event.target.value)} autoComplete="off" placeholder="默认同昵称" />
+          <TextInput value={newDisplayName} onChange={(event) => onDisplayNameChange(event.target.value)} autoComplete="off" placeholder="默认同用户名" />
         </Field>
         <Field label="初始密码">
           <div className="grid gap-2 sm:grid-cols-[1fr_auto]">

@@ -1,4 +1,4 @@
-import { Badge, Card, DisclosurePanel, EmptyState, RecommendationBox, StatusMessage } from '../components/ui'
+import { Badge, Card, DisclosurePanel, EmptyState } from '../components/ui'
 import { SummaryRow } from '../components/SummaryRow'
 import { getDayKey } from '../lib/dates'
 import { roundMetric } from '../lib/metrics'
@@ -16,6 +16,32 @@ type WeeklyTabProps = {
   dailyLogs: DailyLog[]
 }
 
+const toneDotClass = {
+  positive: 'bg-emerald-500',
+  warning: 'bg-amber-500',
+  danger: 'bg-rose-500',
+  neutral: 'bg-slate-400',
+} as const
+
+function RecommendationList({ items }: { items: AdjustmentRecommendation[] }) {
+  if (items.length === 0) {
+    return <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">当前没有需要处理的提醒。</p>
+  }
+  return (
+    <ul className="divide-y divide-[var(--surface-border)] dark:divide-slate-700">
+      {items.map((item) => (
+        <li key={item.title} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+          <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${toneDotClass[item.tone]}`} aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-950 dark:text-slate-50">{item.title}</p>
+            <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.message}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 export function WeeklyTab(props: WeeklyTabProps) {
   const weekendLogs = useMemo(
     () => props.dailyLogs.filter(
@@ -25,15 +51,14 @@ export function WeeklyTab(props: WeeklyTabProps) {
   )
 
   return (
-    <div className="grid gap-4">
-      <Card>
-        <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">下周怎么调</h2>
-        <div className="mt-3 grid gap-2 md:grid-cols-3">
-          {props.weeklyActionRecommendations.map((item) => (
-            <RecommendationBox key={item.title} title={item.title} message={item.message} tone={item.tone} />
-          ))}
+    <div className="grid gap-5">
+      <section className="border-b border-[var(--surface-border)] pb-5 dark:border-slate-800" aria-labelledby="next-week-title">
+        <h2 id="next-week-title" className="text-lg font-semibold text-slate-950 dark:text-slate-50">下周怎么调</h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">先看可执行调整，再查看指标和明细。</p>
+        <div className="mt-4">
+          <RecommendationList items={props.weeklyActionRecommendations} />
         </div>
-      </Card>
+      </section>
 
       <Card>
         <h2 className="text-xl font-semibold text-slate-950 dark:text-slate-50">本周关键指标</h2>
@@ -48,30 +73,45 @@ export function WeeklyTab(props: WeeklyTabProps) {
         </div>
       </Card>
 
-      <DisclosurePanel title="趋势提醒与明细" contentClassName="grid gap-4 lg:grid-cols-2">
-        <RecommendationBox title={props.twoWeekAdjustment.title} message={props.twoWeekAdjustment.message} tone={props.twoWeekAdjustment.tone} />
-        <Card>
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">趋势提醒</h2>
-          <div className="mt-3 grid gap-2">
-            {props.trendAlerts.map((item) => (
-              <RecommendationBox key={item.title} title={item.title} message={item.message} tone={item.tone} />
-            ))}
+      <DisclosurePanel title="趋势提醒与明细" contentClassName="grid gap-6 p-4 lg:grid-cols-2">
+        <section>
+          <h2 className="text-base font-semibold text-slate-950 dark:text-slate-50">两周趋势</h2>
+          <div className="mt-3">
+            <RecommendationList items={[props.twoWeekAdjustment]} />
           </div>
-        </Card>
-        <RecommendationBox title={props.weekendRisk.title} message={props.weekendRisk.message} tone={props.weekendRisk.tone} />
-        <Card>
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">下一周建议</h2>
-          <div className="mt-3 grid gap-2">
+        </section>
+
+        <section>
+          <h2 className="text-base font-semibold text-slate-950 dark:text-slate-50">趋势提醒</h2>
+          <div className="mt-3">
+            <RecommendationList items={props.trendAlerts} />
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-base font-semibold text-slate-950 dark:text-slate-50">周末风险</h2>
+          <div className="mt-3">
+            <RecommendationList items={[props.weekendRisk]} />
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-base font-semibold text-slate-950 dark:text-slate-50">下一周建议</h2>
+          <ul className="mt-3 divide-y divide-[var(--surface-border)] text-sm leading-6 text-slate-700 dark:divide-slate-700 dark:text-slate-200">
             {props.weeklySummary.suggestions.map((suggestion) => (
-              <StatusMessage key={suggestion} tone={props.weeklySummary.weekendOverLimit && suggestion.includes('周末') ? 'danger' : 'neutral'} className="leading-6">{suggestion}</StatusMessage>
+              <li key={suggestion} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+                <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${props.weeklySummary.weekendOverLimit && suggestion.includes('周末') ? 'bg-rose-500' : 'bg-[var(--color-primary-600)]'}`} aria-hidden="true" />
+                <span>{suggestion}</span>
+              </li>
             ))}
-          </div>
-        </Card>
-        <Card className="lg:col-span-2">
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-50">周末规则检查</h2>
-          <div className="mt-3 grid gap-2 md:grid-cols-2">
+          </ul>
+        </section>
+
+        <section className="lg:col-span-2">
+          <h2 className="text-base font-semibold text-slate-950 dark:text-slate-50">周末规则检查</h2>
+          <div className="mt-3 grid gap-x-5 md:grid-cols-2">
             {weekendLogs.map((log) => (
-              <div key={log.date} className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
+              <div key={log.date} className="border-b border-[var(--surface-border)] py-3 text-sm first:pt-0 dark:border-slate-700">
                 <p className="font-medium text-slate-950 dark:text-slate-50">{log.date} · {dayNames[getDayKey(log.date)]}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <Badge tone={(log.calories ?? 0) > props.weekendCalorieUpperKcal ? 'danger' : 'positive'}>热量 {log.calories ?? '未填'} kcal</Badge>
@@ -82,7 +122,7 @@ export function WeeklyTab(props: WeeklyTabProps) {
             ))}
             {weekendLogs.length === 0 ? <EmptyState className="md:col-span-2" title="本周还没有周五/周六记录" message="周末记录会在这里集中检查热量、蛋白和步数。" /> : null}
           </div>
-        </Card>
+        </section>
       </DisclosurePanel>
     </div>
   )

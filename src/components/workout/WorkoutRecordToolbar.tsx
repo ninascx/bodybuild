@@ -1,4 +1,5 @@
-import { Badge, Button, SectionHeader, SegmentedControl } from '../ui'
+import { Badge, Button, DropdownMenu, SectionHeader, SegmentedControl } from '../ui'
+import type { DropdownMenuItem } from '../ui'
 
 export function WorkoutRecordToolbar({
   badgeLabel,
@@ -33,6 +34,29 @@ export function WorkoutRecordToolbar({
   showTrainingModeAction?: boolean
   showSyncAction?: boolean
 }) {
+  const moreItems: DropdownMenuItem[] = []
+  if (hasWorkout) {
+    moreItems.push({
+      label: '新增动作',
+      description: '在当天训练末尾添加一个空动作。',
+      onSelect: onAddExercise,
+    })
+  }
+  if (showSyncAction) {
+    moreItems.push({
+      label: xunjiSyncPending ? '正在从训记导入…' : '从训记导入当日训练',
+      description: '训记是外部训练数据源。',
+      onSelect: onSyncFromXunji,
+      disabled: xunjiSyncPending,
+    })
+  }
+  if (hasWorkout) {
+    moreItems.push({
+      label: collapseMode === 'auto' ? '折叠全部动作' : collapseMode === 'all' ? '展开全部动作' : '恢复自动折叠',
+      onSelect: onCycleCollapseMode,
+    })
+  }
+
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <SectionHeader
@@ -47,16 +71,6 @@ export function WorkoutRecordToolbar({
           </Button>
         ) : null}
         {hasWorkout ? (
-          <Button variant="secondary" className="px-3" onClick={onAddExercise}>
-            新增动作
-          </Button>
-        ) : null}
-        {showSyncAction ? (
-          <Button variant="secondary" className="px-3" loading={xunjiSyncPending} onClick={onSyncFromXunji}>
-            从训记导入训练
-          </Button>
-        ) : null}
-        {hasWorkout ? (
           <SegmentedControl
             ariaLabel="动作筛选"
             value={showOnlyUnfinished ? 'unfinished' : 'all'}
@@ -67,10 +81,8 @@ export function WorkoutRecordToolbar({
             onChange={(value) => onShowOnlyUnfinishedChange(value === 'unfinished')}
           />
         ) : null}
-        {hasWorkout ? (
-          <Button variant="secondary" className="px-3 text-xs" onClick={onCycleCollapseMode}>
-            {collapseMode === 'auto' ? '折叠全部' : collapseMode === 'all' ? '展开全部' : '恢复自动'}
-          </Button>
+        {moreItems.length > 0 ? (
+          <DropdownMenu label="更多" items={moreItems} triggerClassName="px-3" />
         ) : null}
       </div>
     </div>

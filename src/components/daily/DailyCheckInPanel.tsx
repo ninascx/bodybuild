@@ -22,6 +22,8 @@ export type DailyCheckInPanelProps = {
   hasFillableTargetFields: boolean
   focusKey?: DailyFocusKey
   onFocusConsumed?: () => void
+  nextActionLabel?: string
+  onNextAction?: () => void
 }
 
 export function DailyNotesSection({
@@ -32,15 +34,17 @@ export function DailyNotesSection({
   onUpdateDailyLog: (patch: Partial<DailyLog>) => void
 }) {
   return (
-    <Field label="备注" className="scroll-mt-28" >
-      <TextArea
-        data-daily-focus="notes"
-        className="min-h-20 bg-white dark:bg-slate-900 lg:min-h-28"
-        value={selectedLog.notes ?? ''}
-        placeholder="记录训练感受、饮食调整、身体变化..."
-        onChange={(event) => onUpdateDailyLog({ notes: event.target.value })}
-      />
-    </Field>
+    <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-4 dark:border-slate-800 dark:bg-slate-900">
+      <Field label="当天备注" className="scroll-mt-28" helper="可记录饮食调整、训练感受或身体变化。">
+        <TextArea
+          data-daily-focus="notes"
+          className="min-h-24 bg-white dark:bg-slate-950 lg:min-h-32"
+          value={selectedLog.notes ?? ''}
+          placeholder="写下今天值得记住的变化"
+          onChange={(event) => onUpdateDailyLog({ notes: event.target.value })}
+        />
+      </Field>
+    </section>
   )
 }
 

@@ -22,7 +22,7 @@ export function AdminUsersTab({ currentUser }: AdminUsersTabProps) {
     <div className="grid gap-4">
       <FormPanel
         title="用户管理"
-        description="创建昵称账户，管理登录状态、角色、密码和用户数据导出。"
+        description="创建用户名账户，管理显示名称、登录状态、角色、密码和用户数据导出。"
         badges={<span className="text-xs font-medium text-slate-500 dark:text-slate-400">{adminUsers.users.length} 个用户</span>}
         actions={
           <>

@@ -53,7 +53,7 @@ export function buildLoginCredentialText(username: string, password: string, dis
     '训练记录网站登录信息',
     displayName ? `用户：${displayName}` : '',
     `登录地址：${window.location.origin}`,
-    `昵称：${username}`,
+    `用户名：${username}`,
     `密码：${password}`,
     '首次登录后请先进入“个人”页确认目标和身体属性。',
   ]

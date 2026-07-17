@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import type { BodyMetricType, BodyRecord, DailyLog, DailyTarget } from '../../types'
 import type { DailyFocusKey } from '../../lib/productFlow'
 import { bodyMetricDefinition } from '../../lib/bodyMetrics'
-import { Badge, Button, DisclosurePanel } from '../ui'
+import { Badge, Button } from '../ui'
 import { QuickAdjustNumberField, type NumberRange } from '../NumberField'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { getBodyRecordStatus } from './bodyRecordStatus'
@@ -24,6 +24,8 @@ export type DailyEssentialsFormProps = {
   hasCopyableYesterdayFields: boolean
   hasFillableTargetFields: boolean
   focusKey?: DailyFocusKey
+  nextActionLabel?: string
+  onNextAction?: () => void
 }
 
 const quickFieldClass = 'h-11 min-w-[7.5rem] text-base tabular-nums'
@@ -45,7 +47,7 @@ type RecordField = {
 
 function fieldFocusClass(focused: boolean): string {
   return focused
-    ? 'rounded-lg border border-[var(--color-primary-100)] bg-[var(--surface-selected)] p-1 dark:border-cyan-700/40 dark:bg-cyan-950/20'
+    ? 'rounded-lg bg-[var(--surface-selected)] p-2 ring-2 ring-[var(--color-primary-100)] dark:bg-cyan-950/20 dark:ring-cyan-700/40'
     : ''
 }
 
@@ -183,54 +185,110 @@ export function DailyEssentialsForm(props: DailyEssentialsFormProps) {
     </div>
   )
 
+  const complete = keyStatus.completed === keyStatus.total
+  const nextStepMessage = keyStatus.firstMissing
+    ? `先补充${keyStatus.firstMissing.label}，完成后会自动保存。`
+    : props.nextActionLabel
+      ? '三项关键数据已齐，可以继续记录训练。'
+      : '三项关键数据已齐，今天的核心记录已完成。'
+
   return (
-    <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] px-3 py-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5">
-      <div role="status" aria-live="polite" aria-atomic="true">
-        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">关键记录 {keyStatus.completed}/{keyStatus.total}</p>
-        <h3 className="mt-1 text-lg font-semibold text-slate-950 dark:text-slate-50">{keyStatus.title}</h3>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">体重、热量和蛋白质</p>
+    <section className="overflow-hidden rounded-xl border border-[var(--surface-border-strong)] bg-[var(--surface-panel)] dark:border-slate-700 dark:bg-slate-900">
+      <div className="bg-teal-950 px-4 py-4 text-white dark:bg-cyan-950 sm:px-5 sm:py-5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-teal-100 dark:text-cyan-100">关键记录</p>
+          <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-semibold tabular-nums text-white">
+            {keyStatus.completed}/{keyStatus.total}
+          </span>
+        </div>
+        <div className="mt-2" role="status" aria-live="polite" aria-atomic="true">
+          <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">{keyStatus.title}</h2>
+          <p className="mt-1 text-sm leading-6 text-teal-100 dark:text-cyan-100">体重、热量和蛋白质，输入后自动保存。</p>
+        </div>
+        <div
+          className="mt-4 grid grid-cols-3 gap-2"
+          role="progressbar"
+          aria-label="关键记录完成进度"
+          aria-valuemin={0}
+          aria-valuemax={keyStatus.total}
+          aria-valuenow={keyStatus.completed}
+        >
+          {keyStatus.items.map((item) => (
+            <span
+              key={item.key}
+              className={`h-1.5 rounded-full ${item.value !== undefined ? 'bg-cyan-300' : 'bg-white/20'}`}
+              aria-hidden="true"
+            />
+          ))}
+        </div>
       </div>
 
-      <div className="motion-list mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {coreFields.map(renderField)}
+      <div className="px-3 py-4 sm:p-5">
+        <div className="motion-list grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {coreFields.map(renderField)}
+        </div>
+
+        {(props.hasCopyableYesterdayFields || props.hasFillableTargetFields) ? (
+          <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-[var(--surface-border)] pt-3 dark:border-slate-700">
+            {props.hasCopyableYesterdayFields ? (
+              <Button
+                variant="ghost"
+                className="px-3 text-xs shadow-none sm:text-sm"
+                onClick={props.onCopyYesterday}
+                title="快捷键: Ctrl+Y"
+              >
+                补入昨天空值
+              </Button>
+            ) : null}
+            {props.hasFillableTargetFields ? (
+              <Button
+                variant="ghost"
+                className="px-3 text-xs shadow-none sm:text-sm"
+                onClick={props.onFillTarget}
+                title="快捷键: Ctrl+T"
+              >
+                填入目标值
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="mt-4 flex flex-col gap-3 rounded-lg bg-[var(--surface-muted)] p-3 dark:bg-slate-800 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-[var(--color-primary-700)] dark:text-cyan-300">下一步</p>
+            <p className="mt-1 text-sm leading-6 text-slate-700 dark:text-slate-200">{nextStepMessage}</p>
+          </div>
+          {props.nextActionLabel && props.onNextAction ? (
+            <Button className="w-full shrink-0 sm:w-auto" onClick={props.onNextAction}>
+              {props.nextActionLabel}
+            </Button>
+          ) : complete ? (
+            <span className="inline-flex min-h-9 shrink-0 items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+              <span aria-hidden="true">✓</span>
+              核心记录完成
+            </span>
+          ) : null}
+        </div>
       </div>
 
-      <DisclosurePanel
-        className="mt-4"
-        title="补充记录"
+      <details
         open={supplementaryOpen}
-        onOpenChange={setSupplementaryOpen}
-        contentClassName="motion-list grid gap-3 border-t border-[var(--surface-border)] p-3 dark:border-slate-700"
+        onToggle={(event) => setSupplementaryOpen(event.currentTarget.open)}
+        className="group border-t border-[var(--surface-border)] dark:border-slate-700"
       >
-        <div className="grid gap-3 sm:grid-cols-3">
+        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-slate-800 transition-colors hover:bg-[var(--surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-primary-500)] dark:text-slate-200 dark:hover:bg-slate-800 dark:focus-visible:ring-cyan-500 sm:px-5">
+          <span>
+            补充记录
+            <span className="ml-2 font-normal text-slate-500 dark:text-slate-400">步数、睡眠、疲劳</span>
+          </span>
+          <svg className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-[var(--motion-base)] group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m6 9 6 6 6-6" />
+          </svg>
+        </summary>
+        <div className="motion-list grid gap-3 border-t border-[var(--surface-border)] p-4 dark:border-slate-700 sm:grid-cols-3 sm:p-5">
           {supplementaryFields.map(renderField)}
         </div>
-      </DisclosurePanel>
-
-      {(props.hasCopyableYesterdayFields || props.hasFillableTargetFields) ? (
-        <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-[var(--surface-border)] pt-3 dark:border-slate-700">
-          {props.hasCopyableYesterdayFields ? (
-            <Button
-              variant="ghost"
-              className="px-3 text-xs shadow-none sm:text-sm"
-              onClick={props.onCopyYesterday}
-              title="快捷键: Ctrl+Y"
-            >
-              补入昨天空值
-            </Button>
-          ) : null}
-          {props.hasFillableTargetFields ? (
-            <Button
-              variant="ghost"
-              className="px-3 text-xs shadow-none sm:text-sm"
-              onClick={props.onFillTarget}
-              title="快捷键: Ctrl+T"
-            >
-              填入目标
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
+      </details>
     </section>
   )
 }

@@ -4,7 +4,6 @@ import { QuickRecordSection } from '../components/QuickRecordSection'
 import { DailyNotesSection } from '../components/daily/DailyCheckInPanel'
 import { DailyRecordToolbar } from '../components/daily/DailyRecordToolbar'
 import { DailyCalendarPanel } from '../components/daily/DailyRecordPanels'
-import { DailyRecordStatusPanel } from '../components/daily/DailyRecordStatusPanel'
 import { buildCopyYesterdayPatch } from '../components/daily/dailyRecordActions'
 import { buildDailyRecordStatus } from '../components/daily/dailyRecordStatus'
 import { bodyValue } from '../lib/bodyMetrics'
@@ -68,7 +67,6 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
   const selectedWorkout = props.workoutLogs.find((log) => log.date === props.selectedDate)
   const calorieTarget = targetCalories(props.selectedTarget)
   const selectedWeight = bodyValue(props.selectedBodyRecords, props.selectedDate, 'weight')
-  const pendingBodyCount = props.selectedBodyRecords.filter((record) => record.origin !== 'xunji').length
   const status = useMemo(
     () => buildDailyRecordStatus({
       weight: selectedWeight,
@@ -133,8 +131,8 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
         onOpenHistory={() => setHistoryOpen(true)}
       />
 
-      <div className="grid items-start gap-4">
-        <section className="grid min-w-0 gap-4" aria-label="当日记录表单">
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_23rem] xl:gap-6">
+        <section className="min-w-0" aria-label="当日关键记录表单">
           <QuickRecordSection
             key={props.selectedDate}
             selectedLog={props.selectedLog}
@@ -152,17 +150,16 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
             hasFillableTargetFields={hasFillableTargetQuickFields}
             focusKey={effectiveFocusKey}
             onFocusConsumed={consumeFocus}
+            nextActionLabel={status.primaryAction?.label}
+            onNextAction={status.primaryAction ? runPrimaryAction : undefined}
           />
+        </section>
 
-          <div>
-            <DailyRecordStatusPanel
-              status={status}
-              pendingBodyCount={pendingBodyCount}
-              onPrimaryAction={runPrimaryAction}
-              onSyncBody={props.onSyncBodyToXunji}
-            />
+        <aside className="grid min-w-0 gap-4 self-start" aria-labelledby="daily-details-title">
+          <div className="px-1">
+            <h2 id="daily-details-title" className="text-base font-semibold text-slate-950 dark:text-slate-50">详细记录</h2>
+            <p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">按需补充身体围度和当天备注。</p>
           </div>
-
           <Suspense
             fallback={(
               <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel)] p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400" role="status" aria-live="polite" aria-busy="true">
@@ -181,8 +178,7 @@ export function DailyRecordTab(props: DailyRecordTabProps) {
             selectedLog={props.selectedLog}
             onUpdateDailyLog={props.onUpdateDailyLog}
           />
-        </section>
-
+        </aside>
       </div>
 
       <DisclosurePanel className="md:hidden" title="最近六周日历" contentClassName="grid gap-3">

@@ -106,7 +106,7 @@ export function DailyMeasurementCard({
       title={(
         <div className="flex min-w-0 flex-1 items-center justify-between gap-3 pr-2">
           <div className="min-w-0">
-            <span className="block text-base font-semibold text-slate-950 dark:text-slate-50">身体数据</span>
+            <span className="block text-base font-semibold text-slate-950 dark:text-slate-50">身体与围度</span>
             <span className="mt-0.5 block truncate text-xs font-normal text-slate-500 dark:text-slate-400">
               {summary || '体脂率、腰围及其他围度'}
             </span>

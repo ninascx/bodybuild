@@ -39,9 +39,9 @@ export function LoginScreen({
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-transparent px-4 py-8 text-slate-900 dark:text-slate-100">
+    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <form
-        className="w-full max-w-md rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/90 sm:p-6"
+        className="w-full max-w-md rounded-xl border border-slate-300 bg-white p-5 dark:border-slate-700 dark:bg-slate-900 sm:p-6"
         onSubmit={onSubmit}
       >
         <div className="flex items-start justify-between gap-3">
@@ -61,7 +61,7 @@ export function LoginScreen({
         </div>
 
         <div className="mt-6 grid gap-4">
-          <Field label="昵称" helper="请输入管理员创建账户时提供的昵称。">
+          <Field label="用户名" helper="请输入管理员发给你的用户名。">
             <TextInput
               type="text"
               value={username}

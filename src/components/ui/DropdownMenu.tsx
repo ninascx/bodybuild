@@ -4,6 +4,7 @@ import { Button } from './Button'
 
 export interface DropdownMenuItem {
   label: string
+  description?: string
   onSelect: () => void
   disabled?: boolean
   tone?: 'default' | 'danger'
@@ -163,7 +164,14 @@ export function DropdownMenu({
                 item.onSelect()
               }}
             >
-              <span className="min-w-0 truncate">{item.label}</span>
+              <span className="min-w-0">
+                <span className="block truncate">{item.label}</span>
+                {item.description ? (
+                  <span className="mt-0.5 block text-xs font-normal leading-5 text-slate-500 dark:text-slate-400">
+                    {item.description}
+                  </span>
+                ) : null}
+              </span>
             </Button>
           ))}
         </div>
